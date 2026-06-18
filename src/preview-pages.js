@@ -1,3 +1,7 @@
+import { CHAT_BUBBLE_IMAGE_KEYS } from "./theme-model.js";
+
+export { CHAT_BUBBLE_IMAGE_KEYS };
+
 export const PREVIEW_PAGES = [
   {
     id: "home",
@@ -32,7 +36,7 @@ export const PREVIEW_PAGES = [
       "sendButton",
       "sendButtonText",
     ],
-    imageKeys: ["chatBackground", "profileImage", "sendBubble", "receiveBubble"],
+    imageKeys: ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS],
   },
   {
     id: "passcode",

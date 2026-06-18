@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  CHAT_BUBBLE_IMAGE_KEYS,
   cloneDefaultThemeState,
   defaultThemeState,
   getAuthorName,
@@ -25,8 +26,8 @@ test("getThemeId only accepts the middle package segment from user input", () =>
   assert.equal(sanitizeThemeIdSegment(""), "example");
 });
 
-test("default theme name does not include Kakao branding", () => {
-  assert.equal(defaultThemeState.appName, "마이 테마");
+test("default theme name uses the requested Korean wording", () => {
+  assert.equal(defaultThemeState.appName, "나의 테마");
 });
 
 test("Korean theme names are preserved in iOS CSS and Android strings", () => {
@@ -67,6 +68,65 @@ test("IMAGE_TARGETS maps passcode normal and selected images for preview and out
   ]);
   assert.ok(IMAGE_TARGETS.passcodeDot.android.includes("src/main/theme/drawable-xxhdpi/theme_passcode_01_image.png"));
   assert.ok(IMAGE_TARGETS.passcodeDotSelected.android.includes("src/main/theme/drawable-xxhdpi/theme_passcode_01_checked_image.png"));
+});
+
+test("IMAGE_TARGETS maps each 3x chat bubble upload to generated 2x and 3x outputs", () => {
+  assert.deepEqual(CHAT_BUBBLE_IMAGE_KEYS, [
+    "sendBubbleNormal",
+    "sendBubbleSelected",
+    "sendBubbleTailless",
+    "sendBubbleTaillessSelected",
+    "receiveBubbleNormal",
+    "receiveBubbleSelected",
+    "receiveBubbleTailless",
+    "receiveBubbleTaillessSelected",
+  ]);
+  assert.deepEqual(IMAGE_TARGETS.sendBubbleNormal.ios, [
+    "Images/chatroomBubbleSend01@2x.png",
+    "Images/chatroomBubbleSend01@3x.png",
+  ]);
+  assert.deepEqual(IMAGE_TARGETS.sendBubbleSelected.ios, [
+    "Images/chatroomBubbleSend01Selected@2x.png",
+    "Images/chatroomBubbleSend01Selected@3x.png",
+  ]);
+  assert.deepEqual(IMAGE_TARGETS.sendBubbleTailless.ios, [
+    "Images/chatroomBubbleSend02@2x.png",
+    "Images/chatroomBubbleSend02@3x.png",
+  ]);
+  assert.deepEqual(IMAGE_TARGETS.sendBubbleTaillessSelected.ios, [
+    "Images/chatroomBubbleSend02Selected@2x.png",
+    "Images/chatroomBubbleSend02Selected@3x.png",
+  ]);
+  assert.deepEqual(IMAGE_TARGETS.receiveBubbleNormal.ios, [
+    "Images/chatroomBubbleReceive01@2x.png",
+    "Images/chatroomBubbleReceive01@3x.png",
+  ]);
+  assert.deepEqual(IMAGE_TARGETS.receiveBubbleSelected.ios, [
+    "Images/chatroomBubbleReceive01Selected@2x.png",
+    "Images/chatroomBubbleReceive01Selected@3x.png",
+  ]);
+  assert.deepEqual(IMAGE_TARGETS.receiveBubbleTailless.ios, [
+    "Images/chatroomBubbleReceive02@2x.png",
+    "Images/chatroomBubbleReceive02@3x.png",
+  ]);
+  assert.deepEqual(IMAGE_TARGETS.receiveBubbleTaillessSelected.ios, [
+    "Images/chatroomBubbleReceive02Selected@2x.png",
+    "Images/chatroomBubbleReceive02Selected@3x.png",
+  ]);
+  assert.equal(IMAGE_TARGETS.sendBubbleNormal.previewIos, "Images/chatroomBubbleSend01@3x.png");
+  assert.equal(IMAGE_TARGETS.receiveBubbleNormal.previewIos, "Images/chatroomBubbleReceive01@3x.png");
+  assert.deepEqual(IMAGE_TARGETS.sendBubbleNormal.displaySize, [120, 105]);
+  assert.deepEqual(IMAGE_TARGETS.receiveBubbleNormal.displaySize, [120, 105]);
+  assert.ok(
+    IMAGE_TARGETS.sendBubbleNormal.android.includes(
+      "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png",
+    ),
+  );
+  assert.ok(
+    IMAGE_TARGETS.receiveBubbleTailless.android.includes(
+      "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png",
+    ),
+  );
 });
 
 test("IMAGE_TARGETS maps five bottom tab icon uploads", () => {

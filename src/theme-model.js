@@ -115,13 +115,36 @@ const defaultColors = {
 };
 
 export const defaultThemeState = {
-  appName: "마이 테마",
+  appName: "나의 테마",
   baseAuthorName: "reha",
   additionalAuthorName: "",
   themeIdSegment: "example",
   version: "1.0.0",
   colors: defaultColors,
 };
+
+export const CHAT_BUBBLE_IMAGE_KEYS = [
+  "sendBubbleNormal",
+  "sendBubbleSelected",
+  "sendBubbleTailless",
+  "sendBubbleTaillessSelected",
+  "receiveBubbleNormal",
+  "receiveBubbleSelected",
+  "receiveBubbleTailless",
+  "receiveBubbleTaillessSelected",
+];
+
+function bubbleTarget({ label, size, ios2x, ios3x, android = [] }) {
+  return {
+    label,
+    displaySize: size,
+    previewIos: ios3x,
+    previewScale: 3,
+    ios: [ios2x, ios3x],
+    android,
+    ...(android.length ? { androidRequiresNinePatch: true } : {}),
+  };
+}
 
 export const IMAGE_TARGETS = {
   mainBackground: {
@@ -237,42 +260,58 @@ export const IMAGE_TARGETS = {
       "src/main/res/mipmap-xxxhdpi/ic_launcher.png",
     ],
   },
-  sendBubble: {
-    label: "보낸 말풍선",
-    ios: [
-      "Images/chatroomBubbleSend01@2x.png",
-      "Images/chatroomBubbleSend01@3x.png",
-      "Images/chatroomBubbleSend01Selected@2x.png",
-      "Images/chatroomBubbleSend01Selected@3x.png",
-      "Images/chatroomBubbleSend02@2x.png",
-      "Images/chatroomBubbleSend02@3x.png",
-      "Images/chatroomBubbleSend02Selected@2x.png",
-      "Images/chatroomBubbleSend02Selected@3x.png",
-    ],
-    android: [
-      "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png",
-      "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png",
-    ],
-    androidRequiresNinePatch: true,
-  },
-  receiveBubble: {
-    label: "받은 말풍선",
-    ios: [
-      "Images/chatroomBubbleReceive01@2x.png",
-      "Images/chatroomBubbleReceive01@3x.png",
-      "Images/chatroomBubbleReceive01Selected@2x.png",
-      "Images/chatroomBubbleReceive01Selected@3x.png",
-      "Images/chatroomBubbleReceive02@2x.png",
-      "Images/chatroomBubbleReceive02@3x.png",
-      "Images/chatroomBubbleReceive02Selected@2x.png",
-      "Images/chatroomBubbleReceive02Selected@3x.png",
-    ],
-    android: [
-      "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_01_image.9.png",
-      "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png",
-    ],
-    androidRequiresNinePatch: true,
-  },
+  sendBubbleNormal: bubbleTarget({
+    label: "나의 말풍선 - 그냥 말풍선",
+    size: [120, 105],
+    ios2x: "Images/chatroomBubbleSend01@2x.png",
+    ios3x: "Images/chatroomBubbleSend01@3x.png",
+    android: ["src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png"],
+  }),
+  sendBubbleSelected: bubbleTarget({
+    label: "나의 말풍선 - 선택된 말풍선",
+    size: [120, 105],
+    ios2x: "Images/chatroomBubbleSend01Selected@2x.png",
+    ios3x: "Images/chatroomBubbleSend01Selected@3x.png",
+  }),
+  sendBubbleTailless: bubbleTarget({
+    label: "나의 말풍선 - 꼬리 없는 말풍선",
+    size: [120, 105],
+    ios2x: "Images/chatroomBubbleSend02@2x.png",
+    ios3x: "Images/chatroomBubbleSend02@3x.png",
+    android: ["src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png"],
+  }),
+  sendBubbleTaillessSelected: bubbleTarget({
+    label: "나의 말풍선 - 선택된 꼬리 없는 말풍선",
+    size: [120, 105],
+    ios2x: "Images/chatroomBubbleSend02Selected@2x.png",
+    ios3x: "Images/chatroomBubbleSend02Selected@3x.png",
+  }),
+  receiveBubbleNormal: bubbleTarget({
+    label: "상대 말풍선 - 그냥 말풍선",
+    size: [120, 105],
+    ios2x: "Images/chatroomBubbleReceive01@2x.png",
+    ios3x: "Images/chatroomBubbleReceive01@3x.png",
+    android: ["src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_01_image.9.png"],
+  }),
+  receiveBubbleSelected: bubbleTarget({
+    label: "상대 말풍선 - 선택된 말풍선",
+    size: [121, 105],
+    ios2x: "Images/chatroomBubbleReceive01Selected@2x.png",
+    ios3x: "Images/chatroomBubbleReceive01Selected@3x.png",
+  }),
+  receiveBubbleTailless: bubbleTarget({
+    label: "상대 말풍선 - 꼬리 없는 말풍선",
+    size: [120, 105],
+    ios2x: "Images/chatroomBubbleReceive02@2x.png",
+    ios3x: "Images/chatroomBubbleReceive02@3x.png",
+    android: ["src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png"],
+  }),
+  receiveBubbleTaillessSelected: bubbleTarget({
+    label: "상대 말풍선 - 선택된 꼬리 없는 말풍선",
+    size: [121, 105],
+    ios2x: "Images/chatroomBubbleReceive02Selected@2x.png",
+    ios3x: "Images/chatroomBubbleReceive02Selected@3x.png",
+  }),
   passcodeBackgroundImage: {
     label: "암호 화면 배경",
     ios: ["Images/passcodeBgImage@3x.png"],

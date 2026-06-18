@@ -26,12 +26,12 @@ function asBytes(data) {
   return encoder.encode(String(data));
 }
 
-function getUploadDataForTarget(upload, name) {
+function getUploadDataForTarget(upload, name, { allowFallback = true } = {}) {
   if (!upload || upload instanceof Uint8Array || upload instanceof ArrayBuffer) {
-    return upload;
+    return allowFallback ? upload : undefined;
   }
 
-  return upload.variants?.[name] ?? upload.data ?? upload.bytes;
+  return upload.variants?.[name] ?? (allowFallback ? upload.data ?? upload.bytes : undefined);
 }
 
 function buildReplacementMap(uploads, platform) {
@@ -43,12 +43,10 @@ function buildReplacementMap(uploads, platform) {
       continue;
     }
 
-    if (platform === "android" && target.androidRequiresNinePatch) {
-      continue;
-    }
-
     for (const name of target[platform] || []) {
-      const data = getUploadDataForTarget(upload, name);
+      const data = getUploadDataForTarget(upload, name, {
+        allowFallback: !(platform === "android" && target.androidRequiresNinePatch),
+      });
       if (data) {
         replacements.set(name, data);
       }
@@ -138,6 +136,13 @@ export function buildAndroidEntries(templateEntries, { state, uploads = {} }) {
 
 export function getSkippedAndroidUploads(uploads) {
   return Object.keys(uploads || {})
-    .filter((key) => IMAGE_TARGETS[key]?.androidRequiresNinePatch)
+    .filter((key) => {
+      const target = IMAGE_TARGETS[key];
+      if (!target?.androidRequiresNinePatch) {
+        return false;
+      }
+
+      return !target.android?.some((name) => getUploadDataForTarget(uploads[key], name, { allowFallback: false }));
+    })
     .map((key) => IMAGE_TARGETS[key].label);
 }

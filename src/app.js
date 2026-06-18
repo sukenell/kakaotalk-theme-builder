@@ -2,6 +2,7 @@ import { buildAndroidEntries, buildIosEntries, getSkippedAndroidUploads } from "
 import { applyPasscodeAction } from "./passcode-preview.js";
 import { getNextPreviewIndex, getPreviewColorKeys, getPreviewImageKeys, PREVIEW_PAGES } from "./preview-pages.js";
 import {
+  CHAT_BUBBLE_IMAGE_KEYS,
   cloneDefaultThemeState,
   getActiveColors,
   IMAGE_TARGETS,
@@ -44,8 +45,7 @@ const uploadKeys = [
   "tabMoreIcon",
   "profileImage",
   "themeIcon",
-  "sendBubble",
-  "receiveBubble",
+  ...CHAT_BUBBLE_IMAGE_KEYS,
   "passcodeBackgroundImage",
   "passcodeDot",
   "passcodeDotSelected",
@@ -62,12 +62,15 @@ const previewImageVariables = {
   tabMoreIcon: ["--preview-tab-more-icon", "--preview-tab-more-icon-selected"],
   profileImage: ["--preview-profile-image"],
   themeIcon: ["--preview-theme-icon"],
-  sendBubble: ["--preview-send-image"],
-  receiveBubble: ["--preview-receive-image"],
   passcodeBackgroundImage: ["--preview-passcode-image"],
 };
 
-const bubbleUploadKeys = new Set(["sendBubble", "receiveBubble"]);
+const bubbleUploadKeys = new Set(CHAT_BUBBLE_IMAGE_KEYS);
+
+const previewBubbleSources = {
+  "--preview-send-image": ["sendBubbleNormal"],
+  "--preview-receive-image": ["receiveBubbleNormal"],
+};
 
 const iosImageSizes = {
   "Images/chatroomBubbleSend01@2x.png": [80, 70],
@@ -86,6 +89,20 @@ const iosImageSizes = {
   "Images/chatroomBubbleReceive02@3x.png": [120, 105],
   "Images/chatroomBubbleReceive02Selected@2x.png": [80, 70],
   "Images/chatroomBubbleReceive02Selected@3x.png": [121, 105],
+};
+
+const androidNinePatchImageSizes = {
+  "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png": [124, 114],
+  "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png": [124, 114],
+  "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_01_image.9.png": [124, 114],
+  "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png": [124, 114],
+};
+
+const androidNinePatchMarkers = {
+  stretchX: [41, 81],
+  stretchY: [38, 75],
+  paddingX: [41, 81],
+  paddingY: [38, 75],
 };
 
 const state = cloneDefaultThemeState();
@@ -180,9 +197,9 @@ function renderUploadControls() {
       const label = document.createElement("div");
       label.className = "upload-label";
       const title = document.createElement("strong");
-      title.textContent = target.label;
+      title.textContent = formatUploadLabel(target);
       const meta = document.createElement("span");
-      meta.textContent = target.androidRequiresNinePatch ? "iOS 자동 적용" : "iOS / Android 적용";
+      meta.textContent = getUploadMeta(key, target);
       label.append(title, meta);
 
       const button = document.createElement("label");
@@ -198,6 +215,25 @@ function renderUploadControls() {
       return item;
     }),
   );
+}
+
+function formatUploadLabel(target) {
+  if (!target.displaySize) {
+    return target.label;
+  }
+
+  const [width, height] = target.displaySize;
+  return `${target.label}(${width}px x ${height}px)`;
+}
+
+function getUploadMeta(key, target) {
+  if (bubbleUploadKeys.has(key)) {
+    return target.android?.length
+      ? "3x 업로드 / 2x 자동 생성 / Android 9-patch 자동 적용"
+      : "3x 업로드 / 2x 자동 생성 / iOS 적용";
+  }
+
+  return target.androidRequiresNinePatch ? "iOS 자동 적용" : "iOS / Android 적용";
 }
 
 function renderPreviewTabs() {
@@ -257,7 +293,7 @@ function applyUploadThumb(element, key) {
     return;
   }
 
-  const iosTarget = IMAGE_TARGETS[key]?.ios?.[0];
+  const iosTarget = IMAGE_TARGETS[key]?.previewIos ?? IMAGE_TARGETS[key]?.ios?.[0];
   if (iosTarget) {
     element.style.backgroundImage = `url("./assets/templates/ios/${iosTarget}")`;
   }
@@ -269,12 +305,15 @@ async function handleUpload(key, file) {
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
-  uploads[key] = bubbleUploadKeys.has(key) ? { data: bytes, variants: await createIosImageVariants(key, file) } : bytes;
+  const variants = bubbleUploadKeys.has(key) ? await createBubbleImageVariants(key, file) : undefined;
+  uploads[key] = variants ? { data: bytes, variants } : bytes;
 
   if (previews[key]) {
     URL.revokeObjectURL(previews[key]);
   }
-  previews[key] = URL.createObjectURL(file);
+  previews[key] = variants
+    ? createPreviewUrlFromBytes(getPreviewBytesForUpload(key, bytes, variants))
+    : URL.createObjectURL(file);
 
   const thumb = document.querySelector(`[data-upload-thumb="${key}"]`);
   if (thumb) {
@@ -285,7 +324,16 @@ async function handleUpload(key, file) {
   setStatus(`${IMAGE_TARGETS[key].label} 반영`);
 }
 
-async function createIosImageVariants(key, file) {
+function getPreviewBytesForUpload(key, bytes, variants) {
+  const previewIos = IMAGE_TARGETS[key]?.previewIos ?? IMAGE_TARGETS[key]?.ios?.[0];
+  return previewIos ? variants?.[previewIos] ?? bytes : bytes;
+}
+
+function createPreviewUrlFromBytes(bytes) {
+  return URL.createObjectURL(new Blob([bytes], { type: "image/png" }));
+}
+
+async function createBubbleImageVariants(key, file) {
   const target = IMAGE_TARGETS[key];
   const image = await loadImage(file);
   const variants = {};
@@ -296,6 +344,14 @@ async function createIosImageVariants(key, file) {
       continue;
     }
     variants[name] = await renderImageToPngBytes(image, size[0], size[1]);
+  }
+
+  for (const name of target.android || []) {
+    const size = androidNinePatchImageSizes[name];
+    if (!size) {
+      continue;
+    }
+    variants[name] = await renderImageToNinePatchPngBytes(image, size[0], size[1]);
   }
 
   releaseLoadedImage(image);
@@ -327,7 +383,7 @@ function releaseLoadedImage(image) {
   }
 }
 
-function drawImageCover(context, image, width, height) {
+function drawImageCoverRect(context, image, targetX, targetY, width, height) {
   const sourceWidth = image.width;
   const sourceHeight = image.height;
   const scale = Math.max(width / sourceWidth, height / sourceHeight);
@@ -336,8 +392,14 @@ function drawImageCover(context, image, width, height) {
   const cropX = (sourceWidth - cropWidth) / 2;
   const cropY = (sourceHeight - cropHeight) / 2;
 
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, cropX, cropY, cropWidth, cropHeight, targetX, targetY, width, height);
+}
+
+function drawImageCover(context, image, width, height) {
   context.clearRect(0, 0, width, height);
-  context.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, width, height);
+  drawImageCoverRect(context, image, 0, 0, width, height);
 }
 
 async function renderImageToPngBytes(image, width, height) {
@@ -346,6 +408,31 @@ async function renderImageToPngBytes(image, width, height) {
   canvas.height = height;
   drawImageCover(canvas.getContext("2d"), image, width, height);
 
+  return canvasToPngBytes(canvas);
+}
+
+async function renderImageToNinePatchPngBytes(image, width, height) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  context.clearRect(0, 0, width, height);
+  drawImageCoverRect(context, image, 1, 1, width - 2, height - 2);
+  drawNinePatchMarkers(context, width, height);
+
+  return canvasToPngBytes(canvas);
+}
+
+function drawNinePatchMarkers(context, width, height) {
+  const { stretchX, stretchY, paddingX, paddingY } = androidNinePatchMarkers;
+  context.fillStyle = "#000000";
+  context.fillRect(stretchX[0], 0, stretchX[1] - stretchX[0] + 1, 1);
+  context.fillRect(0, stretchY[0], 1, stretchY[1] - stretchY[0] + 1);
+  context.fillRect(paddingX[0], height - 1, paddingX[1] - paddingX[0] + 1, 1);
+  context.fillRect(width - 1, paddingY[0], 1, paddingY[1] - paddingY[0] + 1);
+}
+
+async function canvasToPngBytes(canvas) {
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob((result) => {
       if (result) {
@@ -400,6 +487,9 @@ function updatePreview() {
   Object.entries(previewImageVariables).forEach(([key, variables]) => {
     variables.forEach((variableName) => setOptionalImage(variableName, previews[key]));
   });
+  Object.entries(previewBubbleSources).forEach(([variableName, keys]) => {
+    setPreviewBubbleImage(variableName, keys);
+  });
 
   if (previews.mainBackground && !previews.chatBackground) {
     chatScreen.style.backgroundImage = `url("${previews.mainBackground}")`;
@@ -419,6 +509,18 @@ function setOptionalImage(variableName, url) {
   } else {
     documentRoot.style.removeProperty(variableName);
   }
+}
+
+function setPreviewBubbleImage(variableName, keys) {
+  const key = keys.find((candidate) => previews[candidate]);
+  if (!key) {
+    documentRoot.style.removeProperty(variableName);
+    return;
+  }
+
+  const target = IMAGE_TARGETS[key];
+  const url = previews[key];
+  documentRoot.style.setProperty(variableName, `image-set(url("${url}") ${target.previewScale}x)`);
 }
 
 function handleSettingsInput(event) {

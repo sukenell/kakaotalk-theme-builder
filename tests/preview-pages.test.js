@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  CHAT_BUBBLE_IMAGE_KEYS,
   getNextPreviewIndex,
   getPreviewColorKeys,
   getPreviewIconUrl,
@@ -42,7 +43,7 @@ test("getPreviewImageKeys returns only images used by the active preview page", 
   const tabIconKeys = ["tabFriendIcon", "tabChatIcon", "tabOpenChatIcon", "tabShoppingIcon", "tabMoreIcon"];
 
   assert.deepEqual(getPreviewImageKeys("home"), ["mainBackground", "tabBackground", ...tabIconKeys, "profileImage"]);
-  assert.deepEqual(getPreviewImageKeys("chat"), ["chatBackground", "profileImage", "sendBubble", "receiveBubble"]);
+  assert.deepEqual(getPreviewImageKeys("chat"), ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS]);
   assert.deepEqual(getPreviewImageKeys("passcode"), ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"]);
   assert.deepEqual(getPreviewImageKeys("theme-list"), ["themeIcon"]);
 });

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildAndroidEntries, buildIosEntries } from "../src/theme-builder.js";
+import { buildAndroidEntries, buildIosEntries, getSkippedAndroidUploads } from "../src/theme-builder.js";
 
 test("buildIosEntries patches CSS and replaces mapped uploaded images", () => {
   const entries = [
@@ -30,21 +30,23 @@ test("buildIosEntries patches CSS and replaces mapped uploaded images", () => {
   assert.deepEqual(imageEntry.data, uploadBytes);
 });
 
-test("buildIosEntries prefers per-target upload variants for bubble assets", () => {
+test("buildIosEntries applies generated 2x and 3x variants from one bubble upload", () => {
   const entries = [
     { name: "Images/chatroomBubbleSend01@2x.png", data: new Uint8Array([1]) },
     { name: "Images/chatroomBubbleSend01@3x.png", data: new Uint8Array([2]) },
   ];
   const rawUpload = new Uint8Array([9, 9, 9]);
-  const smallVariant = new Uint8Array([3, 3]);
+  const twoXVariant = new Uint8Array([2, 2]);
+  const threeXVariant = new Uint8Array([3, 3, 3]);
 
   const result = buildIosEntries(entries, {
     state: {},
     uploads: {
-      sendBubble: {
+      sendBubbleNormal: {
         data: rawUpload,
         variants: {
-          "Images/chatroomBubbleSend01@2x.png": smallVariant,
+          "Images/chatroomBubbleSend01@2x.png": twoXVariant,
+          "Images/chatroomBubbleSend01@3x.png": threeXVariant,
         },
       },
     },
@@ -52,11 +54,11 @@ test("buildIosEntries prefers per-target upload variants for bubble assets", () 
 
   assert.deepEqual(
     result.find((entry) => entry.name === "Images/chatroomBubbleSend01@2x.png").data,
-    smallVariant,
+    twoXVariant,
   );
   assert.deepEqual(
     result.find((entry) => entry.name === "Images/chatroomBubbleSend01@3x.png").data,
-    rawUpload,
+    threeXVariant,
   );
 });
 
@@ -91,7 +93,7 @@ test("buildAndroidEntries patches XML and skips raw uploads for 9-patch resource
       colors: { chatBackground: "#DDEEFF" },
     },
     uploads: {
-      sendBubble: new Uint8Array([9, 8, 7]),
+      sendBubbleNormal: new Uint8Array([9, 8, 7]),
     },
   });
 
@@ -108,4 +110,44 @@ test("buildAndroidEntries patches XML and skips raw uploads for 9-patch resource
   assert.match(new TextDecoder().decode(gradleEntry.data), /com.mint.kakaotalk.theme/);
   assert.match(new TextDecoder().decode(manifestEntry.data), /com.mint.kakaotalk.theme/);
   assert.deepEqual(bubbleEntry.data, new Uint8Array([1, 1, 1]));
+});
+
+test("buildAndroidEntries applies generated 9-patch variants for bubble uploads", () => {
+  const bubbleTarget = "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png";
+  const entries = [
+    { name: bubbleTarget, data: new Uint8Array([1, 1, 1]) },
+    { name: "src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png", data: new Uint8Array([2, 2, 2]) },
+  ];
+  const generatedNinePatch = new Uint8Array([9, 9, 9]);
+
+  const result = buildAndroidEntries(entries, {
+    state: {},
+    uploads: {
+      sendBubbleNormal: {
+        data: new Uint8Array([8, 8, 8]),
+        variants: {
+          [bubbleTarget]: generatedNinePatch,
+        },
+      },
+      tabBackground: new Uint8Array([7, 7, 7]),
+    },
+  });
+
+  assert.deepEqual(result.find((entry) => entry.name === bubbleTarget).data, generatedNinePatch);
+  assert.deepEqual(
+    result.find((entry) => entry.name === "src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png").data,
+    new Uint8Array([2, 2, 2]),
+  );
+  assert.deepEqual(
+    getSkippedAndroidUploads({
+      sendBubbleNormal: {
+        variants: {
+          [bubbleTarget]: generatedNinePatch,
+        },
+      },
+      receiveBubbleTailless: new Uint8Array([6, 6, 6]),
+      tabBackground: new Uint8Array([7, 7, 7]),
+    }),
+    ["상대 말풍선 - 꼬리 없는 말풍선", "탭 배경"],
+  );
 });
