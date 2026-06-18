@@ -146,6 +146,81 @@ export const IMAGE_TARGETS = {
     android: ["src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png"],
     androidRequiresNinePatch: true,
   },
+  tabFriendIcon: {
+    label: "친구 탭 아이콘",
+    ios: [
+      "Images/maintabIcoFriends@2x.png",
+      "Images/maintabIcoFriends@3x.png",
+      "Images/maintabIcoFriendsSelected@2x.png",
+      "Images/maintabIcoFriendsSelected@3x.png",
+    ],
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_image.png",
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_focused_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_focused_image.png",
+    ],
+  },
+  tabChatIcon: {
+    label: "대화 탭 아이콘",
+    ios: [
+      "Images/maintabIcoChats@2x.png",
+      "Images/maintabIcoChats@3x.png",
+      "Images/maintabIcoChatsSelected@2x.png",
+      "Images/maintabIcoChatsSelected@3x.png",
+    ],
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_image.png",
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_focused_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_focused_image.png",
+    ],
+  },
+  tabOpenChatIcon: {
+    label: "오픈채팅 탭 아이콘",
+    ios: [
+      "Images/maintabIcoNow@2x.png",
+      "Images/maintabIcoNow@3x.png",
+      "Images/maintabIcoNowSelected@2x.png",
+      "Images/maintabIcoNowSelected@3x.png",
+    ],
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_image.png",
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_focused_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_now_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_now_focused_image.png",
+    ],
+  },
+  tabShoppingIcon: {
+    label: "쇼핑 탭 아이콘",
+    ios: [
+      "Images/maintabIcoShopping@2x.png",
+      "Images/maintabIcoShopping@3x.png",
+      "Images/maintabIcoShoppingSelected@2x.png",
+      "Images/maintabIcoShoppingSelected@3x.png",
+    ],
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_image.png",
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_focused_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_focused_image.png",
+    ],
+  },
+  tabMoreIcon: {
+    label: "더보기 탭 아이콘",
+    ios: [
+      "Images/maintabIcoMore@2x.png",
+      "Images/maintabIcoMore@3x.png",
+      "Images/maintabIcoMoreSelected@2x.png",
+      "Images/maintabIcoMoreSelected@3x.png",
+    ],
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_image.png",
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_focused_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_more_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_more_focused_image.png",
+    ],
+  },
   profileImage: {
     label: "기본 프로필",
     ios: ["Images/profileImg01@3x.png"],
@@ -197,6 +272,14 @@ export const IMAGE_TARGETS = {
       "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png",
     ],
     androidRequiresNinePatch: true,
+  },
+  passcodeBackgroundImage: {
+    label: "암호 화면 배경",
+    ios: ["Images/passcodeBgImage@3x.png"],
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_passcode_background_image.png",
+      "src/main/theme/drawable-sw600dp/theme_passcode_background_image.png",
+    ],
   },
   passcodeDot: {
     label: "암호 기본 이미지",

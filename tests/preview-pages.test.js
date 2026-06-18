@@ -39,15 +39,18 @@ test("getPreviewColorKeys returns only colors used by the active preview page", 
 });
 
 test("getPreviewImageKeys returns only images used by the active preview page", () => {
-  assert.deepEqual(getPreviewImageKeys("home"), ["mainBackground", "tabBackground", "profileImage"]);
+  const tabIconKeys = ["tabFriendIcon", "tabChatIcon", "tabOpenChatIcon", "tabShoppingIcon", "tabMoreIcon"];
+
+  assert.deepEqual(getPreviewImageKeys("home"), ["mainBackground", "tabBackground", ...tabIconKeys, "profileImage"]);
   assert.deepEqual(getPreviewImageKeys("chat"), [
     "chatBackground",
     "tabBackground",
+    ...tabIconKeys,
     "profileImage",
     "sendBubble",
     "receiveBubble",
   ]);
-  assert.deepEqual(getPreviewImageKeys("passcode"), ["passcodeDot", "passcodeDotSelected"]);
+  assert.deepEqual(getPreviewImageKeys("passcode"), ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"]);
   assert.deepEqual(getPreviewImageKeys("theme-list"), ["themeIcon"]);
 });
 

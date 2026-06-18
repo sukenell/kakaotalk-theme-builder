@@ -42,6 +42,12 @@ test("Korean theme names are preserved in iOS CSS and Android strings", () => {
 });
 
 test("IMAGE_TARGETS maps passcode normal and selected images for preview and output", () => {
+  assert.deepEqual(IMAGE_TARGETS.passcodeBackgroundImage.ios, ["Images/passcodeBgImage@3x.png"]);
+  assert.ok(
+    IMAGE_TARGETS.passcodeBackgroundImage.android.includes(
+      "src/main/theme/drawable-xxhdpi/theme_passcode_background_image.png",
+    ),
+  );
   assert.deepEqual(IMAGE_TARGETS.passcodeDot.ios, [
     "Images/passcodeImgCode01@3x.png",
     "Images/passcodeImgCode02@3x.png",
@@ -56,6 +62,19 @@ test("IMAGE_TARGETS maps passcode normal and selected images for preview and out
   ]);
   assert.ok(IMAGE_TARGETS.passcodeDot.android.includes("src/main/theme/drawable-xxhdpi/theme_passcode_01_image.png"));
   assert.ok(IMAGE_TARGETS.passcodeDotSelected.android.includes("src/main/theme/drawable-xxhdpi/theme_passcode_01_checked_image.png"));
+});
+
+test("IMAGE_TARGETS maps five bottom tab icon uploads", () => {
+  assert.deepEqual(IMAGE_TARGETS.tabFriendIcon.ios, [
+    "Images/maintabIcoFriends@2x.png",
+    "Images/maintabIcoFriends@3x.png",
+    "Images/maintabIcoFriendsSelected@2x.png",
+    "Images/maintabIcoFriendsSelected@3x.png",
+  ]);
+  assert.ok(IMAGE_TARGETS.tabChatIcon.android.includes("src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_focused_image.png"));
+  assert.ok(IMAGE_TARGETS.tabOpenChatIcon.android.includes("src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_image.png"));
+  assert.ok(IMAGE_TARGETS.tabShoppingIcon.ios.includes("Images/maintabIcoShoppingSelected@3x.png"));
+  assert.ok(IMAGE_TARGETS.tabMoreIcon.android.includes("src/main/theme/drawable-sw600dp/theme_maintab_ico_more_focused_image.png"));
 });
 
 test("getAuthorName keeps reha first and appends user input with a comma", () => {

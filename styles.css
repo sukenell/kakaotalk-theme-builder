@@ -44,7 +44,7 @@ button {
   display: grid;
   grid-template-columns: minmax(280px, 0.9fr) minmax(260px, 0.8fr) minmax(360px, 1.15fr);
   min-height: 100vh;
-  padding-bottom: 88px;
+  padding-bottom: 112px;
 }
 
 .panel {
@@ -305,11 +305,70 @@ h2 {
 .preview-controls {
   width: min(100%, 420px);
   display: grid;
-  grid-template-columns: 38px 38px;
+  grid-template-columns: 1fr 38px 38px;
   align-items: center;
-  justify-content: center;
   gap: 8px;
   margin-bottom: 14px;
+}
+
+.device-picker {
+  justify-self: start;
+  display: inline-grid;
+  grid-template-columns: repeat(2, 38px);
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.device-picker button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+}
+
+.device-picker button.is-active {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.device-icon {
+  display: block;
+  position: relative;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+}
+
+.device-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.phone-icon {
+  width: 13px;
+  height: 22px;
+}
+
+.tablet-icon {
+  width: 22px;
+  height: 16px;
+}
+
+.tablet-icon::after {
+  width: 2px;
+  height: 2px;
 }
 
 .preview-arrow {
@@ -371,6 +430,12 @@ h2 {
   border-radius: 34px;
   background: #fff;
   box-shadow: var(--shadow);
+}
+
+.phone-preview.is-tablet {
+  width: min(100%, 720px);
+  aspect-ratio: 4 / 3;
+  border-radius: 28px;
 }
 
 .preview-track {
@@ -660,15 +725,116 @@ h2 {
 }
 
 .bottom-tabs button {
-  min-width: 54px;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  min-width: 46px;
   color: var(--preview-description, #805959);
   background: transparent;
   font-size: 12px;
   font-weight: 800;
 }
 
+.tab-icon {
+  width: 24px;
+  height: 24px;
+  background: center / contain no-repeat;
+}
+
+.tab-friends .tab-icon {
+  background-image: var(--preview-tab-friends-icon, url("./assets/templates/ios/Images/maintabIcoFriends@3x.png"));
+}
+
+.tab-friends.is-selected .tab-icon {
+  background-image: var(
+    --preview-tab-friends-icon-selected,
+    url("./assets/templates/ios/Images/maintabIcoFriendsSelected@3x.png")
+  );
+}
+
+.tab-chat .tab-icon {
+  background-image: var(--preview-tab-chat-icon, url("./assets/templates/ios/Images/maintabIcoChats@3x.png"));
+}
+
+.tab-chat.is-selected .tab-icon {
+  background-image: var(
+    --preview-tab-chat-icon-selected,
+    url("./assets/templates/ios/Images/maintabIcoChatsSelected@3x.png")
+  );
+}
+
+.tab-openchat .tab-icon {
+  background-image: var(--preview-tab-openchat-icon, url("./assets/templates/ios/Images/maintabIcoNow@3x.png"));
+}
+
+.tab-openchat.is-selected .tab-icon {
+  background-image: var(
+    --preview-tab-openchat-icon-selected,
+    url("./assets/templates/ios/Images/maintabIcoNowSelected@3x.png")
+  );
+}
+
+.tab-shopping .tab-icon {
+  background-image: var(
+    --preview-tab-shopping-icon,
+    url("./assets/templates/ios/Images/maintabIcoShopping@3x.png")
+  );
+}
+
+.tab-shopping.is-selected .tab-icon {
+  background-image: var(
+    --preview-tab-shopping-icon-selected,
+    url("./assets/templates/ios/Images/maintabIcoShoppingSelected@3x.png")
+  );
+}
+
+.tab-more .tab-icon {
+  background-image: var(--preview-tab-more-icon, url("./assets/templates/ios/Images/maintabIcoMore@3x.png"));
+}
+
+.tab-more.is-selected .tab-icon {
+  background-image: var(
+    --preview-tab-more-icon-selected,
+    url("./assets/templates/ios/Images/maintabIcoMoreSelected@3x.png")
+  );
+}
+
 .bottom-tabs button.is-selected {
   color: var(--preview-header, #664242);
+}
+
+.phone-preview.is-tablet .home-preview {
+  grid-template-rows: 30px 62px 1fr 70px;
+}
+
+.phone-preview.is-tablet .chat-preview {
+  grid-template-rows: 30px 62px 1fr 62px 70px;
+}
+
+.phone-preview.is-tablet .phone-status {
+  padding: 0 34px;
+}
+
+.phone-preview.is-tablet .main-screen,
+.phone-preview.is-tablet .theme-list-screen {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 10px;
+  padding: 20px;
+}
+
+.phone-preview.is-tablet .profile-card,
+.phone-preview.is-tablet .section-title {
+  grid-column: 1 / -1;
+}
+
+.phone-preview.is-tablet .chat-screen {
+  padding: 24px 28px;
+}
+
+.phone-preview.is-tablet .bubble {
+  max-width: 340px;
 }
 
 .passcode-screen {
@@ -678,7 +844,7 @@ h2 {
   gap: 28px;
   padding: 92px 28px 36px;
   background:
-    url("./assets/templates/ios/Images/passcodeBgImage@3x.png") center / cover no-repeat,
+    var(--preview-passcode-image, url("./assets/templates/ios/Images/passcodeBgImage@3x.png")) center / cover no-repeat,
     var(--preview-passcode-bg, #fcc5c5);
   color: var(--preview-passcode-text, #664242);
 }
@@ -775,7 +941,13 @@ h2 {
   backdrop-filter: blur(12px);
 }
 
-.download-bar > div:first-child {
+.download-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.download-copy > div:first-child {
   display: grid;
   gap: 3px;
   min-width: 0;
@@ -795,6 +967,13 @@ h2 {
 .download-bar span {
   color: var(--muted);
   font-size: 13px;
+}
+
+.site-disclaimer {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .download-actions {
@@ -830,12 +1009,16 @@ h2 {
     grid-column: 1 / -1;
     min-height: 720px;
   }
+
+  .phone-preview.is-tablet {
+    width: min(100%, 680px);
+  }
 }
 
 @media (max-width: 760px) {
   .app-shell {
     display: block;
-    padding-bottom: 128px;
+    padding-bottom: 156px;
   }
 
   .panel {
@@ -849,6 +1032,14 @@ h2 {
 
   .phone-preview {
     max-height: none;
+  }
+
+  .preview-controls {
+    width: min(100%, 390px);
+  }
+
+  .phone-preview.is-tablet {
+    width: min(100%, 520px);
   }
 
   .download-bar {
@@ -885,5 +1076,10 @@ h2 {
     grid-template-columns: 1fr;
     justify-items: center;
     padding: 0 4px;
+  }
+
+  .bottom-tabs button {
+    min-width: 0;
+    font-size: 11px;
   }
 }

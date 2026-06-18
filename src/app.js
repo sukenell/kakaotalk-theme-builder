@@ -36,19 +36,42 @@ const uploadKeys = [
   "mainBackground",
   "chatBackground",
   "tabBackground",
+  "tabFriendIcon",
+  "tabChatIcon",
+  "tabOpenChatIcon",
+  "tabShoppingIcon",
+  "tabMoreIcon",
   "profileImage",
   "themeIcon",
   "sendBubble",
   "receiveBubble",
+  "passcodeBackgroundImage",
   "passcodeDot",
   "passcodeDotSelected",
 ];
+
+const previewImageVariables = {
+  mainBackground: ["--preview-main-image"],
+  chatBackground: ["--preview-chat-image"],
+  tabBackground: ["--preview-tab-image"],
+  tabFriendIcon: ["--preview-tab-friends-icon", "--preview-tab-friends-icon-selected"],
+  tabChatIcon: ["--preview-tab-chat-icon", "--preview-tab-chat-icon-selected"],
+  tabOpenChatIcon: ["--preview-tab-openchat-icon", "--preview-tab-openchat-icon-selected"],
+  tabShoppingIcon: ["--preview-tab-shopping-icon", "--preview-tab-shopping-icon-selected"],
+  tabMoreIcon: ["--preview-tab-more-icon", "--preview-tab-more-icon-selected"],
+  profileImage: ["--preview-profile-image"],
+  themeIcon: ["--preview-theme-icon"],
+  sendBubble: ["--preview-send-image"],
+  receiveBubble: ["--preview-receive-image"],
+  passcodeBackgroundImage: ["--preview-passcode-image"],
+};
 
 const state = cloneDefaultThemeState();
 const uploads = {};
 const previews = {};
 const templateCache = new Map();
 let currentPreviewIndex = 1;
+let currentPreviewDevice = "phone";
 let passcodeCount = 0;
 
 const settingsForm = document.querySelector("#settings-form");
@@ -61,8 +84,10 @@ const downloadAndroidButton = document.querySelector("#download-android");
 const chatScreen = document.querySelector("#chat-screen");
 const previewTrack = document.querySelector("#preview-track");
 const previewTabs = document.querySelector("#preview-tabs");
+const previewFrame = document.querySelector("#preview-frame");
 const previewPreviousButton = document.querySelector("#preview-previous");
 const previewNextButton = document.querySelector("#preview-next");
+const previewDeviceButtons = document.querySelectorAll("[data-preview-device]");
 const passcodeScreen = document.querySelector(".passcode-screen");
 const documentRoot = document.documentElement;
 
@@ -193,6 +218,16 @@ function movePreview(direction) {
   setPreviewIndex(getNextPreviewIndex(currentPreviewIndex, direction));
 }
 
+function setPreviewDevice(device) {
+  currentPreviewDevice = device === "tablet" ? "tablet" : "phone";
+  previewFrame.classList.toggle("is-tablet", currentPreviewDevice === "tablet");
+  previewDeviceButtons.forEach((button) => {
+    const isActive = button.dataset.previewDevice === currentPreviewDevice;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
 function applyUploadThumb(element, key) {
   if (previews[key]) {
     element.style.backgroundImage = `url("${previews[key]}")`;
@@ -262,13 +297,9 @@ function updatePreview() {
   documentRoot.style.setProperty("--preview-section-title", colors.sectionTitle);
   documentRoot.style.setProperty("--preview-paragraph", colors.paragraphText);
 
-  setOptionalImage("--preview-main-image", previews.mainBackground);
-  setOptionalImage("--preview-chat-image", previews.chatBackground);
-  setOptionalImage("--preview-tab-image", previews.tabBackground);
-  setOptionalImage("--preview-profile-image", previews.profileImage);
-  setOptionalImage("--preview-theme-icon", previews.themeIcon);
-  setOptionalImage("--preview-send-image", previews.sendBubble);
-  setOptionalImage("--preview-receive-image", previews.receiveBubble);
+  Object.entries(previewImageVariables).forEach(([key, variables]) => {
+    variables.forEach((variableName) => setOptionalImage(variableName, previews[key]));
+  });
 
   if (previews.mainBackground && !previews.chatBackground) {
     chatScreen.style.backgroundImage = `url("${previews.mainBackground}")`;
@@ -463,6 +494,9 @@ async function downloadAndroidSource() {
 settingsForm.addEventListener("input", handleSettingsInput);
 previewPreviousButton.addEventListener("click", () => movePreview("previous"));
 previewNextButton.addEventListener("click", () => movePreview("next"));
+previewDeviceButtons.forEach((button) => {
+  button.addEventListener("click", () => setPreviewDevice(button.dataset.previewDevice));
+});
 passcodeScreen.addEventListener("click", handlePasscodeClick);
 document.addEventListener("keydown", handleGlobalKeydown);
 downloadIosButton.addEventListener("click", downloadIosTheme);
@@ -470,5 +504,6 @@ downloadAndroidButton.addEventListener("click", downloadAndroidSource);
 
 renderUploadControls();
 renderPreviewTabs();
+setPreviewDevice(currentPreviewDevice);
 setPreviewIndex(currentPreviewIndex);
 updatePreview();
