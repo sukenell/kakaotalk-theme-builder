@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>카톡 테마 만들기 by reha</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="panel settings-panel" aria-label="설정 패널">
+        <form id="settings-form" class="settings-form">
+          <fieldset class="field-group" aria-label="테마 정보">
+            <!-- <legend>테마 정보</legend> -->
+            <label class="text-field">
+              <span>테마 이름</span>
+              <input id="app-name" name="appName" type="text" value="My Kakao Theme" />
+            </label>
+            <div class="package-field">
+              <span>테마 ID</span>
+              <div class="package-input">
+                <span>com.</span>
+                <input
+                  id="theme-id-segment"
+                  name="themeIdSegment"
+                  type="text"
+                  value="example"
+                  autocomplete="off"
+                  autocapitalize="none"
+                  inputmode="latin"
+                  pattern="[A-Za-z]*"
+                />
+                <span>.kakaotalk.theme</span>
+              </div>
+            </div>
+            <div class="two-fields">
+              <label class="text-field">
+                <span>버전</span>
+                <input id="version" name="version" type="text" value="1.0.0" />
+              </label>
+              <div class="author-field">
+                <span>제작자</span>
+                <div class="author-input">
+                  <input id="additional-author-name" name="additionalAuthorName" type="text" placeholder="제작자 이름" />
+                </div>
+              </div>
+            </div>
+            <div class="page-picker" aria-label="프리뷰 페이지">
+              <div id="preview-tabs" class="preview-tabs" role="tablist" aria-label="템플릿 페이지"></div>
+            </div>
+          </fieldset>
+
+          <fieldset class="field-group">
+            <legend>컬러</legend>
+            <div id="color-controls" class="color-controls"></div>
+          </fieldset>
+        </form>
+      </section>
+
+      <section class="panel upload-panel" aria-label="업로드 패널">
+        <a
+          id="original-image-download"
+          class="source-image-link"
+          href="https://cs.kakao.com/helps_html/1073209428"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          원본 이미지 다운로드
+        </a>
+        <div id="upload-controls" class="upload-controls"></div>
+        <div class="output-note">
+          <strong>Android</strong>
+          <span>말풍선/탭바 9-patch 이미지는 원본을 유지합니다.</span>
+        </div>
+      </section>
+
+      <section class="panel preview-panel" aria-label="프리뷰 패널">
+        <div class="preview-controls" aria-label="프리뷰 화면 선택">
+          <button id="preview-previous" class="preview-arrow" type="button" aria-label="이전 프리뷰">‹</button>
+          <button id="preview-next" class="preview-arrow" type="button" aria-label="다음 프리뷰">›</button>
+        </div>
+
+        <div class="phone-preview" aria-label="카카오톡 테마 미리보기">
+          <div id="preview-track" class="preview-track">
+            <article class="preview-slide home-preview" aria-label="메인 화면 프리뷰">
+              <div class="phone-status">
+                <span>9:41</span>
+                <span>LTE 100%</span>
+              </div>
+              <div class="phone-header main-header">
+                <button type="button" title="검색" aria-label="검색">⌕</button>
+                <div>
+                  <strong>친구</strong>
+                  <span>소식 3</span>
+                </div>
+                <button type="button" title="설정" aria-label="설정">⚙</button>
+              </div>
+              <div class="main-screen">
+                <div class="profile-card">
+                  <div class="avatar large"></div>
+                  <div>
+                    <strong>나</strong>
+                    <span>새 테마를 만드는 중</span>
+                  </div>
+                </div>
+                <div class="section-title">친구</div>
+                <div class="friend-row">
+                  <div class="avatar"></div>
+                  <div>
+                    <strong>친구</strong>
+                    <span>오늘 분위기 괜찮다.</span>
+                  </div>
+                </div>
+                <div class="friend-row">
+                  <div class="avatar soft"></div>
+                  <div>
+                    <strong>테마봇</strong>
+                    <span>새로운 배경도 잘 어울려.</span>
+                  </div>
+                </div>
+              </div>
+              <div class="bottom-tabs">
+                <button class="is-selected" type="button">친구</button>
+                <button type="button">채팅</button>
+                <button type="button">쇼핑</button>
+                <button type="button">더보기</button>
+              </div>
+            </article>
+
+            <article class="preview-slide chat-preview" aria-label="채팅방 프리뷰">
+              <div class="phone-status">
+                <span>9:41</span>
+                <span>LTE 100%</span>
+              </div>
+              <div class="phone-header">
+                <button type="button" title="뒤로" aria-label="뒤로">‹</button>
+                <div>
+                  <strong>테마 미리보기</strong>
+                  <span>3</span>
+                </div>
+                <button type="button" title="검색" aria-label="검색">⌕</button>
+              </div>
+              <div id="chat-screen" class="chat-screen">
+                <div class="date-chip">오늘</div>
+                <div class="message-row receive">
+                  <div class="avatar"></div>
+                  <div>
+                    <span class="sender">친구</span>
+                    <p class="bubble receive-bubble">오늘 테마 분위기 좋다.</p>
+                  </div>
+                </div>
+                <div class="message-row send">
+                  <p class="bubble send-bubble">이 조합으로 가보자.</p>
+                </div>
+                <div class="message-row receive">
+                  <div class="avatar small"></div>
+                  <div>
+                    <p class="bubble receive-bubble short">좋아.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="input-bar">
+                <button type="button" title="메뉴" aria-label="메뉴">＋</button>
+                <div class="input-pill">메시지 입력</div>
+                <button class="send-button" type="button">전송</button>
+              </div>
+              <div class="bottom-tabs">
+                <button type="button">친구</button>
+                <button class="is-selected" type="button">채팅</button>
+                <button type="button">쇼핑</button>
+                <button type="button">더보기</button>
+              </div>
+            </article>
+
+            <article class="preview-slide passcode-preview" aria-label="잠금화면 프리뷰">
+              <div class="phone-status">
+                <span>9:41</span>
+                <span>LTE 100%</span>
+              </div>
+              <div class="passcode-screen">
+                <strong>암호를 입력해주세요</strong>
+                <div class="passcode-dots" aria-hidden="true">
+                  <span class="passcode-dot" data-passcode-slot="0"></span>
+                  <span class="passcode-dot" data-passcode-slot="1"></span>
+                  <span class="passcode-dot" data-passcode-slot="2"></span>
+                  <span class="passcode-dot" data-passcode-slot="3"></span>
+                </div>
+                <div class="keypad">
+                  <button type="button" data-passcode-digit="1">1</button>
+                  <button type="button" data-passcode-digit="2">2</button>
+                  <button type="button" data-passcode-digit="3">3</button>
+                  <button type="button" data-passcode-digit="4">4</button>
+                  <button type="button" data-passcode-digit="5">5</button>
+                  <button type="button" data-passcode-digit="6">6</button>
+                  <button type="button" data-passcode-digit="7">7</button>
+                  <button type="button" data-passcode-digit="8">8</button>
+                  <button type="button" data-passcode-digit="9">9</button>
+                  <button type="button" data-passcode-action="reset">리셋</button>
+                  <button type="button" data-passcode-digit="0">0</button>
+                  <button type="button" data-passcode-action="delete">지우기</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="preview-slide theme-list-preview" aria-label="테마 목록 프리뷰">
+              <div class="phone-status">
+                <span>9:41</span>
+                <span>LTE 100%</span>
+              </div>
+              <div class="phone-header theme-list-header">
+                <button type="button" title="뒤로" aria-label="뒤로">‹</button>
+                <div>
+                  <strong>테마</strong>
+                  <span>내 테마</span>
+                </div>
+                <button type="button" title="완료" aria-label="완료">✓</button>
+              </div>
+              <div class="theme-list-screen">
+                <div class="theme-list-card active-theme-card">
+                  <div class="theme-icon"></div>
+                  <div>
+                    <strong data-preview-theme-name>My Kakao Theme</strong>
+                    <span>현재 편집 중</span>
+                  </div>
+                </div>
+                <div class="section-title">공식 테마</div>
+                <div class="theme-list-card">
+                  <div class="theme-icon muted"></div>
+                  <div>
+                    <strong>기본</strong>
+                    <span>시스템 설정 모드</span>
+                  </div>
+                </div>
+                <div class="theme-list-card">
+                  <div class="theme-icon pale"></div>
+                  <div>
+                    <strong>겨울이야기</strong>
+                    <span>11.4.0</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="download-bar">
+      <div>
+        <strong id="download-title">My Kakao Theme</strong>
+        <span id="status-text">템플릿 준비 완료</span>
+      </div>
+      <div class="download-actions">
+        <button id="download-ios" type="button">iOS .ktheme</button>
+        <button id="download-android" type="button">Android ZIP</button>
+      </div>
+    </footer>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
