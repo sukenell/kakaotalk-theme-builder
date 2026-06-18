@@ -14,12 +14,11 @@
             <!-- <legend>테마 정보</legend> -->
             <label class="text-field">
               <span>테마 이름</span>
-              <input id="app-name" name="appName" type="text" value="My Kakao Theme" />
+              <input id="app-name" name="appName" type="text" value="마이 테마" />
             </label>
             <div class="package-field">
               <span>테마 ID</span>
               <div class="package-input">
-                <span>com.</span>
                 <input
                   id="theme-id-segment"
                   name="themeIdSegment"
@@ -30,7 +29,6 @@
                   inputmode="latin"
                   pattern="[A-Za-z]*"
                 />
-                <span>.kakaotalk.theme</span>
               </div>
             </div>
             <div class="two-fields">
@@ -160,12 +158,11 @@
                 <button type="button" title="뒤로" aria-label="뒤로">‹</button>
                 <div>
                   <strong>테마 미리보기</strong>
-                  <span>3</span>
                 </div>
                 <button type="button" title="검색" aria-label="검색">⌕</button>
               </div>
               <div id="chat-screen" class="chat-screen">
-                <div class="date-chip">오늘</div>
+                <div class="date-chip" data-preview-date>2026년 6월 18일 목요일 &gt;</div>
                 <div class="message-row receive">
                   <div class="avatar"></div>
                   <div>
@@ -187,28 +184,6 @@
                 <button type="button" title="메뉴" aria-label="메뉴">＋</button>
                 <div class="input-pill">메시지 입력</div>
                 <button class="send-button" type="button">전송</button>
-              </div>
-              <div class="bottom-tabs">
-                <button class="tab-friends" type="button">
-                  <span class="tab-icon" aria-hidden="true"></span>
-                  <span>친구</span>
-                </button>
-                <button class="tab-chat is-selected" type="button">
-                  <span class="tab-icon" aria-hidden="true"></span>
-                  <span>대화</span>
-                </button>
-                <button class="tab-openchat" type="button">
-                  <span class="tab-icon" aria-hidden="true"></span>
-                  <span>오픈채팅</span>
-                </button>
-                <button class="tab-shopping" type="button">
-                  <span class="tab-icon" aria-hidden="true"></span>
-                  <span>쇼핑</span>
-                </button>
-                <button class="tab-more" type="button">
-                  <span class="tab-icon" aria-hidden="true"></span>
-                  <span>더보기</span>
-                </button>
               </div>
             </article>
 
@@ -259,7 +234,7 @@
                 <div class="theme-list-card active-theme-card">
                   <div class="theme-icon"></div>
                   <div>
-                    <strong data-preview-theme-name>My Kakao Theme</strong>
+                    <strong data-preview-theme-name>마이 테마</strong>
                     <span>현재 편집 중</span>
                   </div>
                 </div>
@@ -288,14 +263,14 @@
     <footer class="download-bar">
       <div class="download-copy">
         <div>
-          <strong id="download-title">My Kakao Theme</strong>
+          <strong id="download-title">마이 테마</strong>
           <span id="status-text">템플릿 준비 완료</span>
         </div>
         <p class="site-disclaimer">본 사이트는 [카카오톡]과 관련이 없는 비공식 테마 제작 도구입니다.</p>
       </div>
       <div class="download-actions">
-        <button id="download-ios" type="button">iOS .ktheme</button>
-        <button id="download-android" type="button">Android ZIP</button>
+        <button id="download-ios" type="button">IOS</button>
+        <button id="download-android" type="button">Android</button>
       </div>
     </footer>
 

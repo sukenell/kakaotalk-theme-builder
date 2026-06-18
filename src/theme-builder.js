@@ -26,12 +26,20 @@ function asBytes(data) {
   return encoder.encode(String(data));
 }
 
+function getUploadDataForTarget(upload, name) {
+  if (!upload || upload instanceof Uint8Array || upload instanceof ArrayBuffer) {
+    return upload;
+  }
+
+  return upload.variants?.[name] ?? upload.data ?? upload.bytes;
+}
+
 function buildReplacementMap(uploads, platform) {
   const replacements = new Map();
 
-  for (const [uploadKey, bytes] of Object.entries(uploads || {})) {
+  for (const [uploadKey, upload] of Object.entries(uploads || {})) {
     const target = IMAGE_TARGETS[uploadKey];
-    if (!target || !bytes) {
+    if (!target || !upload) {
       continue;
     }
 
@@ -40,7 +48,10 @@ function buildReplacementMap(uploads, platform) {
     }
 
     for (const name of target[platform] || []) {
-      replacements.set(name, bytes);
+      const data = getUploadDataForTarget(upload, name);
+      if (data) {
+        replacements.set(name, data);
+      }
     }
   }
 

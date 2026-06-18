@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   cloneDefaultThemeState,
+  defaultThemeState,
   getAuthorName,
   getActiveColors,
   getThemeId,
@@ -22,6 +23,10 @@ test("getThemeId only accepts the middle package segment from user input", () =>
   assert.equal(getThemeId({ themeIdSegment: "테마_Reha123!" }), "com.reha.kakaotalk.theme");
   assert.equal(getThemeId({ themeIdSegment: "123" }), "com.example.kakaotalk.theme");
   assert.equal(sanitizeThemeIdSegment(""), "example");
+});
+
+test("default theme name does not include Kakao branding", () => {
+  assert.equal(defaultThemeState.appName, "마이 테마");
 });
 
 test("Korean theme names are preserved in iOS CSS and Android strings", () => {

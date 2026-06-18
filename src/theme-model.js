@@ -115,7 +115,7 @@ const defaultColors = {
 };
 
 export const defaultThemeState = {
-  appName: "My Kakao Theme",
+  appName: "마이 테마",
   baseAuthorName: "reha",
   additionalAuthorName: "",
   themeIdSegment: "example",

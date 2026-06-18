@@ -159,15 +159,6 @@ h2 {
   overflow: hidden;
 }
 
-.package-input span {
-  flex: 0 0 auto;
-  padding: 0 10px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
 .package-input input,
 .author-input input {
   min-width: 44px;
@@ -181,8 +172,8 @@ h2 {
 }
 
 .package-input input {
-  border-left: 1px solid var(--line);
-  border-right: 1px solid var(--line);
+  min-width: 0;
+  width: 100%;
 }
 
 .two-fields {
@@ -460,7 +451,7 @@ h2 {
 
 .chat-preview {
   display: grid;
-  grid-template-rows: 28px 58px 1fr 58px 62px;
+  grid-template-rows: 28px 58px 1fr 58px;
 }
 
 .passcode-preview {
@@ -652,6 +643,7 @@ h2 {
   margin: 0;
   padding: 10px 13px;
   border-radius: 17px;
+  background-origin: border-box;
   font-size: 14px;
   line-height: 1.4;
   word-break: keep-all;
@@ -808,7 +800,7 @@ h2 {
 }
 
 .phone-preview.is-tablet .chat-preview {
-  grid-template-rows: 30px 62px 1fr 62px 70px;
+  grid-template-rows: 30px 62px 1fr 62px;
 }
 
 .phone-preview.is-tablet .phone-status {

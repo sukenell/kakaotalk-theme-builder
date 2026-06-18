@@ -9,6 +9,7 @@ import {
   setActiveColor,
 } from "./theme-model.js";
 import { createStoredZip } from "./zip-utils.js";
+import { formatKoreanDate } from "./date-format.js";
 
 const colorControls = [
   ["mainBackground", "메인 배경"],
@@ -66,6 +67,27 @@ const previewImageVariables = {
   passcodeBackgroundImage: ["--preview-passcode-image"],
 };
 
+const bubbleUploadKeys = new Set(["sendBubble", "receiveBubble"]);
+
+const iosImageSizes = {
+  "Images/chatroomBubbleSend01@2x.png": [80, 70],
+  "Images/chatroomBubbleSend01@3x.png": [120, 105],
+  "Images/chatroomBubbleSend01Selected@2x.png": [80, 70],
+  "Images/chatroomBubbleSend01Selected@3x.png": [120, 105],
+  "Images/chatroomBubbleSend02@2x.png": [80, 70],
+  "Images/chatroomBubbleSend02@3x.png": [120, 105],
+  "Images/chatroomBubbleSend02Selected@2x.png": [80, 70],
+  "Images/chatroomBubbleSend02Selected@3x.png": [120, 105],
+  "Images/chatroomBubbleReceive01@2x.png": [80, 70],
+  "Images/chatroomBubbleReceive01@3x.png": [120, 105],
+  "Images/chatroomBubbleReceive01Selected@2x.png": [80, 70],
+  "Images/chatroomBubbleReceive01Selected@3x.png": [121, 105],
+  "Images/chatroomBubbleReceive02@2x.png": [80, 70],
+  "Images/chatroomBubbleReceive02@3x.png": [120, 105],
+  "Images/chatroomBubbleReceive02Selected@2x.png": [80, 70],
+  "Images/chatroomBubbleReceive02Selected@3x.png": [121, 105],
+};
+
 const state = cloneDefaultThemeState();
 const uploads = {};
 const previews = {};
@@ -89,6 +111,7 @@ const previewPreviousButton = document.querySelector("#preview-previous");
 const previewNextButton = document.querySelector("#preview-next");
 const previewDeviceButtons = document.querySelectorAll("[data-preview-device]");
 const passcodeScreen = document.querySelector(".passcode-screen");
+const previewDateElements = document.querySelectorAll("[data-preview-date]");
 const documentRoot = document.documentElement;
 
 function setStatus(message) {
@@ -246,7 +269,7 @@ async function handleUpload(key, file) {
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
-  uploads[key] = bytes;
+  uploads[key] = bubbleUploadKeys.has(key) ? { data: bytes, variants: await createIosImageVariants(key, file) } : bytes;
 
   if (previews[key]) {
     URL.revokeObjectURL(previews[key]);
@@ -260,6 +283,80 @@ async function handleUpload(key, file) {
 
   updatePreview();
   setStatus(`${IMAGE_TARGETS[key].label} 반영`);
+}
+
+async function createIosImageVariants(key, file) {
+  const target = IMAGE_TARGETS[key];
+  const image = await loadImage(file);
+  const variants = {};
+
+  for (const name of target.ios || []) {
+    const size = iosImageSizes[name];
+    if (!size) {
+      continue;
+    }
+    variants[name] = await renderImageToPngBytes(image, size[0], size[1]);
+  }
+
+  releaseLoadedImage(image);
+  return variants;
+}
+
+async function loadImage(file) {
+  if ("createImageBitmap" in window) {
+    return createImageBitmap(file);
+  }
+
+  const url = URL.createObjectURL(file);
+  const image = new Image();
+  image.decoding = "async";
+  image.src = url;
+  await image.decode();
+  image.dataset.objectUrl = url;
+  return image;
+}
+
+function releaseLoadedImage(image) {
+  if (typeof ImageBitmap !== "undefined" && image instanceof ImageBitmap) {
+    image.close();
+    return;
+  }
+
+  if (image.dataset?.objectUrl) {
+    URL.revokeObjectURL(image.dataset.objectUrl);
+  }
+}
+
+function drawImageCover(context, image, width, height) {
+  const sourceWidth = image.width;
+  const sourceHeight = image.height;
+  const scale = Math.max(width / sourceWidth, height / sourceHeight);
+  const cropWidth = width / scale;
+  const cropHeight = height / scale;
+  const cropX = (sourceWidth - cropWidth) / 2;
+  const cropY = (sourceHeight - cropHeight) / 2;
+
+  context.clearRect(0, 0, width, height);
+  context.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, width, height);
+}
+
+async function renderImageToPngBytes(image, width, height) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  drawImageCover(canvas.getContext("2d"), image, width, height);
+
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob((result) => {
+      if (result) {
+        resolve(result);
+      } else {
+        reject(new Error("image conversion failed"));
+      }
+    }, "image/png");
+  });
+
+  return new Uint8Array(await blob.arrayBuffer());
 }
 
 function normalizeColorInput(value) {
@@ -278,6 +375,9 @@ function normalizeColorInput(value) {
 function updatePreview() {
   const colors = getActiveColors(state);
   downloadTitle.textContent = state.appName;
+  previewDateElements.forEach((element) => {
+    element.textContent = formatKoreanDate();
+  });
 
   documentRoot.style.setProperty("--preview-main-bg", colors.mainBackground);
   documentRoot.style.setProperty("--preview-chat-bg", colors.chatBackground);
@@ -455,14 +555,14 @@ function downloadBytes(bytes, filename, type) {
 
 async function downloadIosTheme() {
   setBusy(true);
-  setStatus("iOS 테마 생성 중");
+  setStatus("IOS 생성 중");
 
   try {
     const entries = await getTemplateEntries("ios");
     const patchedEntries = buildIosEntries(entries, { state, uploads });
     const zip = createStoredZip(patchedEntries);
     downloadBytes(zip, `${sanitizeFileName(state.appName)}.ktheme`, "application/zip");
-    setStatus("iOS .ktheme 다운로드 준비 완료");
+    setStatus("IOS 다운로드 준비 완료");
   } catch (error) {
     console.error(error);
     setStatus("iOS 생성 실패");
@@ -473,7 +573,7 @@ async function downloadIosTheme() {
 
 async function downloadAndroidSource() {
   setBusy(true);
-  setStatus("Android ZIP 생성 중");
+  setStatus("Android 생성 중");
 
   try {
     const entries = await getTemplateEntries("android");
@@ -482,7 +582,7 @@ async function downloadAndroidSource() {
     downloadBytes(zip, `${sanitizeFileName(state.appName)}-android-source.zip`, "application/zip");
 
     const skipped = getSkippedAndroidUploads(uploads);
-    setStatus(skipped.length ? `Android ZIP 생성 완료, 9-patch 제외: ${skipped.join(", ")}` : "Android ZIP 다운로드 준비 완료");
+    setStatus(skipped.length ? `Android 생성 완료, 9-patch 제외: ${skipped.join(", ")}` : "Android 다운로드 준비 완료");
   } catch (error) {
     console.error(error);
     setStatus("Android 생성 실패");

@@ -33,3 +33,26 @@ test("preview has device switches, five bottom tabs, and unofficial footer notic
     assert.match(html, new RegExp(`class=\"[^\"]*${className}`));
   }
 });
+
+test("visible defaults hide package affixes and use compact download labels", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+
+  assert.match(html, /id="app-name"[^>]+value="마이 테마"/);
+  assert.doesNotMatch(html, />com\.<\/span>/);
+  assert.doesNotMatch(html, />\.kakaotalk\.theme<\/span>/);
+  assert.match(html, /<button id="download-ios"[^>]*>IOS<\/button>/);
+  assert.match(html, /<button id="download-android"[^>]*>Android<\/button>/);
+});
+
+test("chat preview has a date chip and no bottom tabs", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const chatStart = html.indexOf('class="preview-slide chat-preview"');
+  const passcodeStart = html.indexOf('class="preview-slide passcode-preview"');
+  const chatMarkup = html.slice(chatStart, passcodeStart);
+
+  assert.ok(chatStart > -1);
+  assert.ok(passcodeStart > chatStart);
+  assert.match(chatMarkup, /data-preview-date/);
+  assert.doesNotMatch(chatMarkup, /class="bottom-tabs"/);
+  assert.doesNotMatch(chatMarkup, /<span>3<\/span>/);
+});

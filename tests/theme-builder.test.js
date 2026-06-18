@@ -30,6 +30,36 @@ test("buildIosEntries patches CSS and replaces mapped uploaded images", () => {
   assert.deepEqual(imageEntry.data, uploadBytes);
 });
 
+test("buildIosEntries prefers per-target upload variants for bubble assets", () => {
+  const entries = [
+    { name: "Images/chatroomBubbleSend01@2x.png", data: new Uint8Array([1]) },
+    { name: "Images/chatroomBubbleSend01@3x.png", data: new Uint8Array([2]) },
+  ];
+  const rawUpload = new Uint8Array([9, 9, 9]);
+  const smallVariant = new Uint8Array([3, 3]);
+
+  const result = buildIosEntries(entries, {
+    state: {},
+    uploads: {
+      sendBubble: {
+        data: rawUpload,
+        variants: {
+          "Images/chatroomBubbleSend01@2x.png": smallVariant,
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(
+    result.find((entry) => entry.name === "Images/chatroomBubbleSend01@2x.png").data,
+    smallVariant,
+  );
+  assert.deepEqual(
+    result.find((entry) => entry.name === "Images/chatroomBubbleSend01@3x.png").data,
+    rawUpload,
+  );
+});
+
 test("buildAndroidEntries patches XML and skips raw uploads for 9-patch resources", () => {
   const entries = [
     {
