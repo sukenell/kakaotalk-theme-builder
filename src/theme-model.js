@@ -37,6 +37,15 @@ const IOS_COLOR_BINDINGS = [
   ["BackgroundStyle-DirectShareBar", "background-color", "directShareBackground"],
 ];
 
+const IOS_BUBBLE_EQUAL_EDGE_INSETS = "10px 10px 10px 10px";
+
+const IOS_BUBBLE_EDGE_INSET_BINDINGS = [
+  ["MessageCellStyle-Send", "-ios-title-edgeinsets"],
+  ["MessageCellStyle-Send", "-ios-group-title-edgeinsets"],
+  ["MessageCellStyle-Receive", "-ios-title-edgeinsets"],
+  ["MessageCellStyle-Receive", "-ios-group-title-edgeinsets"],
+];
+
 const ANDROID_COLOR_BINDINGS = {
   theme_header_color: "headerText",
   theme_section_title_color: "sectionTitle",
@@ -424,7 +433,6 @@ export const IMAGE_TARGETS = {
   },
   splashImage: {
     label: "로딩 화면",
-    previewPath: "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png",
     android: [
       "src/main/theme/drawable-xxhdpi/theme_splash_image.png",
       "src/main/theme/drawable-xhdpi/theme_splash_image.png",
@@ -624,6 +632,10 @@ export function patchIosThemeCss(css, state) {
 
   for (const [blockName, property, colorKey] of IOS_COLOR_BINDINGS) {
     nextCss = replaceInCssBlock(nextCss, blockName, property, colorFor(state, colorKey));
+  }
+
+  for (const [blockName, property] of IOS_BUBBLE_EDGE_INSET_BINDINGS) {
+    nextCss = replaceInCssBlock(nextCss, blockName, property, IOS_BUBBLE_EQUAL_EDGE_INSETS);
   }
 
   return nextCss;

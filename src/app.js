@@ -13,6 +13,13 @@ import {
   sanitizeThemeIdSegment,
   setActiveColor,
 } from "./theme-model.js";
+import {
+  applyPreviewDefaultImages,
+  getPreviewDefaultCssUrl,
+  getPreviewDefaultCssVariableValue,
+  getPreviewDefaultImagePath,
+  PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY,
+} from "./preview-assets.js";
 import { createStoredZip } from "./zip-utils.js";
 import { formatKoreanDate, formatKoreanTime } from "./date-format.js";
 
@@ -55,25 +62,7 @@ const uploadKeys = [
   "passcodeDotSelected",
 ];
 
-const previewImageVariables = {
-  mainBackground: ["--preview-main-image"],
-  chatBackground: ["--preview-chat-image"],
-  tabBackground: ["--preview-tab-image"],
-  tabFriendIcon: ["--preview-tab-friends-icon"],
-  tabFriendIconSelected: ["--preview-tab-friends-icon-selected"],
-  tabChatIcon: ["--preview-tab-chat-icon"],
-  tabChatIconSelected: ["--preview-tab-chat-icon-selected"],
-  tabOpenChatIcon: ["--preview-tab-openchat-icon"],
-  tabOpenChatIconSelected: ["--preview-tab-openchat-icon-selected"],
-  tabShoppingIcon: ["--preview-tab-shopping-icon"],
-  tabShoppingIconSelected: ["--preview-tab-shopping-icon-selected"],
-  tabMoreIcon: ["--preview-tab-more-icon"],
-  tabMoreIconSelected: ["--preview-tab-more-icon-selected"],
-  profileImage: ["--preview-profile-image"],
-  themeIcon: ["--preview-theme-icon"],
-  splashImage: ["--preview-splash-image"],
-  passcodeBackgroundImage: ["--preview-passcode-image"],
-};
+const previewImageVariables = PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY;
 
 const bubbleUploadKeys = new Set(CHAT_BUBBLE_IMAGE_KEYS);
 const tabIconUploadKeys = new Set(TAB_ICON_IMAGE_KEYS);
@@ -182,6 +171,8 @@ const passcodeScreen = document.querySelector(".passcode-screen");
 const previewDateElements = document.querySelectorAll("[data-preview-date]");
 const previewTimeElements = document.querySelectorAll("[data-preview-time]");
 const documentRoot = document.documentElement;
+
+applyPreviewDefaultImages(documentRoot);
 
 function setStatus(message) {
   statusText.textContent = message;
@@ -402,15 +393,9 @@ function applyUploadThumb(element, key) {
     return;
   }
 
-  const iosTarget = IMAGE_TARGETS[key]?.previewIos ?? IMAGE_TARGETS[key]?.ios?.[0];
-  const previewPath = IMAGE_TARGETS[key]?.previewPath;
-  if (previewPath) {
-    element.style.backgroundImage = `url("./${previewPath}")`;
-    return;
-  }
-
-  if (iosTarget) {
-    element.style.backgroundImage = `url("./assets/templates/ios/${iosTarget}")`;
+  const previewImage = getPreviewDefaultCssUrl(key);
+  if (previewImage) {
+    element.style.backgroundImage = previewImage;
   }
 }
 
@@ -674,17 +659,24 @@ function setOptionalImage(variableName, key, url) {
     return;
   }
 
-  if (url) {
-    documentRoot.style.setProperty(variableName, `url("${url}")`);
-  } else {
+  const imageValue = url ? `url("${url}")` : getPreviewDefaultCssVariableValue(variableName);
+  if (!imageValue) {
     documentRoot.style.removeProperty(variableName);
+    return;
   }
+
+  documentRoot.style.setProperty(variableName, imageValue);
 }
 
 function setPreviewBubbleImage(variableName, keys) {
   const key = keys.find((candidate) => previews[candidate]);
   if (!key) {
-    documentRoot.style.removeProperty(variableName);
+    const defaultImage = getPreviewDefaultCssVariableValue(variableName);
+    if (defaultImage) {
+      documentRoot.style.setProperty(variableName, defaultImage);
+    } else {
+      documentRoot.style.removeProperty(variableName);
+    }
     return;
   }
 
@@ -718,10 +710,10 @@ function updatePasscodePreview() {
   document.querySelectorAll(".passcode-dot").forEach((dot, index) => {
     const isSelected = index < passcodeCount;
     const targetKey = isSelected ? "passcodeDotSelected" : "passcodeDot";
-    const fallbackPath = IMAGE_TARGETS[targetKey].ios[index];
-    const imageUrl = previews[targetKey] || `./assets/templates/ios/${fallbackPath}`;
+    const fallbackPath = getPreviewDefaultImagePath(targetKey, index);
+    const imageUrl = previews[targetKey] || (fallbackPath ? `./${fallbackPath}` : "");
     dot.classList.toggle("is-selected", isSelected);
-    dot.style.backgroundImage = `url("${imageUrl}")`;
+    dot.style.backgroundImage = imageUrl ? `url("${imageUrl}")` : "";
   });
 }
 

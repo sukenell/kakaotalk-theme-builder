@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { PREVIEW_CSS_IMAGE_VARIABLES, PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY } from "../src/preview-assets.js";
+
 test("upload panel starts with the official guide download link", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const linkIndex = html.indexOf('id="original-image-download"');
@@ -250,9 +252,13 @@ test("bottom tab preview removes text labels and uses the template icon display 
   }
   assert.match(bottomTabsMarkup, /class="tab-friends is-selected"/);
   assert.match(css, /\.tab-icon\s*\{[\s\S]*width: 38px;[\s\S]*height: 38px;/);
-  assert.match(app, /tabFriendIcon: \["--preview-tab-friends-icon"\]/);
-  assert.match(app, /tabFriendIconSelected: \["--preview-tab-friends-icon-selected"\]/);
-  assert.doesNotMatch(app, /tabFriendIcon: \["--preview-tab-friends-icon", "--preview-tab-friends-icon-selected"\]/);
+  assert.match(app, /PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY/);
+  assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.tabFriendIcon, ["--preview-tab-friends-icon"]);
+  assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.tabFriendIconSelected, ["--preview-tab-friends-icon-selected"]);
+  assert.notDeepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.tabFriendIcon, [
+    "--preview-tab-friends-icon",
+    "--preview-tab-friends-icon-selected",
+  ]);
 });
 
 test("preview includes a chat list screen before the chat room", async () => {
@@ -363,10 +369,15 @@ test("preview includes an Android loading screen from the source splash layout",
   assert.match(html, /class="preview-slide splash-preview" aria-label="로딩화면 프리뷰"/);
   assert.doesNotMatch(html, /class="splash-apply-button"/);
   assert.doesNotMatch(html, />적용하기<\/div>/);
-  assert.match(css, /--preview-splash-image, url\("\.\/assets\/templates\/android-source\/src\/main\/theme\/drawable-xxhdpi\/theme_splash_image\.png"\)/);
+  assert.match(css, /--preview-splash-image, none/);
+  assert.equal(
+    PREVIEW_CSS_IMAGE_VARIABLES["--preview-splash-image"],
+    'url("./assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png")',
+  );
   assert.match(css, /\.splash-screen\s*\{[\s\S]*background:[\s\S]*center \/ cover no-repeat/);
   assert.doesNotMatch(css, /\.splash-apply-button/);
-  assert.match(app, /splashImage: \["--preview-splash-image"\]/);
+  assert.match(app, /applyPreviewDefaultImages/);
+  assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.splashImage, ["--preview-splash-image"]);
   assert.match(model, /label: "로딩 화면"/);
   assert.match(model, /"src\/main\/theme\/drawable-xxhdpi\/theme_splash_image\.png"/);
 });
@@ -406,13 +417,31 @@ test("chat bubbles use 9-slice template images instead of stretching the full as
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
-  assert.match(css, /border-image-source: var\(--preview-send-image, image-set\(url\("\.\/assets\/templates\/ios\/Images\/chatroomBubbleSend01@3x\.png"\) 3x\)\);/);
-  assert.match(css, /border-image-source: var\(--preview-receive-image, image-set\(url\("\.\/assets\/templates\/ios\/Images\/chatroomBubbleReceive01@3x\.png"\) 3x\)\);/);
-  assert.match(css, /border-image-source: var\(--preview-send-additional-image, image-set\(url\("\.\/assets\/templates\/ios\/Images\/chatroomBubbleSend02@3x\.png"\) 3x\)\);/);
-  assert.match(css, /border-image-source: var\(--preview-receive-additional-image, image-set\(url\("\.\/assets\/templates\/ios\/Images\/chatroomBubbleReceive02@3x\.png"\) 3x\)\);/);
+  assert.match(css, /border-image-source: var\(--preview-send-image, none\);/);
+  assert.match(css, /border-image-source: var\(--preview-receive-image, none\);/);
+  assert.match(css, /border-image-source: var\(--preview-send-additional-image, none\);/);
+  assert.match(css, /border-image-source: var\(--preview-receive-additional-image, none\);/);
+  assert.equal(
+    PREVIEW_CSS_IMAGE_VARIABLES["--preview-send-image"],
+    'image-set(url("./assets/templates/ios/Images/chatroomBubbleSend01@3x.png") 3x)',
+  );
+  assert.equal(
+    PREVIEW_CSS_IMAGE_VARIABLES["--preview-receive-image"],
+    'image-set(url("./assets/templates/ios/Images/chatroomBubbleReceive01@3x.png") 3x)',
+  );
+  assert.equal(
+    PREVIEW_CSS_IMAGE_VARIABLES["--preview-send-additional-image"],
+    'image-set(url("./assets/templates/ios/Images/chatroomBubbleSend02@3x.png") 3x)',
+  );
+  assert.equal(
+    PREVIEW_CSS_IMAGE_VARIABLES["--preview-receive-additional-image"],
+    'image-set(url("./assets/templates/ios/Images/chatroomBubbleReceive02@3x.png") 3x)',
+  );
+  assert.match(css, /\.bubble\s*\{[\s\S]*--preview-bubble-slice: 17 17 17 17;[\s\S]*--preview-bubble-border-width: 10px;/);
   assert.match(css, /border-width: var\(--preview-bubble-border-width\);/);
-  assert.match(css, /\.send-bubble\s*\{[\s\S]*--preview-bubble-slice: 17 17 17 17;[\s\S]*--preview-bubble-border-width: 10px 17px 7px 11px;/);
-  assert.match(css, /\.receive-bubble\s*\{[\s\S]*--preview-bubble-slice: 17 22 17 22;[\s\S]*--preview-bubble-border-width: 10px 11px 7px 17px;/);
+  assert.doesNotMatch(css, /\.send-bubble\s*\{[\s\S]*--preview-bubble-border-width:/);
+  assert.doesNotMatch(css, /\.receive-bubble\s*\{[\s\S]*--preview-bubble-border-width:/);
+  assert.doesNotMatch(css, /\.receive-bubble\s*\{[\s\S]*--preview-bubble-slice:/);
   assert.match(css, /border-image-slice: var\(--preview-bubble-slice\) fill;/);
   assert.match(css, /border-image-repeat: stretch;/);
   assert.doesNotMatch(css, /background:[\s\S]*--preview-send-image[\s\S]*100% 100% no-repeat/);

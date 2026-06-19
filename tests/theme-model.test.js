@@ -21,6 +21,7 @@ import {
   setActiveColor,
   TAB_ICON_IMAGE_KEYS,
 } from "../src/theme-model.js";
+import { PREVIEW_DEFAULT_IMAGE_PATHS } from "../src/preview-assets.js";
 
 test("getThemeId only accepts the middle package segment from user input", () => {
   assert.equal(getThemeId({ themeIdSegment: "reha" }), "com.reha.kakaotalk.theme");
@@ -318,10 +319,7 @@ test("IMAGE_TARGETS maps the Android splash loading image upload", () => {
     "src/main/theme/drawable-land-xhdpi/theme_splash_image.png",
     "src/main/theme/drawable-sw600dp-land/theme_splash_image.png",
   ]);
-  assert.equal(
-    IMAGE_TARGETS.splashImage.previewPath,
-    "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png",
-  );
+  assert.equal(PREVIEW_DEFAULT_IMAGE_PATHS.splashImage, "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png");
 });
 
 test("getAuthorName keeps reha first and appends user input with a comma", () => {
@@ -413,10 +411,14 @@ MessageCellStyle-Send
 {
     -ios-text-color: #FFFFFF;
     -ios-unread-text-color: #FF7F7F;
+    -ios-title-edgeinsets: 10px 11px 7px 17px;
+    -ios-group-title-edgeinsets: 10px 11px 7px 17px;
 }
 MessageCellStyle-Receive
 {
     -ios-text-color: #4D4D4D;
+    -ios-title-edgeinsets: 10px 17px 7px 11px;
+    -ios-group-title-edgeinsets: 10px 17px 7px 11px;
 }
 `;
 
@@ -448,6 +450,10 @@ MessageCellStyle-Receive
   assert.match(patched, /MainViewStyle-Primary[\s\S]*background-color: #101418;/);
   assert.match(patched, /BackgroundStyle-ChatRoom[\s\S]*background-color: #202830;/);
   assert.match(patched, /MessageCellStyle-Send[\s\S]*-ios-unread-text-color: #FFE066;/);
+  assert.match(patched, /MessageCellStyle-Send[\s\S]*-ios-title-edgeinsets: 10px 10px 10px 10px;/);
+  assert.match(patched, /MessageCellStyle-Send[\s\S]*-ios-group-title-edgeinsets: 10px 10px 10px 10px;/);
+  assert.match(patched, /MessageCellStyle-Receive[\s\S]*-ios-title-edgeinsets: 10px 10px 10px 10px;/);
+  assert.match(patched, /MessageCellStyle-Receive[\s\S]*-ios-group-title-edgeinsets: 10px 10px 10px 10px;/);
 });
 
 test("patchAndroidBuildGradle updates namespace and applicationId from theme segment", () => {

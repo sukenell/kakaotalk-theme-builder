@@ -529,8 +529,7 @@ h2 {
   justify-content: space-between;
   padding: 0 15px;
   background:
-    var(--preview-main-image, url("./assets/templates/ios/Images/mainBgImage@3x.png")) top center /
-      cover no-repeat,
+    var(--preview-main-image, none) top center / cover no-repeat,
     var(--preview-main-bg, #ffdddd);
 }
 
@@ -639,8 +638,7 @@ h2 {
 
 .chat-list-header {
   background:
-    var(--preview-main-image, url("./assets/templates/ios/Images/mainBgImage@3x.png")) top center /
-      cover no-repeat,
+    var(--preview-main-image, none) top center / cover no-repeat,
     var(--preview-main-bg, #ffdddd);
 }
 
@@ -683,8 +681,7 @@ h2 {
   overflow: hidden;
   padding: 18px 14px;
   background:
-    var(--preview-chat-image, url("./assets/templates/ios/Images/chatroomBgImage@3x.png")) center /
-      cover no-repeat,
+    var(--preview-chat-image, none) center / cover no-repeat,
     var(--preview-chat-bg, #ffdddd);
 }
 
@@ -693,8 +690,7 @@ h2 {
   overflow-y: auto;
   padding: 0 16px 12px;
   background:
-    var(--preview-main-image, url("./assets/templates/ios/Images/mainBgImage@3x.png")) top center /
-      cover no-repeat,
+    var(--preview-main-image, none) top center / cover no-repeat,
     var(--preview-main-bg, #ffdddd);
   scrollbar-width: none;
 }
@@ -884,8 +880,7 @@ h2 {
   overflow: hidden;
   padding: 8px 16px 14px;
   background:
-    var(--preview-main-image, url("./assets/templates/ios/Images/mainBgImage@3x.png")) top center /
-      cover no-repeat,
+    var(--preview-main-image, none) top center / cover no-repeat,
     var(--preview-main-bg, #ffdddd);
 }
 
@@ -1154,8 +1149,7 @@ h2 {
   height: 34px;
   border-radius: 13px;
   background:
-    var(--preview-profile-image, url("./assets/templates/ios/Images/profileImg01@3x.png")) center /
-      cover no-repeat,
+    var(--preview-profile-image, none) center / cover no-repeat,
     #fff4f4;
 }
 
@@ -1195,7 +1189,7 @@ h2 {
 
 .bubble {
   --preview-bubble-slice: 17 17 17 17;
-  --preview-bubble-border-width: 10px 17px 7px 11px;
+  --preview-bubble-border-width: 10px;
   display: inline-block;
   max-width: 238px;
   margin: 0;
@@ -1213,25 +1207,21 @@ h2 {
 }
 
 .send-bubble {
-  --preview-bubble-slice: 17 17 17 17;
-  --preview-bubble-border-width: 10px 17px 7px 11px;
-  border-image-source: var(--preview-send-image, image-set(url("./assets/templates/ios/Images/chatroomBubbleSend01@3x.png") 3x));
+  border-image-source: var(--preview-send-image, none);
   color: var(--preview-send-text, #ffffff);
 }
 
 .receive-bubble {
-  --preview-bubble-slice: 17 22 17 22;
-  --preview-bubble-border-width: 10px 11px 7px 17px;
-  border-image-source: var(--preview-receive-image, image-set(url("./assets/templates/ios/Images/chatroomBubbleReceive01@3x.png") 3x));
+  border-image-source: var(--preview-receive-image, none);
   color: var(--preview-receive-text, #4d4d4d);
 }
 
 .send-bubble.additional-bubble {
-  border-image-source: var(--preview-send-additional-image, image-set(url("./assets/templates/ios/Images/chatroomBubbleSend02@3x.png") 3x));
+  border-image-source: var(--preview-send-additional-image, none);
 }
 
 .receive-bubble.additional-bubble {
-  border-image-source: var(--preview-receive-additional-image, image-set(url("./assets/templates/ios/Images/chatroomBubbleReceive02@3x.png") 3x));
+  border-image-source: var(--preview-receive-additional-image, none);
 }
 
 .bubble.short {
@@ -1241,7 +1231,7 @@ h2 {
 .splash-screen {
   height: 100%;
   background:
-    var(--preview-splash-image, url("./assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png")) center / cover no-repeat,
+    var(--preview-splash-image, none) center / cover no-repeat,
     #ffffff;
 }
 
@@ -1285,8 +1275,7 @@ h2 {
 .bottom-tabs {
   justify-content: space-around;
   background:
-    var(--preview-tab-image, url("./assets/templates/ios/Images/maintabBgImage@3x.png")) center / cover
-      no-repeat,
+    var(--preview-tab-image, none) center / cover no-repeat,
     var(--preview-main-bg, #ffdddd);
   border-top: 1px solid rgba(0, 0, 0, 0.07);
 }
@@ -1307,61 +1296,43 @@ h2 {
 }
 
 .tab-friends .tab-icon {
-  background-image: var(--preview-tab-friends-icon, url("./assets/templates/ios/Images/maintabIcoFriends@3x.png"));
+  background-image: var(--preview-tab-friends-icon, none);
 }
 
 .tab-friends.is-selected .tab-icon {
-  background-image: var(
-    --preview-tab-friends-icon-selected,
-    url("./assets/templates/ios/Images/maintabIcoFriendsSelected@3x.png")
-  );
+  background-image: var(--preview-tab-friends-icon-selected, none);
 }
 
 .tab-chat .tab-icon {
-  background-image: var(--preview-tab-chat-icon, url("./assets/templates/ios/Images/maintabIcoChats@3x.png"));
+  background-image: var(--preview-tab-chat-icon, none);
 }
 
 .tab-chat.is-selected .tab-icon {
-  background-image: var(
-    --preview-tab-chat-icon-selected,
-    url("./assets/templates/ios/Images/maintabIcoChatsSelected@3x.png")
-  );
+  background-image: var(--preview-tab-chat-icon-selected, none);
 }
 
 .tab-openchat .tab-icon {
-  background-image: var(--preview-tab-openchat-icon, url("./assets/templates/ios/Images/maintabIcoNow@3x.png"));
+  background-image: var(--preview-tab-openchat-icon, none);
 }
 
 .tab-openchat.is-selected .tab-icon {
-  background-image: var(
-    --preview-tab-openchat-icon-selected,
-    url("./assets/templates/ios/Images/maintabIcoNowSelected@3x.png")
-  );
+  background-image: var(--preview-tab-openchat-icon-selected, none);
 }
 
 .tab-shopping .tab-icon {
-  background-image: var(
-    --preview-tab-shopping-icon,
-    url("./assets/templates/ios/Images/maintabIcoShopping@3x.png")
-  );
+  background-image: var(--preview-tab-shopping-icon, none);
 }
 
 .tab-shopping.is-selected .tab-icon {
-  background-image: var(
-    --preview-tab-shopping-icon-selected,
-    url("./assets/templates/ios/Images/maintabIcoShoppingSelected@3x.png")
-  );
+  background-image: var(--preview-tab-shopping-icon-selected, none);
 }
 
 .tab-more .tab-icon {
-  background-image: var(--preview-tab-more-icon, url("./assets/templates/ios/Images/maintabIcoMore@3x.png"));
+  background-image: var(--preview-tab-more-icon, none);
 }
 
 .tab-more.is-selected .tab-icon {
-  background-image: var(
-    --preview-tab-more-icon-selected,
-    url("./assets/templates/ios/Images/maintabIcoMoreSelected@3x.png")
-  );
+  background-image: var(--preview-tab-more-icon-selected, none);
 }
 
 .bottom-tabs button.is-selected {
@@ -1458,7 +1429,7 @@ h2 {
   justify-items: center;
   padding: 0 28px 34px;
   background:
-    var(--preview-passcode-image, url("./assets/templates/ios/Images/passcodeBgImage@3x.png")) center / cover no-repeat,
+    var(--preview-passcode-image, none) center / cover no-repeat,
     var(--preview-passcode-bg, #fcc5c5);
   color: var(--preview-passcode-text, #664242);
 }
@@ -1758,8 +1729,7 @@ h2 {
   height: 48px;
   border-radius: 8px;
   background:
-    var(--preview-theme-icon, url("./assets/templates/ios/Images/commonIcoTheme.png")) center / cover
-      no-repeat,
+    var(--preview-theme-icon, none) center / cover no-repeat,
     #fff4f4;
 }
 
