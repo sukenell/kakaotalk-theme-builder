@@ -68,6 +68,34 @@ test("buildIosEntries applies generated 2x and 3x variants from one bubble uploa
   );
 });
 
+test("buildIosEntries appends uploaded iOS assets that are not in the base template", () => {
+  const rawUpload = new Uint8Array([9, 9, 9]);
+  const twoXVariant = new Uint8Array([2, 2]);
+  const threeXVariant = new Uint8Array([3, 3, 3]);
+
+  const result = buildIosEntries([], {
+    state: {},
+    uploads: {
+      tabPiccomaIcon: {
+        data: rawUpload,
+        variants: {
+          "Images/maintabIcoPiccoma@2x.png": twoXVariant,
+          "Images/maintabIcoPiccoma@3x.png": threeXVariant,
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(
+    result.find((entry) => entry.name === "Images/maintabIcoPiccoma@2x.png").data,
+    twoXVariant,
+  );
+  assert.deepEqual(
+    result.find((entry) => entry.name === "Images/maintabIcoPiccoma@3x.png").data,
+    threeXVariant,
+  );
+});
+
 test("build entries replace cleared background image uploads with a transparent image", () => {
   const iosEntries = [
     { name: "Images/passcodeBgImage@3x.png", data: new Uint8Array([1, 1, 1]) },
@@ -180,4 +208,31 @@ test("buildAndroidEntries applies generated 9-patch variants for bubble uploads"
     }),
     ["상대 말풍선 - 추가", "탭 배경"],
   );
+});
+
+test("buildAndroidEntries appends extended tab images and selectors when both states are uploaded", () => {
+  const normal = new Uint8Array([1, 2, 3]);
+  const selected = new Uint8Array([4, 5, 6]);
+
+  const result = buildAndroidEntries([], {
+    state: {},
+    uploads: {
+      tabFindIcon: normal,
+      tabFindIconSelected: selected,
+    },
+  });
+
+  assert.deepEqual(
+    result.find((entry) => entry.name === "src/main/theme/drawable-xxhdpi/theme_maintab_ico_find_image.png").data,
+    normal,
+  );
+  assert.deepEqual(
+    result.find((entry) => entry.name === "src/main/theme/drawable-xxhdpi/theme_maintab_ico_find_focused_image.png").data,
+    selected,
+  );
+
+  const selector = result.find((entry) => entry.name === "src/main/theme-adv/drawable/theme_tab_find_icon.xml");
+  const selectorXml = new TextDecoder().decode(selector.data);
+  assert.match(selectorXml, /theme_maintab_ico_find_focused_image/);
+  assert.match(selectorXml, /theme_maintab_ico_find_image/);
 });

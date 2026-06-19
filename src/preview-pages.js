@@ -1,6 +1,6 @@
-import { CHAT_BUBBLE_IMAGE_KEYS, TAB_ICON_IMAGE_KEYS } from "./theme-model.js";
+import { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, TAB_ICON_IMAGE_KEYS } from "./theme-model.js";
 
-export { CHAT_BUBBLE_IMAGE_KEYS, TAB_ICON_IMAGE_KEYS };
+export { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, TAB_ICON_IMAGE_KEYS };
 
 export const PREVIEW_PAGES = [
   {
@@ -8,14 +8,30 @@ export const PREVIEW_PAGES = [
     label: "메인",
     iconUrl: "https://cdn-icons-png.flaticon.com/512/25/25694.png",
     colorKeys: ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle", "bodyPressed", "titlePressed"],
-    imageKeys: ["mainBackground", "tabBackground", ...TAB_ICON_IMAGE_KEYS, "profileImage"],
+    imageKeys: [
+      "mainBackground",
+      "tabBackground",
+      ...TAB_ICON_IMAGE_KEYS,
+      "profileImage",
+      "profileFullImage",
+      "addFriendButton",
+      "addFriendButtonPressed",
+    ],
   },
   {
     id: "chat-list",
     label: "대화 목록",
     iconUrl: "https://cdn-icons-png.flaticon.com/512/2076/2076218.png",
     colorKeys: ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle"],
-    imageKeys: ["mainBackground", "tabBackground", ...TAB_ICON_IMAGE_KEYS, "profileImage"],
+    imageKeys: [
+      "mainBackground",
+      "tabBackground",
+      ...TAB_ICON_IMAGE_KEYS,
+      "profileImage",
+      "profileFullImage",
+      "addFriendButton",
+      "addFriendButtonPressed",
+    ],
   },
   {
     id: "chat",
@@ -46,16 +62,16 @@ export const PREVIEW_PAGES = [
   {
     id: "splash",
     label: "로딩화면",
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/3176/3176363.png",
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/2499/2499339.png",
     colorKeys: [],
     imageKeys: ["splashImage"],
   },
   {
     id: "theme-list",
     label: "테마 목록",
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/6919/6919181.png",
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/5112/5112614.png",
     colorKeys: ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle"],
-    imageKeys: ["themeIcon"],
+    imageKeys: ["themeIcon", ...ADDITIONAL_IMAGE_KEYS.filter((key) => key.startsWith("themeIcon"))],
   },
 ];
 

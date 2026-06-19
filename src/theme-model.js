@@ -145,6 +145,23 @@ export const TAB_ICON_IMAGE_KEYS = [
   "tabShoppingIconSelected",
   "tabMoreIcon",
   "tabMoreIconSelected",
+  "tabCallIcon",
+  "tabCallIconSelected",
+  "tabPiccomaIcon",
+  "tabPiccomaIconSelected",
+  "tabFindIcon",
+  "tabFindIconSelected",
+  "tabGameIcon",
+  "tabGameIconSelected",
+];
+
+export const ADDITIONAL_IMAGE_KEYS = [
+  "addFriendButton",
+  "addFriendButtonPressed",
+  "profileFullImage",
+  "themeIconBackground",
+  "themeIconForeground",
+  "themeIconRound",
 ];
 
 function bubbleTarget({ label, size, ios2x, ios3x, android = [] }) {
@@ -157,6 +174,26 @@ function bubbleTarget({ label, size, ios2x, ios3x, android = [] }) {
     android,
     ...(android.length ? { androidRequiresNinePatch: true } : {}),
   };
+}
+
+function tabIconTarget({ label, ios2x, ios3x, android = [] }) {
+  return {
+    label,
+    displaySize: [114, 114],
+    ...(ios3x ? { previewIos: ios3x, previewScale: 3 } : {}),
+    ios: [ios2x, ios3x].filter(Boolean),
+    android,
+  };
+}
+
+function androidMipmapTargets(name) {
+  return [
+    `src/main/res/mipmap-mdpi/${name}`,
+    `src/main/res/mipmap-hdpi/${name}`,
+    `src/main/res/mipmap-xhdpi/${name}`,
+    `src/main/res/mipmap-xxhdpi/${name}`,
+    `src/main/res/mipmap-xxxhdpi/${name}`,
+  ];
 }
 
 export const IMAGE_TARGETS = {
@@ -182,120 +219,185 @@ export const IMAGE_TARGETS = {
     android: ["src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png"],
     androidRequiresNinePatch: true,
   },
-  tabFriendIcon: {
+  tabFriendIcon: tabIconTarget({
     label: "친구 탭 아이콘 - 기본",
-    ios: [
-      "Images/maintabIcoFriends@2x.png",
-      "Images/maintabIcoFriends@3x.png",
-    ],
+    ios2x: "Images/maintabIcoFriends@2x.png",
+    ios3x: "Images/maintabIcoFriends@3x.png",
     android: [
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_image.png",
     ],
-  },
-  tabFriendIconSelected: {
+  }),
+  tabFriendIconSelected: tabIconTarget({
     label: "친구 탭 아이콘 - 선택",
-    ios: [
-      "Images/maintabIcoFriendsSelected@2x.png",
-      "Images/maintabIcoFriendsSelected@3x.png",
-    ],
+    ios2x: "Images/maintabIcoFriendsSelected@2x.png",
+    ios3x: "Images/maintabIcoFriendsSelected@3x.png",
     android: [
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_focused_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_focused_image.png",
     ],
-  },
-  tabChatIcon: {
+  }),
+  tabChatIcon: tabIconTarget({
     label: "대화 탭 아이콘 - 기본",
-    ios: [
-      "Images/maintabIcoChats@2x.png",
-      "Images/maintabIcoChats@3x.png",
-    ],
+    ios2x: "Images/maintabIcoChats@2x.png",
+    ios3x: "Images/maintabIcoChats@3x.png",
     android: [
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_image.png",
     ],
-  },
-  tabChatIconSelected: {
+  }),
+  tabChatIconSelected: tabIconTarget({
     label: "대화 탭 아이콘 - 선택",
-    ios: [
-      "Images/maintabIcoChatsSelected@2x.png",
-      "Images/maintabIcoChatsSelected@3x.png",
-    ],
+    ios2x: "Images/maintabIcoChatsSelected@2x.png",
+    ios3x: "Images/maintabIcoChatsSelected@3x.png",
     android: [
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_focused_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_focused_image.png",
     ],
-  },
-  tabOpenChatIcon: {
+  }),
+  tabOpenChatIcon: tabIconTarget({
     label: "오픈채팅 탭 아이콘 - 기본",
-    ios: [
-      "Images/maintabIcoNow@2x.png",
-      "Images/maintabIcoNow@3x.png",
-    ],
+    ios2x: "Images/maintabIcoNow@2x.png",
+    ios3x: "Images/maintabIcoNow@3x.png",
     android: [
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_now_image.png",
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_openchat_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_openchat_image.png",
     ],
-  },
-  tabOpenChatIconSelected: {
+  }),
+  tabOpenChatIconSelected: tabIconTarget({
     label: "오픈채팅 탭 아이콘 - 선택",
-    ios: [
-      "Images/maintabIcoNowSelected@2x.png",
-      "Images/maintabIcoNowSelected@3x.png",
-    ],
+    ios2x: "Images/maintabIcoNowSelected@2x.png",
+    ios3x: "Images/maintabIcoNowSelected@3x.png",
     android: [
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_focused_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_now_focused_image.png",
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_openchat_focused_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_openchat_focused_image.png",
     ],
-  },
-  tabShoppingIcon: {
+  }),
+  tabShoppingIcon: tabIconTarget({
     label: "쇼핑 탭 아이콘 - 기본",
-    ios: [
-      "Images/maintabIcoShopping@2x.png",
-      "Images/maintabIcoShopping@3x.png",
-    ],
+    ios2x: "Images/maintabIcoShopping@2x.png",
+    ios3x: "Images/maintabIcoShopping@3x.png",
     android: [
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_image.png",
     ],
-  },
-  tabShoppingIconSelected: {
+  }),
+  tabShoppingIconSelected: tabIconTarget({
     label: "쇼핑 탭 아이콘 - 선택",
-    ios: [
-      "Images/maintabIcoShoppingSelected@2x.png",
-      "Images/maintabIcoShoppingSelected@3x.png",
-    ],
+    ios2x: "Images/maintabIcoShoppingSelected@2x.png",
+    ios3x: "Images/maintabIcoShoppingSelected@3x.png",
     android: [
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_focused_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_focused_image.png",
     ],
-  },
-  tabMoreIcon: {
+  }),
+  tabMoreIcon: tabIconTarget({
     label: "더보기 탭 아이콘 - 기본",
-    ios: [
-      "Images/maintabIcoMore@2x.png",
-      "Images/maintabIcoMore@3x.png",
-    ],
+    ios2x: "Images/maintabIcoMore@2x.png",
+    ios3x: "Images/maintabIcoMore@3x.png",
     android: [
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_more_image.png",
     ],
-  },
-  tabMoreIconSelected: {
+  }),
+  tabMoreIconSelected: tabIconTarget({
     label: "더보기 탭 아이콘 - 선택",
-    ios: [
-      "Images/maintabIcoMoreSelected@2x.png",
-      "Images/maintabIcoMoreSelected@3x.png",
-    ],
+    ios2x: "Images/maintabIcoMoreSelected@2x.png",
+    ios3x: "Images/maintabIcoMoreSelected@3x.png",
     android: [
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_focused_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_more_focused_image.png",
     ],
-  },
+  }),
+  tabCallIcon: tabIconTarget({
+    label: "통화 탭 아이콘 - 기본",
+    ios2x: "Images/maintabIcoCall@2x.png",
+    ios3x: "Images/maintabIcoCall@3x.png",
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_call_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_call_image.png",
+    ],
+  }),
+  tabCallIconSelected: tabIconTarget({
+    label: "통화 탭 아이콘 - 선택",
+    ios2x: "Images/maintabIcoCallSelected@2x.png",
+    ios3x: "Images/maintabIcoCallSelected@3x.png",
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_call_focused_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_call_focused_image.png",
+    ],
+  }),
+  tabPiccomaIcon: tabIconTarget({
+    label: "피코마 탭 아이콘 - 기본",
+    ios2x: "Images/maintabIcoPiccoma@2x.png",
+    ios3x: "Images/maintabIcoPiccoma@3x.png",
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_piccoma_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_piccoma_image.png",
+    ],
+  }),
+  tabPiccomaIconSelected: tabIconTarget({
+    label: "피코마 탭 아이콘 - 선택",
+    ios2x: "Images/maintabIcoPiccomaSelected@2x.png",
+    ios3x: "Images/maintabIcoPiccomaSelected@3x.png",
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_piccoma_focused_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_piccoma_focused_image.png",
+    ],
+  }),
+  tabFindIcon: tabIconTarget({
+    label: "찾기 탭 아이콘 - 기본",
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_find_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_find_image.png",
+    ],
+  }),
+  tabFindIconSelected: tabIconTarget({
+    label: "찾기 탭 아이콘 - 선택",
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_find_focused_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_find_focused_image.png",
+    ],
+  }),
+  tabGameIcon: tabIconTarget({
+    label: "게임 탭 아이콘 - 기본",
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_game_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_game_image.png",
+    ],
+  }),
+  tabGameIconSelected: tabIconTarget({
+    label: "게임 탭 아이콘 - 선택",
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_game_focused_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_game_focused_image.png",
+    ],
+  }),
   profileImage: {
     label: "기본 프로필",
     ios: ["Images/profileImg01@3x.png"],
     android: ["src/main/theme/drawable-xxhdpi/theme_profile_01_image.png"],
+  },
+  profileFullImage: {
+    label: "기본 프로필 전체 이미지",
+    android: ["src/main/theme/drawable-nodpi/theme_profile_01_image_full.png"],
+  },
+  addFriendButton: {
+    label: "친구 추가 버튼 - 기본",
+    displaySize: [126, 102],
+    previewIos: "Images/findBtnAddFriend@3x.png",
+    previewScale: 3,
+    ios: ["Images/findBtnAddFriend@2x.png", "Images/findBtnAddFriend@3x.png"],
+    android: ["src/main/theme/drawable-xxhdpi/theme_find_add_friend_button_image.png"],
+  },
+  addFriendButtonPressed: {
+    label: "친구 추가 버튼 - 선택",
+    displaySize: [126, 102],
+    android: ["src/main/theme/drawable-xxhdpi/theme_find_add_friend_button_pressed_image.png"],
   },
   themeIcon: {
     label: "테마 아이콘",
@@ -307,6 +409,18 @@ export const IMAGE_TARGETS = {
       "src/main/res/mipmap-xxhdpi/ic_launcher.png",
       "src/main/res/mipmap-xxxhdpi/ic_launcher.png",
     ],
+  },
+  themeIconBackground: {
+    label: "Android 런처 배경",
+    android: androidMipmapTargets("ic_launcher_background.png"),
+  },
+  themeIconForeground: {
+    label: "Android 런처 전경",
+    android: androidMipmapTargets("ic_launcher_foreground.png"),
+  },
+  themeIconRound: {
+    label: "Android 런처 라운드",
+    android: androidMipmapTargets("ic_launcher_round.png"),
   },
   splashImage: {
     label: "로딩 화면",

@@ -15,6 +15,30 @@ const transparentPngBytes = new Uint8Array([
   253, 160, 172, 220, 170, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
 ]);
 
+const androidGeneratedTabSelectors = [
+  {
+    normalKey: "tabOpenChatIcon",
+    selectedKey: "tabOpenChatIconSelected",
+    name: "src/main/theme-adv/drawable/theme_tab_open_chat_icon.xml",
+    normalDrawable: "theme_maintab_ico_openchat_image",
+    selectedDrawable: "theme_maintab_ico_openchat_focused_image",
+  },
+  {
+    normalKey: "tabFindIcon",
+    selectedKey: "tabFindIconSelected",
+    name: "src/main/theme-adv/drawable/theme_tab_find_icon.xml",
+    normalDrawable: "theme_maintab_ico_find_image",
+    selectedDrawable: "theme_maintab_ico_find_focused_image",
+  },
+  {
+    normalKey: "tabGameIcon",
+    selectedKey: "tabGameIconSelected",
+    name: "src/main/theme-adv/drawable/theme_tab_game_icon.xml",
+    normalDrawable: "theme_maintab_ico_game_image",
+    selectedDrawable: "theme_maintab_ico_game_focused_image",
+  },
+];
+
 function asText(data) {
   return typeof data === "string" ? data : decoder.decode(data);
 }
@@ -65,10 +89,47 @@ function buildReplacementMap(uploads, platform) {
   return replacements;
 }
 
+function appendMissingEntries(entries, additions) {
+  const names = new Set(entries.map((entry) => entry.name));
+  const result = [...entries];
+
+  for (const [name, data] of additions) {
+    if (names.has(name)) {
+      continue;
+    }
+    names.add(name);
+    result.push({ name, data: asBytes(data) });
+  }
+
+  return result;
+}
+
+function buildAndroidSelectorXml({ normalDrawable, selectedDrawable }) {
+  return `<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true" android:drawable="@drawable/${selectedDrawable}"/>
+    <item android:drawable="@drawable/${normalDrawable}"/>
+</selector>
+`;
+}
+
+function hasUpload(uploads, key) {
+  const upload = uploads?.[key];
+  return Boolean(upload && !upload.cleared);
+}
+
+function buildGeneratedAndroidSelectors(uploads) {
+  return new Map(
+    androidGeneratedTabSelectors
+      .filter((selector) => hasUpload(uploads, selector.normalKey) && hasUpload(uploads, selector.selectedKey))
+      .map((selector) => [selector.name, encoder.encode(buildAndroidSelectorXml(selector))]),
+  );
+}
+
 export function buildIosEntries(templateEntries, { state, uploads = {} }) {
   const replacements = buildReplacementMap(uploads, "ios");
 
-  return templateEntries.map((entry) => {
+  const entries = templateEntries.map((entry) => {
     if (entry.name === "KakaoTalkTheme.css") {
       return {
         name: entry.name,
@@ -88,12 +149,15 @@ export function buildIosEntries(templateEntries, { state, uploads = {} }) {
       data: asBytes(entry.data),
     };
   });
+
+  return appendMissingEntries(entries, replacements);
 }
 
 export function buildAndroidEntries(templateEntries, { state, uploads = {} }) {
   const replacements = buildReplacementMap(uploads, "android");
+  const generatedSelectors = buildGeneratedAndroidSelectors(uploads);
 
-  return templateEntries.map((entry) => {
+  const entries = templateEntries.map((entry) => {
     if (entry.name === "build.gradle.kts") {
       return {
         name: entry.name,
@@ -141,6 +205,8 @@ export function buildAndroidEntries(templateEntries, { state, uploads = {} }) {
       data: asBytes(entry.data),
     };
   });
+
+  return appendMissingEntries(appendMissingEntries(entries, replacements), generatedSelectors);
 }
 
 export function getSkippedAndroidUploads(uploads) {

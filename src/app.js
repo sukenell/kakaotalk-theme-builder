@@ -2,6 +2,7 @@ import { buildAndroidEntries, buildIosEntries, getSkippedAndroidUploads } from "
 import { applyPasscodeAction } from "./passcode-preview.js";
 import { getNextPreviewIndex, getPreviewColorKeys, getPreviewImageKeys, PREVIEW_PAGES } from "./preview-pages.js";
 import {
+  ADDITIONAL_IMAGE_KEYS,
   CHAT_BUBBLE_IMAGE_KEYS,
   TAB_ICON_IMAGE_KEYS,
   cloneDefaultThemeState,
@@ -46,6 +47,7 @@ const uploadKeys = [
   ...TAB_ICON_IMAGE_KEYS,
   "profileImage",
   "themeIcon",
+  ...ADDITIONAL_IMAGE_KEYS,
   "splashImage",
   ...CHAT_BUBBLE_IMAGE_KEYS,
   "passcodeBackgroundImage",
@@ -74,6 +76,7 @@ const previewImageVariables = {
 };
 
 const bubbleUploadKeys = new Set(CHAT_BUBBLE_IMAGE_KEYS);
+const tabIconUploadKeys = new Set(TAB_ICON_IMAGE_KEYS);
 const clearableBackgroundImageKeys = new Set(["mainBackground", "chatBackground", "passcodeBackgroundImage"]);
 const backgroundImageColorKeys = {
   mainBackground: "mainBackground",
@@ -89,6 +92,36 @@ const previewBubbleSources = {
 };
 
 const iosImageSizes = {
+  "Images/maintabIcoFriends@2x.png": [76, 76],
+  "Images/maintabIcoFriends@3x.png": [114, 114],
+  "Images/maintabIcoFriendsSelected@2x.png": [76, 76],
+  "Images/maintabIcoFriendsSelected@3x.png": [114, 114],
+  "Images/maintabIcoChats@2x.png": [76, 76],
+  "Images/maintabIcoChats@3x.png": [114, 114],
+  "Images/maintabIcoChatsSelected@2x.png": [76, 76],
+  "Images/maintabIcoChatsSelected@3x.png": [114, 114],
+  "Images/maintabIcoNow@2x.png": [76, 76],
+  "Images/maintabIcoNow@3x.png": [114, 114],
+  "Images/maintabIcoNowSelected@2x.png": [76, 76],
+  "Images/maintabIcoNowSelected@3x.png": [114, 114],
+  "Images/maintabIcoShopping@2x.png": [76, 76],
+  "Images/maintabIcoShopping@3x.png": [114, 114],
+  "Images/maintabIcoShoppingSelected@2x.png": [76, 76],
+  "Images/maintabIcoShoppingSelected@3x.png": [114, 114],
+  "Images/maintabIcoMore@2x.png": [76, 76],
+  "Images/maintabIcoMore@3x.png": [114, 114],
+  "Images/maintabIcoMoreSelected@2x.png": [76, 76],
+  "Images/maintabIcoMoreSelected@3x.png": [114, 114],
+  "Images/maintabIcoCall@2x.png": [76, 76],
+  "Images/maintabIcoCall@3x.png": [114, 114],
+  "Images/maintabIcoCallSelected@2x.png": [76, 76],
+  "Images/maintabIcoCallSelected@3x.png": [114, 114],
+  "Images/maintabIcoPiccoma@2x.png": [76, 76],
+  "Images/maintabIcoPiccoma@3x.png": [114, 114],
+  "Images/maintabIcoPiccomaSelected@2x.png": [76, 76],
+  "Images/maintabIcoPiccomaSelected@3x.png": [114, 114],
+  "Images/findBtnAddFriend@2x.png": [84, 68],
+  "Images/findBtnAddFriend@3x.png": [126, 102],
   "Images/chatroomBubbleSend01@2x.png": [80, 70],
   "Images/chatroomBubbleSend01@3x.png": [120, 105],
   "Images/chatroomBubbleSend01Selected@2x.png": [80, 70],
@@ -387,7 +420,7 @@ async function handleUpload(key, file) {
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const variants = bubbleUploadKeys.has(key) ? await createBubbleImageVariants(key, file) : undefined;
+  const variants = shouldGenerateUploadVariants(key) ? await createUploadImageVariants(key, file) : undefined;
   uploads[key] = variants ? { data: bytes, variants } : bytes;
 
   if (previews[key]) {
@@ -445,7 +478,17 @@ function createPreviewUrlFromBytes(bytes) {
   return URL.createObjectURL(new Blob([bytes], { type: "image/png" }));
 }
 
-async function createBubbleImageVariants(key, file) {
+function shouldGenerateUploadVariants(key) {
+  const target = IMAGE_TARGETS[key];
+  return (
+    bubbleUploadKeys.has(key) ||
+    tabIconUploadKeys.has(key) ||
+    target?.ios?.some((name) => iosImageSizes[name]) ||
+    target?.android?.some((name) => androidNinePatchImageSizes[name])
+  );
+}
+
+async function createUploadImageVariants(key, file) {
   const target = IMAGE_TARGETS[key];
   const image = await loadImage(file);
   const variants = {};

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  ADDITIONAL_IMAGE_KEYS,
   CHAT_BUBBLE_IMAGE_KEYS,
   cloneDefaultThemeState,
   defaultThemeState,
@@ -164,15 +165,27 @@ test("IMAGE_TARGETS maps separate normal and selected bottom tab icon uploads", 
     "tabShoppingIconSelected",
     "tabMoreIcon",
     "tabMoreIconSelected",
+    "tabCallIcon",
+    "tabCallIconSelected",
+    "tabPiccomaIcon",
+    "tabPiccomaIconSelected",
+    "tabFindIcon",
+    "tabFindIconSelected",
+    "tabGameIcon",
+    "tabGameIconSelected",
   ]);
   assert.deepEqual(IMAGE_TARGETS.tabFriendIcon.ios, [
     "Images/maintabIcoFriends@2x.png",
     "Images/maintabIcoFriends@3x.png",
   ]);
+  assert.equal(IMAGE_TARGETS.tabFriendIcon.previewIos, "Images/maintabIcoFriends@3x.png");
+  assert.equal(IMAGE_TARGETS.tabFriendIcon.previewScale, 3);
+  assert.deepEqual(IMAGE_TARGETS.tabFriendIcon.displaySize, [114, 114]);
   assert.deepEqual(IMAGE_TARGETS.tabFriendIconSelected.ios, [
     "Images/maintabIcoFriendsSelected@2x.png",
     "Images/maintabIcoFriendsSelected@3x.png",
   ]);
+  assert.equal(IMAGE_TARGETS.tabFriendIconSelected.previewIos, "Images/maintabIcoFriendsSelected@3x.png");
   assert.equal(IMAGE_TARGETS.tabFriendIcon.label, "친구 탭 아이콘 - 기본");
   assert.equal(IMAGE_TARGETS.tabFriendIconSelected.label, "친구 탭 아이콘 - 선택");
   assert.ok(IMAGE_TARGETS.tabFriendIcon.android.includes("src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_image.png"));
@@ -185,29 +198,115 @@ test("IMAGE_TARGETS maps separate normal and selected bottom tab icon uploads", 
     "Images/maintabIcoChats@2x.png",
     "Images/maintabIcoChats@3x.png",
   ]);
+  assert.equal(IMAGE_TARGETS.tabChatIcon.previewIos, "Images/maintabIcoChats@3x.png");
   assert.deepEqual(IMAGE_TARGETS.tabChatIconSelected.ios, [
     "Images/maintabIcoChatsSelected@2x.png",
     "Images/maintabIcoChatsSelected@3x.png",
   ]);
+  assert.equal(IMAGE_TARGETS.tabChatIconSelected.previewIos, "Images/maintabIcoChatsSelected@3x.png");
   assert.ok(IMAGE_TARGETS.tabChatIcon.android.includes("src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_image.png"));
   assert.ok(
     IMAGE_TARGETS.tabChatIconSelected.android.includes(
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_focused_image.png",
     ),
   );
-  assert.ok(IMAGE_TARGETS.tabOpenChatIcon.android.includes("src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_image.png"));
+  assert.ok(
+    IMAGE_TARGETS.tabOpenChatIcon.android.includes(
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_image.png",
+    ),
+  );
   assert.ok(
     IMAGE_TARGETS.tabOpenChatIconSelected.android.includes(
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_focused_image.png",
     ),
   );
+  assert.deepEqual(IMAGE_TARGETS.tabOpenChatIcon.ios, [
+    "Images/maintabIcoNow@2x.png",
+    "Images/maintabIcoNow@3x.png",
+  ]);
+  assert.equal(IMAGE_TARGETS.tabOpenChatIcon.previewIos, "Images/maintabIcoNow@3x.png");
+  assert.deepEqual(IMAGE_TARGETS.tabOpenChatIconSelected.ios, [
+    "Images/maintabIcoNowSelected@2x.png",
+    "Images/maintabIcoNowSelected@3x.png",
+  ]);
+  assert.equal(IMAGE_TARGETS.tabOpenChatIconSelected.previewIos, "Images/maintabIcoNowSelected@3x.png");
   assert.ok(IMAGE_TARGETS.tabShoppingIcon.ios.includes("Images/maintabIcoShopping@3x.png"));
+  assert.equal(IMAGE_TARGETS.tabShoppingIcon.previewIos, "Images/maintabIcoShopping@3x.png");
   assert.ok(IMAGE_TARGETS.tabShoppingIconSelected.ios.includes("Images/maintabIcoShoppingSelected@3x.png"));
+  assert.equal(IMAGE_TARGETS.tabShoppingIconSelected.previewIos, "Images/maintabIcoShoppingSelected@3x.png");
+  assert.equal(IMAGE_TARGETS.tabMoreIcon.previewIos, "Images/maintabIcoMore@3x.png");
+  assert.equal(IMAGE_TARGETS.tabMoreIconSelected.previewIos, "Images/maintabIcoMoreSelected@3x.png");
   assert.ok(
     IMAGE_TARGETS.tabMoreIconSelected.android.includes(
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_more_focused_image.png",
     ),
   );
+  assert.deepEqual(IMAGE_TARGETS.tabCallIcon.ios, [
+    "Images/maintabIcoCall@2x.png",
+    "Images/maintabIcoCall@3x.png",
+  ]);
+  assert.deepEqual(IMAGE_TARGETS.tabCallIconSelected.ios, [
+    "Images/maintabIcoCallSelected@2x.png",
+    "Images/maintabIcoCallSelected@3x.png",
+  ]);
+  assert.ok(
+    IMAGE_TARGETS.tabCallIcon.android.includes("src/main/theme/drawable-xxhdpi/theme_maintab_ico_call_image.png"),
+  );
+  assert.ok(
+    IMAGE_TARGETS.tabCallIconSelected.android.includes(
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_call_focused_image.png",
+    ),
+  );
+  assert.deepEqual(IMAGE_TARGETS.tabPiccomaIcon.ios, [
+    "Images/maintabIcoPiccoma@2x.png",
+    "Images/maintabIcoPiccoma@3x.png",
+  ]);
+  assert.ok(
+    IMAGE_TARGETS.tabPiccomaIconSelected.android.includes(
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_piccoma_focused_image.png",
+    ),
+  );
+  assert.equal(IMAGE_TARGETS.tabFindIcon.ios.length, 0);
+  assert.ok(
+    IMAGE_TARGETS.tabFindIcon.android.includes("src/main/theme/drawable-xxhdpi/theme_maintab_ico_find_image.png"),
+  );
+  assert.ok(
+    IMAGE_TARGETS.tabGameIconSelected.android.includes(
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_game_focused_image.png",
+    ),
+  );
+  assert.ok(
+    IMAGE_TARGETS.tabOpenChatIcon.android.includes(
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_openchat_image.png",
+    ),
+  );
+});
+
+test("IMAGE_TARGETS maps additional Android structure upload inputs", () => {
+  assert.deepEqual(ADDITIONAL_IMAGE_KEYS, [
+    "addFriendButton",
+    "addFriendButtonPressed",
+    "profileFullImage",
+    "themeIconBackground",
+    "themeIconForeground",
+    "themeIconRound",
+  ]);
+  assert.deepEqual(IMAGE_TARGETS.addFriendButton.ios, [
+    "Images/findBtnAddFriend@2x.png",
+    "Images/findBtnAddFriend@3x.png",
+  ]);
+  assert.deepEqual(IMAGE_TARGETS.addFriendButton.displaySize, [126, 102]);
+  assert.ok(
+    IMAGE_TARGETS.addFriendButtonPressed.android.includes(
+      "src/main/theme/drawable-xxhdpi/theme_find_add_friend_button_pressed_image.png",
+    ),
+  );
+  assert.deepEqual(IMAGE_TARGETS.profileFullImage.android, [
+    "src/main/theme/drawable-nodpi/theme_profile_01_image_full.png",
+  ]);
+  assert.ok(IMAGE_TARGETS.themeIconBackground.android.includes("src/main/res/mipmap-xxxhdpi/ic_launcher_background.png"));
+  assert.ok(IMAGE_TARGETS.themeIconForeground.android.includes("src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png"));
+  assert.ok(IMAGE_TARGETS.themeIconRound.android.includes("src/main/res/mipmap-xxxhdpi/ic_launcher_round.png"));
 });
 
 test("IMAGE_TARGETS maps the Android splash loading image upload", () => {

@@ -87,8 +87,12 @@
               <span class="device-icon tablet-icon" aria-hidden="true"></span>
             </button>
           </div>
-          <button id="preview-previous" class="preview-arrow" type="button" aria-label="이전 프리뷰">‹</button>
-          <button id="preview-next" class="preview-arrow" type="button" aria-label="다음 프리뷰">›</button>
+          <button id="preview-previous" class="preview-arrow" type="button" aria-label="이전 프리뷰">
+            <span class="arrow-icon arrow-left" aria-hidden="true"></span>
+          </button>
+          <button id="preview-next" class="preview-arrow" type="button" aria-label="다음 프리뷰">
+            <span class="arrow-icon arrow-right" aria-hidden="true"></span>
+          </button>
         </div>
 
         <div id="preview-frame" class="phone-preview" aria-label="카카오톡 테마 미리보기">
@@ -308,7 +312,9 @@
                 <span>LTE 100%</span>
               </div>
               <div class="phone-header">
-                <button type="button" title="뒤로" aria-label="뒤로">‹</button>
+                <button type="button" title="뒤로" aria-label="뒤로">
+                  <span class="arrow-icon arrow-left" aria-hidden="true"></span>
+                </button>
                 <div>
                   <strong>채팅방</strong>
                 </div>
@@ -408,8 +414,8 @@
                   <button type="button" data-passcode-digit="9">9</button>
                   <button class="passcode-cancel" type="button" data-passcode-action="reset">취소</button>
                   <button type="button" data-passcode-digit="0">0</button>
-                  <button class="passcode-delete" type="button" data-passcode-action="delete" title="지우기" aria-label="지우기">
-                    <span class="backspace-icon" aria-hidden="true"></span>
+                  <button class="passcode-delete" type="button" data-passcode-action="delete" title="뒤로" aria-label="뒤로">
+                    뒤로
                   </button>
                 </div>
               </div>
@@ -425,14 +431,16 @@
                 <span>LTE 100%</span>
               </div>
               <div class="phone-header theme-list-header">
-                <button type="button" title="뒤로" aria-label="뒤로">‹</button>
+                <button type="button" title="뒤로" aria-label="뒤로">
+                  <span class="arrow-icon arrow-left" aria-hidden="true"></span>
+                </button>
                 <div>
                   <strong>테마</strong>
                 </div>
                 <button type="button" title="관리" aria-label="관리">관리</button>
               </div>
               <div class="theme-list-screen">
-                <div class="section-title">기본</div>
+                <div class="section-title theme-basic-section">기본</div>
                 <div class="theme-list-row theme-mode-row">
                   <div class="theme-preview-card system-mode-preview" aria-hidden="true">
                     <span></span>

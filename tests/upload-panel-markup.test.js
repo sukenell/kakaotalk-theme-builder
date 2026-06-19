@@ -24,10 +24,17 @@ test("theme mode controls are not shown because generated themes use one palette
 
 test("preview has device switches, five bottom tabs, and unofficial footer notice", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 
   assert.match(html, /data-preview-device="phone"/);
   assert.match(html, /data-preview-device="tablet"/);
   assert.match(html, /본 사이트는 \[카카오톡\]과 관련이 없는 비공식 테마 제작 도구입니다\./);
+  assert.match(html, /id="preview-previous"[\s\S]*<span class="arrow-icon arrow-left" aria-hidden="true"><\/span>[\s\S]*id="preview-next"[\s\S]*<span class="arrow-icon arrow-right" aria-hidden="true"><\/span>/);
+  assert.doesNotMatch(html, /id="preview-previous"[^>]*>‹<\/button>/);
+  assert.doesNotMatch(html, /id="preview-next"[^>]*>›<\/button>/);
+  assert.match(css, /\.arrow-icon\s*\{[\s\S]*mask: url\("data:image\/svg\+xml,/);
+  assert.doesNotMatch(css, /\.preview-arrow::before/);
+  assert.doesNotMatch(css, /\.preview-arrow::after/);
 
   for (const className of ["tab-friends", "tab-chat", "tab-openchat", "tab-shopping", "tab-more"]) {
     assert.match(html, new RegExp(`class=\"[^\"]*${className}`));
@@ -291,7 +298,7 @@ test("theme list uses one-line rows for basic, official, and user themes", async
   const tabletThemeListCss = css.match(/\.phone-preview\.is-tablet \.theme-list-screen\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const headerEnd = previewMarkup.indexOf('class="theme-list-screen"');
   const headerMarkup = previewMarkup.slice(0, headerEnd);
-  const basicIndex = previewMarkup.indexOf("<div class=\"section-title\">기본</div>");
+  const basicIndex = previewMarkup.indexOf("<div class=\"section-title theme-basic-section\">기본</div>");
   const officialIndex = previewMarkup.indexOf("공식 테마");
   const officialRowIndex = previewMarkup.indexOf("<strong>공식 테마</strong>");
   const systemIndex = previewMarkup.indexOf("<strong>시스템 설정 모드</strong>");
@@ -332,13 +339,16 @@ test("theme list uses one-line rows for basic, official, and user themes", async
   assert.doesNotMatch(previewMarkup, /겨울이야기/);
   assert.match(css, /\.theme-list-row\s*\{[\s\S]*grid-template-columns: 58px minmax\(0, 1fr\) auto;/);
   assert.match(css, /\.theme-list-screen\s*\{[\s\S]*overflow-y: auto;/);
+  assert.match(css, /\.phone-preview\.is-tablet \.theme-list-preview \.theme-basic-section,\s*\.phone-preview\.is-tablet \.theme-list-preview \.theme-mode-row\s*\{[\s\S]*display: none;/);
   assert.match(previewMarkup, /class="theme-preview-card chat-mode-preview light-mode-preview"[\s\S]*mode-preview-title[\s\S]*Chats[\s\S]*mode-avatar one[\s\S]*mode-line one[\s\S]*mode-alert/);
   assert.match(previewMarkup, /class="theme-preview-card chat-mode-preview dark-mode-preview"[\s\S]*mode-preview-title[\s\S]*Chats[\s\S]*mode-avatar three[\s\S]*mode-line three[\s\S]*mode-alert/);
   assert.match(css, /\.chat-mode-preview\s*\{[\s\S]*width: 48px;[\s\S]*height: 64px;/);
+  assert.match(css, /\.mode-avatar\s*\{[\s\S]*border-radius: 4px;/);
   assert.match(css, /\.mode-avatar\.one\s*\{[\s\S]*top: 17px;[\s\S]*background: #8ad4e7;/);
   assert.match(css, /\.mode-avatar\.two\s*\{[\s\S]*top: 29px;[\s\S]*background: #7fb7e4;/);
   assert.match(css, /\.mode-avatar\.three\s*\{[\s\S]*top: 41px;[\s\S]*background: #91aee8;/);
-  assert.match(css, /\.mode-alert\s*\{[\s\S]*right: 7px;[\s\S]*background: #e96b5f;/);
+  assert.match(css, /\.mode-line\.one\s*\{[\s\S]*top: 20px;/);
+  assert.match(css, /\.mode-alert\s*\{[\s\S]*right: 7px;[\s\S]*top: 20px;[\s\S]*background: #e96b5f;/);
   assert.match(css, /\.dark-mode-preview \.mode-line\s*\{[\s\S]*background: #3a3a3a;/);
   assert.match(tabletThemeListCss, /display: block;/);
   assert.doesNotMatch(tabletThemeListCss, /grid-template-columns/);
@@ -370,14 +380,15 @@ test("passcode preview follows the reference lock screen copy and keypad actions
 
   assert.match(passcodeMarkup, /<div class="passcode-intro">[\s\S]*<strong>암호입력<\/strong>[\s\S]*<span>암호를 입력해주세요<\/span>/);
   assert.match(passcodeMarkup, /data-passcode-action="reset"[^>]*>취소<\/button>/);
-  assert.match(passcodeMarkup, /data-passcode-action="delete"[\s\S]*<span class="backspace-icon" aria-hidden="true"><\/span>/);
+  assert.match(passcodeMarkup, /data-passcode-action="delete"[^>]*aria-label="뒤로"[^>]*>\s*뒤로\s*<\/button>/);
+  assert.doesNotMatch(passcodeMarkup, /class="backspace-icon"/);
   assert.doesNotMatch(passcodeMarkup, />리셋<\/button>/);
   assert.doesNotMatch(passcodeMarkup, />지우기<\/button>/);
   assert.match(css, /\.passcode-screen\s*\{[\s\S]*grid-template-rows: minmax\(230px, 0\.76fr\) auto minmax\(0, 1fr\);/);
   assert.match(css, /\.passcode-intro\s*\{[\s\S]*gap: 14px;/);
   assert.match(css, /\.keypad\s*\{[\s\S]*grid-template-columns: repeat\(3, 64px\);/);
   assert.match(css, /\.keypad button\s*\{[\s\S]*background: transparent;/);
-  assert.match(css, /\.backspace-icon::before/);
+  assert.doesNotMatch(css, /\.backspace-icon/);
 });
 
 test("tablet passcode preview defines a landscape layout that fits the keypad", async () => {
@@ -399,8 +410,9 @@ test("chat bubbles use 9-slice template images instead of stretching the full as
   assert.match(css, /border-image-source: var\(--preview-receive-image, image-set\(url\("\.\/assets\/templates\/ios\/Images\/chatroomBubbleReceive01@3x\.png"\) 3x\)\);/);
   assert.match(css, /border-image-source: var\(--preview-send-additional-image, image-set\(url\("\.\/assets\/templates\/ios\/Images\/chatroomBubbleSend02@3x\.png"\) 3x\)\);/);
   assert.match(css, /border-image-source: var\(--preview-receive-additional-image, image-set\(url\("\.\/assets\/templates\/ios\/Images\/chatroomBubbleReceive02@3x\.png"\) 3x\)\);/);
-  assert.match(css, /--preview-bubble-slice: 12 13\.333 11\.333 13\.333;/);
-  assert.match(css, /border-width: 12px 13\.333px 11\.333px;/);
+  assert.match(css, /border-width: var\(--preview-bubble-border-width\);/);
+  assert.match(css, /\.send-bubble\s*\{[\s\S]*--preview-bubble-slice: 17 17 17 17;[\s\S]*--preview-bubble-border-width: 10px 17px 7px 11px;/);
+  assert.match(css, /\.receive-bubble\s*\{[\s\S]*--preview-bubble-slice: 17 22 17 22;[\s\S]*--preview-bubble-border-width: 10px 11px 7px 17px;/);
   assert.match(css, /border-image-slice: var\(--preview-bubble-slice\) fill;/);
   assert.match(css, /border-image-repeat: stretch;/);
   assert.doesNotMatch(css, /background:[\s\S]*--preview-send-image[\s\S]*100% 100% no-repeat/);
@@ -418,6 +430,34 @@ test("bubble uploads preview the same generated iOS variant used for downloads",
   assert.match(app, /function setPreviewBubbleImage/);
   assert.match(app, /image-set\(url\("\$\{url\}"\) \$\{target\.previewScale\}x\)/);
   assert.match(app, /IMAGE_TARGETS\[key\]\?\.previewIos \?\? IMAGE_TARGETS\[key\]\?\.ios\?\.\[0\]/);
+});
+
+test("tab icon uploads use a 3x source and generate 2x plus 3x outputs", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const model = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
+
+  assert.match(app, /const tabIconUploadKeys = new Set\(TAB_ICON_IMAGE_KEYS\);/);
+  assert.match(app, /shouldGenerateUploadVariants\(key\)/);
+  assert.match(app, /tabIconUploadKeys\.has\(key\)/);
+  assert.match(app, /"Images\/maintabIcoNow@2x\.png": \[76, 76\]/);
+  assert.match(app, /"Images\/maintabIcoNow@3x\.png": \[114, 114\]/);
+  assert.match(app, /"Images\/maintabIcoCall@2x\.png": \[76, 76\]/);
+  assert.match(app, /"Images\/maintabIcoPiccoma@3x\.png": \[114, 114\]/);
+  assert.match(app, /createUploadImageVariants\(key, file\)/);
+  assert.match(model, /previewIos: ios3x/);
+  assert.match(model, /displaySize: \[114, 114\]/);
+});
+
+test("upload panel includes additional Android structure inputs", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const previewPages = await readFile(new URL("../src/preview-pages.js", import.meta.url), "utf8");
+  const model = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
+
+  assert.match(app, /\.\.\.ADDITIONAL_IMAGE_KEYS/);
+  assert.match(previewPages, /\.\.\.ADDITIONAL_IMAGE_KEYS\.filter\(\(key\) => key\.startsWith\("themeIcon"\)\)/);
+  assert.match(model, /label: "친구 추가 버튼 - 기본"/);
+  assert.match(model, /label: "기본 프로필 전체 이미지"/);
+  assert.match(model, /label: "Android 런처 전경"/);
 });
 
 test("chat upload panel exposes 3x bubble uploads and generates 2x automatically", async () => {

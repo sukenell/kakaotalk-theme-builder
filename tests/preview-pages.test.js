@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  ADDITIONAL_IMAGE_KEYS,
   CHAT_BUBBLE_IMAGE_KEYS,
   getNextPreviewIndex,
   getPreviewColorKeys,
@@ -50,23 +51,40 @@ test("getPreviewColorKeys returns only colors used by the active preview page", 
 });
 
 test("getPreviewImageKeys returns only images used by the active preview page", () => {
-  assert.deepEqual(getPreviewImageKeys("home"), ["mainBackground", "tabBackground", ...TAB_ICON_IMAGE_KEYS, "profileImage"]);
+  assert.deepEqual(getPreviewImageKeys("home"), [
+    "mainBackground",
+    "tabBackground",
+    ...TAB_ICON_IMAGE_KEYS,
+    "profileImage",
+    "profileFullImage",
+    "addFriendButton",
+    "addFriendButtonPressed",
+  ]);
   assert.deepEqual(getPreviewImageKeys("chat-list"), [
     "mainBackground",
     "tabBackground",
     ...TAB_ICON_IMAGE_KEYS,
     "profileImage",
+    "profileFullImage",
+    "addFriendButton",
+    "addFriendButtonPressed",
   ]);
   assert.deepEqual(getPreviewImageKeys("chat"), ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS]);
   assert.deepEqual(getPreviewImageKeys("passcode"), ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"]);
   assert.deepEqual(getPreviewImageKeys("splash"), ["splashImage"]);
-  assert.deepEqual(getPreviewImageKeys("theme-list"), ["themeIcon"]);
+  assert.deepEqual(getPreviewImageKeys("theme-list"), [
+    "themeIcon",
+    ...ADDITIONAL_IMAGE_KEYS.filter((key) => key.startsWith("themeIcon")),
+  ]);
 });
 
 test("PREVIEW_PAGES uses Flaticon image assets for page icons", () => {
   for (const page of PREVIEW_PAGES) {
     assert.match(getPreviewIconUrl(page.id), /^https:\/\/cdn-icons-png\.flaticon\.com\/512\//);
   }
+
+  assert.equal(getPreviewIconUrl("splash"), "https://cdn-icons-png.flaticon.com/512/2499/2499339.png");
+  assert.equal(getPreviewIconUrl("theme-list"), "https://cdn-icons-png.flaticon.com/512/5112/5112614.png");
 });
 
 test("getNextPreviewIndex moves left and right with wraparound", () => {
