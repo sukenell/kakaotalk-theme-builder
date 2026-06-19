@@ -36,13 +36,21 @@ test("preview has device switches, five bottom tabs, and unofficial footer notic
 
 test("visible defaults hide package affixes and use compact download labels", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
   assert.match(html, /id="app-name"[^>]+value="나의 테마"/);
   assert.match(html, /id="download-title">나의 테마<\/strong>/);
+  assert.match(html, /id="version"[^>]+pattern="\\d\+\\\.\\d\+\\\.\\d\+"/);
+  assert.match(html, /id="version"[^>]+inputmode="numeric"/);
   assert.doesNotMatch(html, />com\.<\/span>/);
   assert.doesNotMatch(html, />\.kakaotalk\.theme<\/span>/);
   assert.match(html, /<button id="download-ios"[^>]*>IOS<\/button>/);
   assert.match(html, /<button id="download-android"[^>]*>Android<\/button>/);
+  assert.match(app, /normalizeThemeVersion/);
+  assert.match(app, /isValidThemeVersion/);
+  assert.match(app, /function updateDownloadButtons/);
+  assert.match(app, /downloadIosButton\.disabled = isDownloadDisabled;/);
+  assert.match(app, /downloadAndroidButton\.disabled = isDownloadDisabled;/);
 });
 
 test("theme id and author wrapper inputs keep rounded focus treatment", async () => {
@@ -66,17 +74,199 @@ test("chat preview has a date chip and no bottom tabs", async () => {
   assert.doesNotMatch(chatMarkup, /<span>3<\/span>/);
 });
 
-test("friends preview header has a left title without search or settings buttons", async () => {
+test("chat preview includes default profile and extra basic/additional bubble samples", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const chatStart = html.indexOf('class="preview-slide chat-preview"');
+  const passcodeStart = html.indexOf('class="preview-slide passcode-preview"');
+  const chatMarkup = html.slice(chatStart, passcodeStart);
+
+  assert.match(chatMarkup, /class="message-group receive"[\s\S]*<div class="avatar default-profile"><\/div>[\s\S]*<span class="sender">친구<\/span>[\s\S]*<p class="bubble receive-bubble short">좋아\.<\/p>[\s\S]*<p class="bubble receive-bubble additional-bubble">/);
+  assert.match(chatMarkup, /class="message-group send"[\s\S]*<p class="bubble send-bubble">기본 말풍선\.<\/p>[\s\S]*<p class="bubble send-bubble additional-bubble">추가 말풍선\.<\/p>/);
+  assert.match(chatMarkup, /<time class="message-time" data-preview-time>00:00<\/time>/);
+  assert.match(css, /\.message-group\.receive\s*\{[\s\S]*align-items: start;/);
+  assert.match(css, /\.message-stack\s*\{[\s\S]*align-items: flex-start;/);
+  assert.match(css, /\.sender\s*\{[^}]*margin: 3px 0 4px 2px;/);
+  assert.match(css, /\.message-group\.send \.message-stack\s*\{[\s\S]*align-items: flex-end;/);
+  assert.match(app, /formatKoreanTime/);
+  assert.match(app, /previewTimeElements\.forEach/);
+});
+
+test("upload panel no longer shows bubble generation or Android 9-patch helper copy", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.doesNotMatch(html, /말풍선 9-patch는 자동 변환하고, 탭바 9-patch 이미지는 원본을 유지합니다\./);
+  assert.doesNotMatch(html, /class="output-note"/);
+  assert.doesNotMatch(app, /3x 업로드 \/ 2x 자동 생성/);
+  assert.doesNotMatch(app, /Android 9-patch 자동 적용/);
+});
+
+test("background image uploads expose a delete action that falls back to the selected color", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /const clearableBackgroundImageKeys = new Set\(\[[\s\S]*"mainBackground"[\s\S]*"chatBackground"[\s\S]*"passcodeBackgroundImage"/);
+  assert.match(app, /clearButton\.dataset\.uploadClear = key;/);
+  assert.match(app, /clearButton\.textContent = "삭제";/);
+  assert.match(app, /uploads\[key\] = \{ cleared: true \};/);
+  assert.match(app, /documentRoot\.style\.setProperty\(variableName, "none"\);/);
+});
+
+test("friends preview follows the reference friends layout", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const previewStart = html.indexOf('class="preview-slide home-preview"');
   const headerStart = html.indexOf('class="phone-header main-header"');
   const screenStart = html.indexOf('class="main-screen"');
+  const bottomTabsStart = html.indexOf('class="bottom-tabs"');
   const headerMarkup = html.slice(headerStart, screenStart);
+  const screenMarkup = html.slice(screenStart, bottomTabsStart);
+  const segmentIndex = screenMarkup.indexOf('class="friend-segment-tabs"');
+  const bannerIndex = screenMarkup.indexOf('class="friends-promo-card"');
+  const updatedIndex = screenMarkup.indexOf('class="updated-friends-section"');
+  const favoriteIndex = screenMarkup.indexOf('class="favorite-friends-section"');
+  const allFriendsIndex = screenMarkup.indexOf('class="all-friends-section"');
 
+  assert.ok(previewStart > -1);
   assert.ok(headerStart > -1);
   assert.ok(screenStart > headerStart);
-  assert.match(headerMarkup, /<strong>친구<\/strong>/);
-  assert.doesNotMatch(headerMarkup, /title="검색"/);
-  assert.doesNotMatch(headerMarkup, /title="설정"/);
+  assert.match(headerMarkup, /class="home-owner-title"[\s\S]*<div class="avatar header-avatar"><\/div>[\s\S]*<strong>나<\/strong>/);
+  assert.doesNotMatch(headerMarkup, /<strong>친구<\/strong>/);
+  for (const label of ["검색", "친구 추가", "음악", "설정"]) {
+    assert.match(headerMarkup, new RegExp(`aria-label="${label}"`));
+  }
+  assert.ok(segmentIndex > -1);
+  assert.ok(bannerIndex > segmentIndex);
+  assert.ok(updatedIndex > bannerIndex);
+  assert.ok(favoriteIndex > updatedIndex);
+  assert.match(screenMarkup, /class="friend-segment is-active"[^>]*>친구<\/button>/);
+  assert.match(screenMarkup, /class="friend-segment"[^>]*>소식<\/button>/);
+  assert.match(screenMarkup, /class="friends-promo-card"[\s\S]*새로운 친구 이야기를 확인해 보세요/);
+  assert.match(screenMarkup, /class="updated-friends-section"[\s\S]*업데이트한 친구 1[\s\S]*<strong>고양이<\/strong>/);
+  assert.doesNotMatch(screenMarkup, /소식 만들기/);
+  assert.doesNotMatch(screenMarkup, /create-story-button/);
+  assert.match(screenMarkup, /class="favorite-friends-section"[\s\S]*즐겨찾는 친구 6/);
+  assert.ok(allFriendsIndex > favoriteIndex);
+  assert.match(screenMarkup, /class="all-friends-section"[\s\S]*친구 999/);
+  for (const name of [
+    "요정하우",
+    "여왕이 친구",
+    "위대한 못 고양이",
+    "힘힘이 친구",
+    "고독이 친구",
+    "행복자 친구",
+    "토끼 친구",
+    "구름 친구",
+    "민트 친구",
+  ]) {
+    assert.match(screenMarkup, new RegExp(`<strong>${name}<\\/strong>`));
+  }
+  for (const status of [
+    "오늘도 좋은 하루",
+    "반짝이는 오후",
+    "잠시 쉬어가는 중",
+    "새로운 소식 업데이트",
+    "조용한 하루",
+    "행복 수집 중",
+    "산책 다녀오는 중",
+    "커피 한 잔의 여유",
+    "답장은 천천히",
+  ]) {
+    assert.match(screenMarkup, new RegExp(`<span>${status}<\\/span>`));
+  }
+  assert.doesNotMatch(screenMarkup, />카카오톡 친구<\/span>/);
+  assert.doesNotMatch(screenMarkup, /펑/);
+  assert.doesNotMatch(screenMarkup, /생일인 친구/);
+  assert.doesNotMatch(screenMarkup, /추천친구/);
+  assert.doesNotMatch(screenMarkup, /채널/);
+  assert.match(css, /\.main-header \.home-owner-title strong\s*\{[^}]*font-size: 18px;/);
+  assert.match(css, /\.friend-header-actions\s*\{[\s\S]*grid-template-columns: repeat\(4, 28px\);[\s\S]*gap: 12px;/);
+  assert.match(css, /\.main-screen\s*\{[\s\S]*overflow-y: auto;[\s\S]*padding: 0 16px 12px;/);
+  assert.match(css, /\.friend-segment\.is-active\s*\{[\s\S]*background: var\(--preview-selected-bg, #ffb3b3\);[\s\S]*color: var\(--preview-selected-text, #b06b6b\);/);
+  assert.match(css, /\.avatar\.header-avatar\s*\{[\s\S]*width: 34px;[\s\S]*height: 34px;/);
+  assert.match(css, /\.friends-promo-card\s*\{[\s\S]*background: rgba\(255, 255, 255, 0\.94\);/);
+  assert.match(css, /\.friends-promo-card\s*\{[\s\S]*min-height: 78px;/);
+  assert.match(css, /\.favorite-profile-row\s*\{[\s\S]*grid-template-columns: 50px minmax\(0, 1fr\);/);
+  assert.match(css, /\.favorite-profile-row \.avatar\s*\{[\s\S]*width: 44px;[\s\S]*height: 44px;/);
+  assert.match(app, /\["bodyPressed", "선택 배경"\]/);
+  assert.match(app, /\["titlePressed", "선택 텍스트"\]/);
+  assert.match(app, /documentRoot\.style\.setProperty\("--preview-selected-bg", colors\.bodyPressed\);/);
+  assert.match(app, /documentRoot\.style\.setProperty\("--preview-selected-text", colors\.titlePressed\);/);
+});
+
+test("friends and chat list headers use Flaticon image icons", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+
+  for (const [className, url] of [
+    ["search-action", "https://cdn-icons-png.flaticon.com/512/622/622669.png"],
+    ["add-action", "https://cdn-icons-png.flaticon.com/512/748/748137.png"],
+    ["music-action", "https://cdn-icons-png.flaticon.com/512/727/727245.png"],
+    ["settings-action", "https://cdn-icons-png.flaticon.com/512/484/484613.png"],
+    ["chat-compose-icon", "https://cdn-icons-png.flaticon.com/512/1159/1159633.png"],
+  ]) {
+    assert.match(css, new RegExp(`\\.${className}\\s*\\{[\\s\\S]*background-image: url\\("${url.replaceAll("/", "\\/")}"\\);`));
+  }
+
+  assert.match(css, /\.friend-header-actions button\s*\{[\s\S]*width: 28px;[\s\S]*height: 28px;/);
+  assert.match(css, /\.friend-action-icon,\s*\.chat-compose-icon\s*\{[\s\S]*width: 20px;[\s\S]*height: 20px;/);
+  assert.match(css, /\.chat-list-header > strong\s*\{[^}]*font-size: 18px;/);
+  assert.match(css, /\.main-header \.friend-header-actions\s*\{[\s\S]*grid-template-columns: repeat\(4, 28px\);[\s\S]*gap: 12px;/);
+  assert.match(css, /\.chat-list-actions\s*\{[\s\S]*grid-template-columns: repeat\(3, 28px\);[\s\S]*gap: 12px;/);
+  assert.match(css, /\.phone-header \.chat-list-actions\s*\{[\s\S]*grid-template-columns: repeat\(3, 28px\);[\s\S]*gap: 12px;/);
+  assert.match(css, /\.chat-list-actions button\s*\{[\s\S]*width: 28px;[\s\S]*height: 28px;/);
+  assert.doesNotMatch(css, /\.search-action::before/);
+  assert.doesNotMatch(css, /\.search-action::after/);
+  assert.doesNotMatch(css, /\.add-action::before/);
+  assert.doesNotMatch(css, /\.music-action::before/);
+  assert.doesNotMatch(css, /\.settings-action::before/);
+  assert.doesNotMatch(css, /\.chat-compose-icon::before/);
+  assert.doesNotMatch(css, /\.chat-compose-icon::after/);
+});
+
+test("bottom tab preview removes text labels and uses the template icon display size", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const bottomTabsStart = html.indexOf('class="bottom-tabs"');
+  const homeEnd = html.indexOf("</article>", bottomTabsStart);
+  const bottomTabsMarkup = html.slice(bottomTabsStart, homeEnd);
+
+  assert.match(bottomTabsMarkup, /aria-label="친구"/);
+  assert.match(bottomTabsMarkup, /aria-label="대화"/);
+  assert.match(bottomTabsMarkup, /aria-label="오픈채팅"/);
+  assert.match(bottomTabsMarkup, /aria-label="쇼핑"/);
+  assert.match(bottomTabsMarkup, /aria-label="더보기"/);
+  for (const label of ["친구", "대화", "오픈채팅", "쇼핑", "더보기"]) {
+    assert.doesNotMatch(bottomTabsMarkup, new RegExp(`>${label}<\\/span>`));
+  }
+  assert.match(bottomTabsMarkup, /class="tab-friends is-selected"/);
+  assert.match(css, /\.tab-icon\s*\{[\s\S]*width: 38px;[\s\S]*height: 38px;/);
+  assert.match(app, /tabFriendIcon: \["--preview-tab-friends-icon"\]/);
+  assert.match(app, /tabFriendIconSelected: \["--preview-tab-friends-icon-selected"\]/);
+  assert.doesNotMatch(app, /tabFriendIcon: \["--preview-tab-friends-icon", "--preview-tab-friends-icon-selected"\]/);
+});
+
+test("preview includes a chat list screen before the chat room", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const chatListStart = html.indexOf('class="preview-slide chat-list-preview"');
+  const chatStart = html.indexOf('class="preview-slide chat-preview"');
+  const chatListMarkup = html.slice(chatListStart, chatStart);
+  const tabletChatListCss = css.match(/\.phone-preview\.is-tablet \.chat-list-screen\s*\{[\s\S]*?\}/)?.[0] ?? "";
+
+  assert.ok(chatListStart > -1);
+  assert.ok(chatStart > chatListStart);
+  assert.match(chatListMarkup, /aria-label="대화 목록 프리뷰"/);
+  assert.match(chatListMarkup, /class="phone-header chat-list-header"[\s\S]*<strong>대화<\/strong>/);
+  assert.match(chatListMarkup, /class="chat-list-row"[\s\S]*data-preview-time/);
+  assert.match(chatListMarkup, /class="tab-chat is-selected"/);
+  assert.doesNotMatch(chatListMarkup, /class="tab-friends is-selected"/);
+  assert.match(css, /\.chat-list-preview\s*\{[\s\S]*grid-template-rows: 30px 68px 1fr 68px;/);
+  assert.match(css, /\.chat-list-row\s*\{[\s\S]*grid-template-columns: 48px minmax\(0, 1fr\) auto;/);
+  assert.match(tabletChatListCss, /display: block;/);
+  assert.doesNotMatch(tabletChatListCss, /grid-template-columns/);
 });
 
 test("chat preview title is chat room and its trailing action is a menu", async () => {
@@ -93,34 +283,110 @@ test("chat preview title is chat room and its trailing action is a menu", async 
   assert.doesNotMatch(headerMarkup, /title="검색"/);
 });
 
-test("theme list orders official themes before user themes and removes header subtitle", async () => {
+test("theme list uses one-line rows for basic, official, and user themes", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   const previewStart = html.indexOf('class="preview-slide theme-list-preview"');
   const previewMarkup = html.slice(previewStart);
+  const tabletThemeListCss = css.match(/\.phone-preview\.is-tablet \.theme-list-screen\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const headerEnd = previewMarkup.indexOf('class="theme-list-screen"');
   const headerMarkup = previewMarkup.slice(0, headerEnd);
+  const basicIndex = previewMarkup.indexOf("<div class=\"section-title\">기본</div>");
   const officialIndex = previewMarkup.indexOf("공식 테마");
-  const defaultIndex = previewMarkup.indexOf("<strong>기본</strong>");
+  const officialRowIndex = previewMarkup.indexOf("<strong>공식 테마</strong>");
+  const systemIndex = previewMarkup.indexOf("<strong>시스템 설정 모드</strong>");
   const userSectionIndex = previewMarkup.indexOf("사용자 테마");
   const activeIndex = previewMarkup.indexOf("data-preview-theme-name");
+  const activeVersionIndex = previewMarkup.indexOf("data-preview-theme-version");
   const userThemeIndex = previewMarkup.indexOf("<strong>사용자테마</strong>");
+  const officialSectionMarkup = previewMarkup.slice(officialIndex, userSectionIndex);
+  const systemRowStart = previewMarkup.lastIndexOf('<div class="theme-list-row theme-mode-row">', systemIndex);
+  const systemRowEnd = previewMarkup.indexOf('<div class="theme-list-row theme-mode-row">', systemIndex);
+  const systemRowMarkup = previewMarkup.slice(systemRowStart, systemRowEnd);
+  const selectedChoices = previewMarkup.match(/class="theme-choice selected"/g) ?? [];
 
   assert.ok(previewStart > -1);
   assert.doesNotMatch(headerMarkup, /내 테마/);
+  assert.match(headerMarkup, />관리<\/button>/);
+  assert.ok(basicIndex > -1);
+  assert.ok(systemIndex > basicIndex);
   assert.ok(officialIndex > -1);
-  assert.ok(defaultIndex > officialIndex);
-  assert.ok(userSectionIndex > defaultIndex);
+  assert.ok(officialIndex > systemIndex);
+  assert.ok(officialRowIndex > officialIndex);
+  assert.ok(userSectionIndex > officialIndex);
+  assert.ok(userSectionIndex > officialRowIndex);
   assert.ok(activeIndex > userSectionIndex);
+  assert.ok(activeVersionIndex > activeIndex);
   assert.ok(userThemeIndex > activeIndex);
+  assert.equal(selectedChoices.length, 1);
+  assert.doesNotMatch(systemRowMarkup, /class="theme-choice selected"/);
+  assert.match(systemRowMarkup, /<strong>시스템 설정 모드<\/strong>[\s\S]*class="theme-choice" aria-hidden="true"/);
+  assert.equal(officialSectionMarkup.match(/class="theme-list-row"/g)?.length, 1);
+  assert.match(officialSectionMarkup, /class="theme-list-row"[\s\S]*<strong>공식 테마<\/strong>[\s\S]*class="theme-download"/);
+  assert.doesNotMatch(officialSectionMarkup, /앱 아이콘 변경/);
+  assert.doesNotMatch(officialSectionMarkup, /여름이야기/);
+  assert.doesNotMatch(officialSectionMarkup, /비밀의 숲/);
+  assert.match(previewMarkup, /class="theme-list-row active-theme-row"[\s\S]*data-preview-theme-name[\s\S]*data-preview-theme-version[\s\S]*class="theme-choice selected"/);
+  assert.doesNotMatch(previewMarkup, /현재 편집 중/);
+  assert.doesNotMatch(previewMarkup, /class="theme-list-card"/);
   assert.doesNotMatch(previewMarkup, /겨울이야기/);
+  assert.match(css, /\.theme-list-row\s*\{[\s\S]*grid-template-columns: 58px minmax\(0, 1fr\) auto;/);
+  assert.match(css, /\.theme-list-screen\s*\{[\s\S]*overflow-y: auto;/);
+  assert.match(previewMarkup, /class="theme-preview-card chat-mode-preview light-mode-preview"[\s\S]*mode-preview-title[\s\S]*Chats[\s\S]*mode-avatar one[\s\S]*mode-line one[\s\S]*mode-alert/);
+  assert.match(previewMarkup, /class="theme-preview-card chat-mode-preview dark-mode-preview"[\s\S]*mode-preview-title[\s\S]*Chats[\s\S]*mode-avatar three[\s\S]*mode-line three[\s\S]*mode-alert/);
+  assert.match(css, /\.chat-mode-preview\s*\{[\s\S]*width: 48px;[\s\S]*height: 64px;/);
+  assert.match(css, /\.mode-avatar\.one\s*\{[\s\S]*top: 17px;[\s\S]*background: #8ad4e7;/);
+  assert.match(css, /\.mode-avatar\.two\s*\{[\s\S]*top: 29px;[\s\S]*background: #7fb7e4;/);
+  assert.match(css, /\.mode-avatar\.three\s*\{[\s\S]*top: 41px;[\s\S]*background: #91aee8;/);
+  assert.match(css, /\.mode-alert\s*\{[\s\S]*right: 7px;[\s\S]*background: #e96b5f;/);
+  assert.match(css, /\.dark-mode-preview \.mode-line\s*\{[\s\S]*background: #3a3a3a;/);
+  assert.match(tabletThemeListCss, /display: block;/);
+  assert.doesNotMatch(tabletThemeListCss, /grid-template-columns/);
+});
+
+test("preview includes an Android loading screen from the source splash layout", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const model = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
+
+  assert.match(html, /class="preview-slide splash-preview" aria-label="로딩화면 프리뷰"/);
+  assert.doesNotMatch(html, /class="splash-apply-button"/);
+  assert.doesNotMatch(html, />적용하기<\/div>/);
+  assert.match(css, /--preview-splash-image, url\("\.\/assets\/templates\/android-source\/src\/main\/theme\/drawable-xxhdpi\/theme_splash_image\.png"\)/);
+  assert.match(css, /\.splash-screen\s*\{[\s\S]*background:[\s\S]*center \/ cover no-repeat/);
+  assert.doesNotMatch(css, /\.splash-apply-button/);
+  assert.match(app, /splashImage: \["--preview-splash-image"\]/);
+  assert.match(model, /label: "로딩 화면"/);
+  assert.match(model, /"src\/main\/theme\/drawable-xxhdpi\/theme_splash_image\.png"/);
+});
+
+test("passcode preview follows the reference lock screen copy and keypad actions", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const passcodeStart = html.indexOf('class="preview-slide passcode-preview"');
+  const themeListStart = html.indexOf('class="preview-slide theme-list-preview"');
+  const passcodeMarkup = html.slice(passcodeStart, themeListStart);
+
+  assert.match(passcodeMarkup, /<div class="passcode-intro">[\s\S]*<strong>암호입력<\/strong>[\s\S]*<span>암호를 입력해주세요<\/span>/);
+  assert.match(passcodeMarkup, /data-passcode-action="reset"[^>]*>취소<\/button>/);
+  assert.match(passcodeMarkup, /data-passcode-action="delete"[\s\S]*<span class="backspace-icon" aria-hidden="true"><\/span>/);
+  assert.doesNotMatch(passcodeMarkup, />리셋<\/button>/);
+  assert.doesNotMatch(passcodeMarkup, />지우기<\/button>/);
+  assert.match(css, /\.passcode-screen\s*\{[\s\S]*grid-template-rows: minmax\(230px, 0\.76fr\) auto minmax\(0, 1fr\);/);
+  assert.match(css, /\.passcode-intro\s*\{[\s\S]*gap: 14px;/);
+  assert.match(css, /\.keypad\s*\{[\s\S]*grid-template-columns: repeat\(3, 64px\);/);
+  assert.match(css, /\.keypad button\s*\{[\s\S]*background: transparent;/);
+  assert.match(css, /\.backspace-icon::before/);
 });
 
 test("tablet passcode preview defines a landscape layout that fits the keypad", async () => {
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 
   assert.match(css, /\.phone-preview\.is-tablet \.passcode-screen\s*\{[\s\S]*grid-template-columns: minmax\(0, 1fr\) auto;/);
-  assert.match(css, /\.phone-preview\.is-tablet \.passcode-screen\s*\{[\s\S]*gap: 18px 24px;/);
+  assert.match(css, /\.phone-preview\.is-tablet \.passcode-screen\s*\{[\s\S]*gap: 24px;/);
   assert.match(css, /\.phone-preview\.is-tablet \.passcode-screen\s*\{[\s\S]*padding: 32px;/);
+  assert.match(css, /\.phone-preview\.is-tablet \.passcode-intro\s*\{[\s\S]*grid-column: 1;/);
   assert.match(css, /\.phone-preview\.is-tablet \.keypad\s*\{[\s\S]*grid-column: 2;/);
   assert.match(css, /\.phone-preview\.is-tablet \.keypad\s*\{[\s\S]*width: min\(100%, 260px\);/);
 });
@@ -131,6 +397,8 @@ test("chat bubbles use 9-slice template images instead of stretching the full as
 
   assert.match(css, /border-image-source: var\(--preview-send-image, image-set\(url\("\.\/assets\/templates\/ios\/Images\/chatroomBubbleSend01@3x\.png"\) 3x\)\);/);
   assert.match(css, /border-image-source: var\(--preview-receive-image, image-set\(url\("\.\/assets\/templates\/ios\/Images\/chatroomBubbleReceive01@3x\.png"\) 3x\)\);/);
+  assert.match(css, /border-image-source: var\(--preview-send-additional-image, image-set\(url\("\.\/assets\/templates\/ios\/Images\/chatroomBubbleSend02@3x\.png"\) 3x\)\);/);
+  assert.match(css, /border-image-source: var\(--preview-receive-additional-image, image-set\(url\("\.\/assets\/templates\/ios\/Images\/chatroomBubbleReceive02@3x\.png"\) 3x\)\);/);
   assert.match(css, /--preview-bubble-slice: 12 13\.333 11\.333 13\.333;/);
   assert.match(css, /border-width: 12px 13\.333px 11\.333px;/);
   assert.match(css, /border-image-slice: var\(--preview-bubble-slice\) fill;/);
@@ -138,6 +406,8 @@ test("chat bubbles use 9-slice template images instead of stretching the full as
   assert.doesNotMatch(css, /background:[\s\S]*--preview-send-image[\s\S]*100% 100% no-repeat/);
   assert.match(app, /function formatUploadLabel/);
   assert.match(app, /\$\{target\.label\}\(\$\{width\}px x \$\{height\}px\)/);
+  assert.match(app, /"--preview-send-additional-image": \["sendBubbleTailless"\]/);
+  assert.match(app, /"--preview-receive-additional-image": \["receiveBubbleTailless"\]/);
   assert.doesNotMatch(css, /border-bottom-(?:right|left)-radius:\s*6px/);
 });
 

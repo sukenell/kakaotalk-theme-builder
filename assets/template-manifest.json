@@ -28,22 +28,22 @@
     {
       "name": "Images/chatroomBubbleReceive02@2x.png",
       "url": "assets/templates/ios/Images/chatroomBubbleReceive02@2x.png",
-      "size": 268
+      "size": 246
     },
     {
       "name": "Images/chatroomBubbleReceive02@3x.png",
       "url": "assets/templates/ios/Images/chatroomBubbleReceive02@3x.png",
-      "size": 395
+      "size": 389
     },
     {
       "name": "Images/chatroomBubbleReceive02Selected@2x.png",
       "url": "assets/templates/ios/Images/chatroomBubbleReceive02Selected@2x.png",
-      "size": 270
+      "size": 247
     },
     {
       "name": "Images/chatroomBubbleReceive02Selected@3x.png",
       "url": "assets/templates/ios/Images/chatroomBubbleReceive02Selected@3x.png",
-      "size": 397
+      "size": 387
     },
     {
       "name": "Images/chatroomBubbleSend01@2x.png",
@@ -68,22 +68,22 @@
     {
       "name": "Images/chatroomBubbleSend02@2x.png",
       "url": "assets/templates/ios/Images/chatroomBubbleSend02@2x.png",
-      "size": 271
+      "size": 246
     },
     {
       "name": "Images/chatroomBubbleSend02@3x.png",
       "url": "assets/templates/ios/Images/chatroomBubbleSend02@3x.png",
-      "size": 393
+      "size": 389
     },
     {
       "name": "Images/chatroomBubbleSend02Selected@2x.png",
       "url": "assets/templates/ios/Images/chatroomBubbleSend02Selected@2x.png",
-      "size": 271
+      "size": 246
     },
     {
       "name": "Images/chatroomBubbleSend02Selected@3x.png",
       "url": "assets/templates/ios/Images/chatroomBubbleSend02Selected@3x.png",
-      "size": 394
+      "size": 389
     },
     {
       "name": "Images/commonIcoTheme.png",
@@ -720,7 +720,7 @@
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png",
       "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png",
-      "size": 438
+      "size": 447
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_01_image.9.png",
@@ -730,7 +730,7 @@
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png",
       "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png",
-      "size": 430
+      "size": 445
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_find_add_friend_button_image.png",

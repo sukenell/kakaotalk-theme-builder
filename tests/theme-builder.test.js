@@ -3,6 +3,12 @@ import test from "node:test";
 
 import { buildAndroidEntries, buildIosEntries, getSkippedAndroidUploads } from "../src/theme-builder.js";
 
+const transparentPngBytes = new Uint8Array([
+  137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0,
+  0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 156, 99, 248, 15, 4, 0, 9, 251, 3,
+  253, 160, 172, 220, 170, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+]);
+
 test("buildIosEntries patches CSS and replaces mapped uploaded images", () => {
   const entries = [
     {
@@ -60,6 +66,30 @@ test("buildIosEntries applies generated 2x and 3x variants from one bubble uploa
     result.find((entry) => entry.name === "Images/chatroomBubbleSend01@3x.png").data,
     threeXVariant,
   );
+});
+
+test("build entries replace cleared background image uploads with a transparent image", () => {
+  const iosEntries = [
+    { name: "Images/passcodeBgImage@3x.png", data: new Uint8Array([1, 1, 1]) },
+    { name: "KakaoTalkTheme.css", data: "BackgroundStyle-Passcode { background-color: #FFDEDE; }" },
+  ];
+  const androidTarget = "src/main/theme/drawable-xxhdpi/theme_passcode_background_image.png";
+  const androidEntries = [
+    { name: androidTarget, data: new Uint8Array([2, 2, 2]) },
+    { name: "src/main/theme/values/colors.xml", data: `<resources></resources>` },
+  ];
+
+  const iosResult = buildIosEntries(iosEntries, {
+    state: {},
+    uploads: { passcodeBackgroundImage: { cleared: true } },
+  });
+  const androidResult = buildAndroidEntries(androidEntries, {
+    state: {},
+    uploads: { passcodeBackgroundImage: { cleared: true } },
+  });
+
+  assert.deepEqual(iosResult.find((entry) => entry.name === "Images/passcodeBgImage@3x.png").data, transparentPngBytes);
+  assert.deepEqual(androidResult.find((entry) => entry.name === androidTarget).data, transparentPngBytes);
 });
 
 test("buildAndroidEntries patches XML and skips raw uploads for 9-patch resources", () => {
@@ -148,6 +178,6 @@ test("buildAndroidEntries applies generated 9-patch variants for bubble uploads"
       receiveBubbleTailless: new Uint8Array([6, 6, 6]),
       tabBackground: new Uint8Array([7, 7, 7]),
     }),
-    ["상대 말풍선 - 꼬리 없는 말풍선", "탭 배경"],
+    ["상대 말풍선 - 추가", "탭 배경"],
   );
 });

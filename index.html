@@ -34,7 +34,16 @@
             <div class="two-fields">
               <label class="text-field">
                 <span>버전</span>
-                <input id="version" name="version" type="text" value="1.0.0" />
+                <input
+                  id="version"
+                  name="version"
+                  type="text"
+                  value="1.0.0"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  pattern="\d+\.\d+\.\d+"
+                  title="숫자.숫자.숫자 형식으로 입력해주세요"
+                />
               </label>
               <div class="author-field">
                 <span>제작자</span>
@@ -66,10 +75,6 @@
           공식 가이드 파일 다운로드
         </a>
         <div id="upload-controls" class="upload-controls"></div>
-        <div class="output-note">
-          <strong>Android</strong>
-          <span>말풍선 9-patch는 자동 변환하고, 탭바 9-patch 이미지는 원본을 유지합니다.</span>
-        </div>
       </section>
 
       <section class="panel preview-panel" aria-label="프리뷰 패널">
@@ -90,59 +95,209 @@
           <div id="preview-track" class="preview-track">
             <article class="preview-slide home-preview" aria-label="메인 화면 프리뷰">
               <div class="phone-status">
-                <span>9:41</span>
-                <span>LTE 100%</span>
+                <span>10:42</span>
+                <span>LTE 86%</span>
               </div>
               <div class="phone-header main-header">
-                <div>
-                  <strong>친구</strong>
-                  <span>소식 3</span>
+                <div class="home-owner-title">
+                  <div class="avatar header-avatar"></div>
+                  <strong>나</strong>
+                </div>
+                <div class="friend-header-actions">
+                  <button type="button" title="검색" aria-label="검색">
+                    <span class="friend-action-icon search-action" aria-hidden="true"></span>
+                  </button>
+                  <button type="button" title="친구 추가" aria-label="친구 추가">
+                    <span class="friend-action-icon add-action" aria-hidden="true"></span>
+                  </button>
+                  <button type="button" title="음악" aria-label="음악">
+                    <span class="friend-action-icon music-action" aria-hidden="true"></span>
+                  </button>
+                  <button type="button" title="설정" aria-label="설정">
+                    <span class="friend-action-icon settings-action" aria-hidden="true"></span>
+                  </button>
                 </div>
               </div>
               <div class="main-screen">
-                <div class="profile-card">
-                  <div class="avatar large"></div>
+                <div class="friend-segment-tabs" role="tablist" aria-label="친구 홈 필터">
+                  <button class="friend-segment is-active" type="button" role="tab" aria-selected="true">친구</button>
+                  <button class="friend-segment" type="button" role="tab" aria-selected="false">소식</button>
+                </div>
+                <div class="friends-promo-card">
                   <div>
-                    <strong>나</strong>
-                    <span>새 테마를 만드는 중</span>
+                    <strong>[AI] 카카오톡 친구보기</strong>
+                    <span>새로운 친구 이야기를 확인해 보세요</span>
+                  </div>
+                  <div class="promo-mascot" aria-hidden="true">
+                    <span></span>
                   </div>
                 </div>
-                <div class="section-title">친구</div>
-                <div class="friend-row">
+                <section class="updated-friends-section" aria-label="업데이트한 친구">
+                  <div class="friends-section-label">업데이트한 친구 1</div>
+                  <div class="updated-profile-strip">
+                    <div class="updated-profile-card">
+                      <div class="avatar"></div>
+                      <strong>고양이</strong>
+                    </div>
+                  </div>
+                </section>
+                <div class="friend-list-divider" aria-hidden="true"></div>
+                <section class="favorite-friends-section" aria-label="즐겨찾는 친구">
+                  <div class="friends-section-label">즐겨찾는 친구 6</div>
+                  <div class="favorite-profile-row">
+                    <div class="avatar"></div>
+                    <div>
+                      <strong>요정하우</strong>
+                      <span>오늘도 좋은 하루</span>
+                    </div>
+                  </div>
+                  <div class="favorite-profile-row">
+                    <div class="avatar soft"></div>
+                    <div>
+                      <strong>여왕이 친구</strong>
+                      <span>반짝이는 오후</span>
+                    </div>
+                  </div>
+                  <div class="favorite-profile-row">
+                    <div class="avatar"></div>
+                    <div>
+                      <strong>위대한 못 고양이</strong>
+                      <span>잠시 쉬어가는 중</span>
+                    </div>
+                  </div>
+                  <div class="favorite-profile-row">
+                    <div class="avatar soft"></div>
+                    <div>
+                      <strong>힘힘이 친구</strong>
+                      <span>새로운 소식 업데이트</span>
+                    </div>
+                  </div>
+                  <div class="favorite-profile-row">
+                    <div class="avatar"></div>
+                    <div>
+                      <strong>고독이 친구</strong>
+                      <span>조용한 하루</span>
+                    </div>
+                  </div>
+                  <div class="favorite-profile-row">
+                    <div class="avatar soft"></div>
+                    <div>
+                      <strong>행복자 친구</strong>
+                      <span>행복 수집 중</span>
+                    </div>
+                  </div>
+                </section>
+                <section class="all-friends-section" aria-label="친구 목록">
+                  <div class="friends-section-label">친구 999</div>
+                  <div class="favorite-profile-row">
+                    <div class="avatar"></div>
+                    <div>
+                      <strong>토끼 친구</strong>
+                      <span>산책 다녀오는 중</span>
+                    </div>
+                  </div>
+                  <div class="favorite-profile-row">
+                    <div class="avatar soft"></div>
+                    <div>
+                      <strong>구름 친구</strong>
+                      <span>커피 한 잔의 여유</span>
+                    </div>
+                  </div>
+                  <div class="favorite-profile-row">
+                    <div class="avatar"></div>
+                    <div>
+                      <strong>민트 친구</strong>
+                      <span>답장은 천천히</span>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="bottom-tabs">
+                <button class="tab-friends is-selected" type="button" aria-label="친구">
+                  <span class="tab-icon" aria-hidden="true"></span>
+                </button>
+                <button class="tab-chat" type="button" aria-label="대화">
+                  <span class="tab-icon" aria-hidden="true"></span>
+                </button>
+                <button class="tab-openchat" type="button" aria-label="오픈채팅">
+                  <span class="tab-icon" aria-hidden="true"></span>
+                </button>
+                <button class="tab-shopping" type="button" aria-label="쇼핑">
+                  <span class="tab-icon" aria-hidden="true"></span>
+                </button>
+                <button class="tab-more" type="button" aria-label="더보기">
+                  <span class="tab-icon" aria-hidden="true"></span>
+                </button>
+              </div>
+            </article>
+
+            <article class="preview-slide chat-list-preview" aria-label="대화 목록 프리뷰">
+              <div class="phone-status">
+                <span>10:42</span>
+                <span>LTE 86%</span>
+              </div>
+              <div class="phone-header chat-list-header">
+                <strong>대화</strong>
+                <div class="chat-list-actions">
+                  <button type="button" title="검색" aria-label="검색">
+                    <span class="friend-action-icon search-action" aria-hidden="true"></span>
+                  </button>
+                  <button type="button" title="새 대화" aria-label="새 대화">
+                    <span class="chat-compose-icon" aria-hidden="true"></span>
+                  </button>
+                  <button type="button" title="설정" aria-label="설정">
+                    <span class="friend-action-icon settings-action" aria-hidden="true"></span>
+                  </button>
+                </div>
+              </div>
+              <div class="chat-list-screen">
+                <div class="chat-list-row is-pinned">
                   <div class="avatar"></div>
-                  <div>
+                  <div class="chat-list-copy">
                     <strong>친구</strong>
-                    <span>오늘 분위기 괜찮다.</span>
+                    <span>오늘 테마 분위기 좋다.</span>
+                  </div>
+                  <div class="chat-list-meta">
+                    <time data-preview-time>00:00</time>
+                    <span class="unread-badge">2</span>
                   </div>
                 </div>
-                <div class="friend-row">
+                <div class="chat-list-row">
+                  <div class="avatar default-profile"></div>
+                  <div class="chat-list-copy">
+                    <strong>나와의 채팅</strong>
+                    <span>이미지와 컬러를 확인해봐.</span>
+                  </div>
+                  <div class="chat-list-meta">
+                    <time data-preview-time>00:00</time>
+                  </div>
+                </div>
+                <div class="chat-list-row">
                   <div class="avatar soft"></div>
-                  <div>
-                    <strong>테마봇</strong>
-                    <span>새로운 배경도 잘 어울려.</span>
+                  <div class="chat-list-copy">
+                    <strong>테마 미리보기</strong>
+                    <span>채팅방 화면으로 들어가기 전 목록.</span>
+                  </div>
+                  <div class="chat-list-meta">
+                    <time data-preview-time>00:00</time>
                   </div>
                 </div>
               </div>
               <div class="bottom-tabs">
-                <button class="tab-friends is-selected" type="button">
+                <button class="tab-friends" type="button" aria-label="친구">
                   <span class="tab-icon" aria-hidden="true"></span>
-                  <span>친구</span>
                 </button>
-                <button class="tab-chat" type="button">
+                <button class="tab-chat is-selected" type="button" aria-label="대화">
                   <span class="tab-icon" aria-hidden="true"></span>
-                  <span>대화</span>
                 </button>
-                <button class="tab-openchat" type="button">
+                <button class="tab-openchat" type="button" aria-label="오픈채팅">
                   <span class="tab-icon" aria-hidden="true"></span>
-                  <span>오픈채팅</span>
                 </button>
-                <button class="tab-shopping" type="button">
+                <button class="tab-shopping" type="button" aria-label="쇼핑">
                   <span class="tab-icon" aria-hidden="true"></span>
-                  <span>쇼핑</span>
                 </button>
-                <button class="tab-more" type="button">
+                <button class="tab-more" type="button" aria-label="더보기">
                   <span class="tab-icon" aria-hidden="true"></span>
-                  <span>더보기</span>
                 </button>
               </div>
             </article>
@@ -161,20 +316,60 @@
               </div>
               <div id="chat-screen" class="chat-screen">
                 <div class="date-chip" data-preview-date>2026년 6월 18일 목요일 &gt;</div>
-                <div class="message-row receive">
+                <div class="message-group receive">
                   <div class="avatar"></div>
-                  <div>
+                  <div class="message-stack">
                     <span class="sender">친구</span>
-                    <p class="bubble receive-bubble">오늘 테마 분위기 좋다.</p>
+                    <div class="bubble-line">
+                      <p class="bubble receive-bubble">오늘 테마 분위기 좋다.</p>
+                      <time class="message-time" data-preview-time>00:00</time>
+                    </div>
+                    <div class="bubble-line">
+                      <p class="bubble receive-bubble additional-bubble">이어지는 말풍선은 추가로 보여줘.</p>
+                      <time class="message-time" data-preview-time>00:00</time>
+                    </div>
                   </div>
                 </div>
-                <div class="message-row send">
-                  <p class="bubble send-bubble">이 조합으로 가보자.</p>
+                <div class="message-group send">
+                  <div class="message-stack">
+                    <div class="bubble-line">
+                      <time class="message-time" data-preview-time>00:00</time>
+                      <p class="bubble send-bubble">이 조합으로 가보자.</p>
+                    </div>
+                    <div class="bubble-line">
+                      <time class="message-time" data-preview-time>00:00</time>
+                      <p class="bubble send-bubble additional-bubble">추가 말풍선.</p>
+                    </div>
+                  </div>
                 </div>
-                <div class="message-row receive">
-                  <div class="avatar small"></div>
-                  <div>
-                    <p class="bubble receive-bubble short">좋아.</p>
+                <div class="message-group receive">
+                  <div class="avatar default-profile"></div>
+                  <div class="message-stack">
+                    <span class="sender">친구</span>
+                    <div class="bubble-line">
+                      <p class="bubble receive-bubble short">좋아.</p>
+                      <time class="message-time" data-preview-time>00:00</time>
+                    </div>
+                    <div class="bubble-line">
+                      <p class="bubble receive-bubble additional-bubble">추가 말풍선도 보여줘.</p>
+                      <time class="message-time" data-preview-time>00:00</time>
+                    </div>
+                    <div class="bubble-line">
+                      <p class="bubble receive-bubble additional-bubble short">이렇게.</p>
+                      <time class="message-time" data-preview-time>00:00</time>
+                    </div>
+                  </div>
+                </div>
+                <div class="message-group send">
+                  <div class="message-stack">
+                    <div class="bubble-line">
+                      <time class="message-time" data-preview-time>00:00</time>
+                      <p class="bubble send-bubble">기본 말풍선.</p>
+                    </div>
+                    <div class="bubble-line">
+                      <time class="message-time" data-preview-time>00:00</time>
+                      <p class="bubble send-bubble additional-bubble">추가 말풍선.</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -191,12 +386,15 @@
                 <span>LTE 100%</span>
               </div>
               <div class="passcode-screen">
-                <strong>암호를 입력해주세요</strong>
-                <div class="passcode-dots" aria-hidden="true">
-                  <span class="passcode-dot" data-passcode-slot="0"></span>
-                  <span class="passcode-dot" data-passcode-slot="1"></span>
-                  <span class="passcode-dot" data-passcode-slot="2"></span>
-                  <span class="passcode-dot" data-passcode-slot="3"></span>
+                <div class="passcode-intro">
+                  <strong>암호입력</strong>
+                  <span>암호를 입력해주세요</span>
+                  <div class="passcode-dots" aria-hidden="true">
+                    <span class="passcode-dot" data-passcode-slot="0"></span>
+                    <span class="passcode-dot" data-passcode-slot="1"></span>
+                    <span class="passcode-dot" data-passcode-slot="2"></span>
+                    <span class="passcode-dot" data-passcode-slot="3"></span>
+                  </div>
                 </div>
                 <div class="keypad">
                   <button type="button" data-passcode-digit="1">1</button>
@@ -208,11 +406,17 @@
                   <button type="button" data-passcode-digit="7">7</button>
                   <button type="button" data-passcode-digit="8">8</button>
                   <button type="button" data-passcode-digit="9">9</button>
-                  <button type="button" data-passcode-action="reset">리셋</button>
+                  <button class="passcode-cancel" type="button" data-passcode-action="reset">취소</button>
                   <button type="button" data-passcode-digit="0">0</button>
-                  <button type="button" data-passcode-action="delete">지우기</button>
+                  <button class="passcode-delete" type="button" data-passcode-action="delete" title="지우기" aria-label="지우기">
+                    <span class="backspace-icon" aria-hidden="true"></span>
+                  </button>
                 </div>
               </div>
+            </article>
+
+            <article class="preview-slide splash-preview" aria-label="로딩화면 프리뷰">
+              <div class="splash-screen"></div>
             </article>
 
             <article class="preview-slide theme-list-preview" aria-label="테마 목록 프리뷰">
@@ -225,31 +429,77 @@
                 <div>
                   <strong>테마</strong>
                 </div>
-                <button type="button" title="완료" aria-label="완료">✓</button>
+                <button type="button" title="관리" aria-label="관리">관리</button>
               </div>
               <div class="theme-list-screen">
-                <div class="section-title">공식 테마</div>
-                <div class="theme-list-card">
-                  <div class="theme-icon muted"></div>
-                  <div>
-                    <strong>기본</strong>
-                    <span>시스템 설정 모드</span>
+                <div class="section-title">기본</div>
+                <div class="theme-list-row theme-mode-row">
+                  <div class="theme-preview-card system-mode-preview" aria-hidden="true">
+                    <span></span>
                   </div>
+                  <div class="theme-list-copy">
+                    <strong>시스템 설정 모드</strong>
+                    <span>디스플레이 설정에 따라 자동 전환됩니다.</span>
+                  </div>
+                  <span class="theme-choice" aria-hidden="true"></span>
+                </div>
+                <div class="theme-list-row theme-mode-row">
+                  <div class="theme-preview-card chat-mode-preview light-mode-preview" aria-hidden="true">
+                    <span class="mode-preview-title">Chats</span>
+                    <span class="mode-avatar one"></span>
+                    <span class="mode-avatar two"></span>
+                    <span class="mode-avatar three"></span>
+                    <span class="mode-line one"></span>
+                    <span class="mode-line two"></span>
+                    <span class="mode-line three"></span>
+                    <span class="mode-alert"></span>
+                  </div>
+                  <div class="theme-list-copy">
+                    <strong>라이트 모드</strong>
+                  </div>
+                  <span class="theme-choice" aria-hidden="true"></span>
+                </div>
+                <div class="theme-list-row theme-mode-row">
+                  <div class="theme-preview-card chat-mode-preview dark-mode-preview" aria-hidden="true">
+                    <span class="mode-preview-title">Chats</span>
+                    <span class="mode-avatar one"></span>
+                    <span class="mode-avatar two"></span>
+                    <span class="mode-avatar three"></span>
+                    <span class="mode-line one"></span>
+                    <span class="mode-line two"></span>
+                    <span class="mode-line three"></span>
+                    <span class="mode-alert"></span>
+                  </div>
+                  <div class="theme-list-copy">
+                    <strong>다크 모드</strong>
+                  </div>
+                  <span class="theme-choice" aria-hidden="true"></span>
+                </div>
+                <div class="section-title">공식 테마</div>
+                <div class="theme-list-row">
+                  <div class="theme-icon official-theme"></div>
+                  <div class="theme-list-copy">
+                    <strong>공식 테마</strong>
+                    <span>25.6.0</span>
+                  </div>
+                  <button class="theme-download" type="button" title="다운로드" aria-label="공식 테마 다운로드">↓</button>
                 </div>
                 <div class="section-title">사용자 테마</div>
-                <div class="theme-list-card active-theme-card">
+                <div class="theme-list-row active-theme-row">
                   <div class="theme-icon"></div>
-                  <div>
+                  <div class="theme-list-copy">
                     <strong data-preview-theme-name>나의 테마</strong>
-                    <span>현재 편집 중</span>
+                    <span data-preview-theme-version>1.0.0</span>
                   </div>
+                  <span class="theme-choice selected" aria-label="선택됨"></span>
                 </div>
-                <div class="theme-list-card">
+                <div class="theme-list-row">
                   <div class="theme-icon pale"></div>
-                  <div>
+                  <div class="theme-list-copy">
                     <strong>사용자테마</strong>
                     <span>11.4.0</span>
                   </div>
+                  <span class="theme-choice" aria-hidden="true"></span>
                 </div>
               </div>
             </article>

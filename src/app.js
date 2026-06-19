@@ -3,14 +3,17 @@ import { applyPasscodeAction } from "./passcode-preview.js";
 import { getNextPreviewIndex, getPreviewColorKeys, getPreviewImageKeys, PREVIEW_PAGES } from "./preview-pages.js";
 import {
   CHAT_BUBBLE_IMAGE_KEYS,
+  TAB_ICON_IMAGE_KEYS,
   cloneDefaultThemeState,
   getActiveColors,
   IMAGE_TARGETS,
+  isValidThemeVersion,
+  normalizeThemeVersion,
   sanitizeThemeIdSegment,
   setActiveColor,
 } from "./theme-model.js";
 import { createStoredZip } from "./zip-utils.js";
-import { formatKoreanDate } from "./date-format.js";
+import { formatKoreanDate, formatKoreanTime } from "./date-format.js";
 
 const colorControls = [
   ["mainBackground", "메인 배경"],
@@ -20,6 +23,8 @@ const colorControls = [
   ["descriptionText", "설명 텍스트"],
   ["paragraphText", "본문 텍스트"],
   ["sectionTitle", "섹션 타이틀"],
+  ["bodyPressed", "선택 배경"],
+  ["titlePressed", "선택 텍스트"],
   ["sendText", "보낸 말풍선 텍스트"],
   ["receiveText", "받은 말풍선 텍스트"],
   ["unreadCount", "읽지 않음 숫자"],
@@ -38,13 +43,10 @@ const uploadKeys = [
   "mainBackground",
   "chatBackground",
   "tabBackground",
-  "tabFriendIcon",
-  "tabChatIcon",
-  "tabOpenChatIcon",
-  "tabShoppingIcon",
-  "tabMoreIcon",
+  ...TAB_ICON_IMAGE_KEYS,
   "profileImage",
   "themeIcon",
+  "splashImage",
   ...CHAT_BUBBLE_IMAGE_KEYS,
   "passcodeBackgroundImage",
   "passcodeDot",
@@ -55,21 +57,35 @@ const previewImageVariables = {
   mainBackground: ["--preview-main-image"],
   chatBackground: ["--preview-chat-image"],
   tabBackground: ["--preview-tab-image"],
-  tabFriendIcon: ["--preview-tab-friends-icon", "--preview-tab-friends-icon-selected"],
-  tabChatIcon: ["--preview-tab-chat-icon", "--preview-tab-chat-icon-selected"],
-  tabOpenChatIcon: ["--preview-tab-openchat-icon", "--preview-tab-openchat-icon-selected"],
-  tabShoppingIcon: ["--preview-tab-shopping-icon", "--preview-tab-shopping-icon-selected"],
-  tabMoreIcon: ["--preview-tab-more-icon", "--preview-tab-more-icon-selected"],
+  tabFriendIcon: ["--preview-tab-friends-icon"],
+  tabFriendIconSelected: ["--preview-tab-friends-icon-selected"],
+  tabChatIcon: ["--preview-tab-chat-icon"],
+  tabChatIconSelected: ["--preview-tab-chat-icon-selected"],
+  tabOpenChatIcon: ["--preview-tab-openchat-icon"],
+  tabOpenChatIconSelected: ["--preview-tab-openchat-icon-selected"],
+  tabShoppingIcon: ["--preview-tab-shopping-icon"],
+  tabShoppingIconSelected: ["--preview-tab-shopping-icon-selected"],
+  tabMoreIcon: ["--preview-tab-more-icon"],
+  tabMoreIconSelected: ["--preview-tab-more-icon-selected"],
   profileImage: ["--preview-profile-image"],
   themeIcon: ["--preview-theme-icon"],
+  splashImage: ["--preview-splash-image"],
   passcodeBackgroundImage: ["--preview-passcode-image"],
 };
 
 const bubbleUploadKeys = new Set(CHAT_BUBBLE_IMAGE_KEYS);
+const clearableBackgroundImageKeys = new Set(["mainBackground", "chatBackground", "passcodeBackgroundImage"]);
+const backgroundImageColorKeys = {
+  mainBackground: "mainBackground",
+  chatBackground: "chatBackground",
+  passcodeBackgroundImage: "passcodeBackground",
+};
 
 const previewBubbleSources = {
   "--preview-send-image": ["sendBubbleNormal"],
   "--preview-receive-image": ["receiveBubbleNormal"],
+  "--preview-send-additional-image": ["sendBubbleTailless"],
+  "--preview-receive-additional-image": ["receiveBubbleTailless"],
 };
 
 const iosImageSizes = {
@@ -112,6 +128,7 @@ const templateCache = new Map();
 let currentPreviewIndex = 1;
 let currentPreviewDevice = "phone";
 let passcodeCount = 0;
+let isDownloadBusy = false;
 
 const settingsForm = document.querySelector("#settings-form");
 const colorControlRoot = document.querySelector("#color-controls");
@@ -120,6 +137,7 @@ const statusText = document.querySelector("#status-text");
 const downloadTitle = document.querySelector("#download-title");
 const downloadIosButton = document.querySelector("#download-ios");
 const downloadAndroidButton = document.querySelector("#download-android");
+const versionInput = document.querySelector("#version");
 const chatScreen = document.querySelector("#chat-screen");
 const previewTrack = document.querySelector("#preview-track");
 const previewTabs = document.querySelector("#preview-tabs");
@@ -129,6 +147,7 @@ const previewNextButton = document.querySelector("#preview-next");
 const previewDeviceButtons = document.querySelectorAll("[data-preview-device]");
 const passcodeScreen = document.querySelector(".passcode-screen");
 const previewDateElements = document.querySelectorAll("[data-preview-date]");
+const previewTimeElements = document.querySelectorAll("[data-preview-time]");
 const documentRoot = document.documentElement;
 
 function setStatus(message) {
@@ -136,8 +155,34 @@ function setStatus(message) {
 }
 
 function setBusy(isBusy) {
-  downloadIosButton.disabled = isBusy;
-  downloadAndroidButton.disabled = isBusy;
+  isDownloadBusy = isBusy;
+  updateDownloadButtons();
+}
+
+function updateDownloadButtons() {
+  const isVersionValid = isValidThemeVersion(state.version);
+  const isDownloadDisabled = isDownloadBusy || !isVersionValid;
+  const invalidVersionMessage = "버전은 숫자.숫자.숫자 형식으로 입력해주세요";
+
+  downloadIosButton.disabled = isDownloadDisabled;
+  downloadAndroidButton.disabled = isDownloadDisabled;
+  downloadIosButton.title = isVersionValid ? "" : invalidVersionMessage;
+  downloadAndroidButton.title = isVersionValid ? "" : invalidVersionMessage;
+
+  if (versionInput) {
+    versionInput.setAttribute("aria-invalid", String(!isVersionValid));
+    versionInput.setCustomValidity(isVersionValid ? "" : invalidVersionMessage);
+  }
+}
+
+function canDownloadTheme() {
+  if (isValidThemeVersion(state.version)) {
+    return true;
+  }
+
+  setStatus("버전은 숫자.숫자.숫자 형식으로 입력해주세요");
+  updateDownloadButtons();
+  return false;
 }
 
 function sanitizeFileName(value) {
@@ -198,9 +243,13 @@ function renderUploadControls() {
       label.className = "upload-label";
       const title = document.createElement("strong");
       title.textContent = formatUploadLabel(target);
-      const meta = document.createElement("span");
-      meta.textContent = getUploadMeta(key, target);
-      label.append(title, meta);
+      const metaText = getUploadMeta(key, target);
+      label.append(title);
+      if (metaText) {
+        const meta = document.createElement("span");
+        meta.textContent = metaText;
+        label.append(meta);
+      }
 
       const button = document.createElement("label");
       button.className = "file-button";
@@ -211,7 +260,21 @@ function renderUploadControls() {
       input.addEventListener("change", () => handleUpload(key, input.files?.[0]));
       button.append(input);
 
-      item.append(thumb, label, button);
+      const actions = document.createElement("div");
+      actions.className = "upload-actions";
+      actions.append(button);
+      if (clearableBackgroundImageKeys.has(key)) {
+        const clearButton = document.createElement("button");
+        clearButton.className = "clear-upload-button";
+        clearButton.type = "button";
+        clearButton.dataset.uploadClear = key;
+        clearButton.textContent = "삭제";
+        clearButton.disabled = isClearedImageUpload(key);
+        clearButton.addEventListener("click", () => handleClearUpload(key));
+        actions.append(clearButton);
+      }
+
+      item.append(thumb, label, actions);
       return item;
     }),
   );
@@ -228,9 +291,11 @@ function formatUploadLabel(target) {
 
 function getUploadMeta(key, target) {
   if (bubbleUploadKeys.has(key)) {
-    return target.android?.length
-      ? "3x 업로드 / 2x 자동 생성 / Android 9-patch 자동 적용"
-      : "3x 업로드 / 2x 자동 생성 / iOS 적용";
+    return "";
+  }
+
+  if (!target.ios?.length && target.android?.length) {
+    return "Android 적용";
   }
 
   return target.androidRequiresNinePatch ? "iOS 자동 적용" : "iOS / Android 적용";
@@ -288,12 +353,29 @@ function setPreviewDevice(device) {
 }
 
 function applyUploadThumb(element, key) {
+  element.style.backgroundColor = "";
+  element.style.backgroundImage = "";
+
+  if (isClearedImageUpload(key)) {
+    const colorKey = backgroundImageColorKeys[key];
+    const colors = getActiveColors(state);
+    element.style.backgroundColor = colors[colorKey] ?? "";
+    element.style.backgroundImage = "none";
+    return;
+  }
+
   if (previews[key]) {
     element.style.backgroundImage = `url("${previews[key]}")`;
     return;
   }
 
   const iosTarget = IMAGE_TARGETS[key]?.previewIos ?? IMAGE_TARGETS[key]?.ios?.[0];
+  const previewPath = IMAGE_TARGETS[key]?.previewPath;
+  if (previewPath) {
+    element.style.backgroundImage = `url("./${previewPath}")`;
+    return;
+  }
+
   if (iosTarget) {
     element.style.backgroundImage = `url("./assets/templates/ios/${iosTarget}")`;
   }
@@ -321,7 +403,37 @@ async function handleUpload(key, file) {
   }
 
   updatePreview();
+  updateUploadControlsState();
   setStatus(`${IMAGE_TARGETS[key].label} 반영`);
+}
+
+function handleClearUpload(key) {
+  if (!clearableBackgroundImageKeys.has(key)) {
+    return;
+  }
+
+  if (previews[key]) {
+    URL.revokeObjectURL(previews[key]);
+  }
+  delete previews[key];
+  uploads[key] = { cleared: true };
+
+  updatePreview();
+  updateUploadControlsState();
+  setStatus(`${IMAGE_TARGETS[key].label} 삭제`);
+}
+
+function isClearedImageUpload(key) {
+  return uploads[key]?.cleared === true;
+}
+
+function updateUploadControlsState() {
+  document.querySelectorAll("[data-upload-thumb]").forEach((thumb) => {
+    applyUploadThumb(thumb, thumb.dataset.uploadThumb);
+  });
+  document.querySelectorAll("[data-upload-clear]").forEach((button) => {
+    button.disabled = isClearedImageUpload(button.dataset.uploadClear);
+  });
 }
 
 function getPreviewBytesForUpload(key, bytes, variants) {
@@ -465,6 +577,9 @@ function updatePreview() {
   previewDateElements.forEach((element) => {
     element.textContent = formatKoreanDate();
   });
+  previewTimeElements.forEach((element) => {
+    element.textContent = formatKoreanTime();
+  });
 
   documentRoot.style.setProperty("--preview-main-bg", colors.mainBackground);
   documentRoot.style.setProperty("--preview-chat-bg", colors.chatBackground);
@@ -483,15 +598,17 @@ function updatePreview() {
   documentRoot.style.setProperty("--preview-passcode-keypad-bg", colors.passcodeKeypadBackground);
   documentRoot.style.setProperty("--preview-section-title", colors.sectionTitle);
   documentRoot.style.setProperty("--preview-paragraph", colors.paragraphText);
+  documentRoot.style.setProperty("--preview-selected-bg", colors.bodyPressed);
+  documentRoot.style.setProperty("--preview-selected-text", colors.titlePressed);
 
   Object.entries(previewImageVariables).forEach(([key, variables]) => {
-    variables.forEach((variableName) => setOptionalImage(variableName, previews[key]));
+    variables.forEach((variableName) => setOptionalImage(variableName, key, previews[key]));
   });
   Object.entries(previewBubbleSources).forEach(([variableName, keys]) => {
     setPreviewBubbleImage(variableName, keys);
   });
 
-  if (previews.mainBackground && !previews.chatBackground) {
+  if (previews.mainBackground && !previews.chatBackground && !isClearedImageUpload("chatBackground")) {
     chatScreen.style.backgroundImage = `url("${previews.mainBackground}")`;
   } else {
     chatScreen.style.backgroundImage = "";
@@ -500,10 +617,20 @@ function updatePreview() {
   document.querySelectorAll("[data-preview-theme-name]").forEach((element) => {
     element.textContent = state.appName;
   });
+  document.querySelectorAll("[data-preview-theme-version]").forEach((element) => {
+    element.textContent = state.version;
+  });
+  updateDownloadButtons();
   updatePasscodePreview();
+  updateUploadControlsState();
 }
 
-function setOptionalImage(variableName, url) {
+function setOptionalImage(variableName, key, url) {
+  if (isClearedImageUpload(key)) {
+    documentRoot.style.setProperty(variableName, "none");
+    return;
+  }
+
   if (url) {
     documentRoot.style.setProperty(variableName, `url("${url}")`);
   } else {
@@ -533,8 +660,14 @@ function handleSettingsInput(event) {
     if (target.name === "themeIdSegment") {
       target.value = sanitizeThemeIdSegment(target.value);
     }
+    if (target.name === "version") {
+      target.value = normalizeThemeVersion(target.value);
+    }
     state[target.name] = target.value;
     updatePreview();
+    if (target.name === "version") {
+      setStatus(isValidThemeVersion(state.version) ? "템플릿 준비 완료" : "버전은 숫자.숫자.숫자 형식으로 입력해주세요");
+    }
   }
 }
 
@@ -656,6 +789,10 @@ function downloadBytes(bytes, filename, type) {
 }
 
 async function downloadIosTheme() {
+  if (!canDownloadTheme()) {
+    return;
+  }
+
   setBusy(true);
   setStatus("IOS 생성 중");
 
@@ -674,6 +811,10 @@ async function downloadIosTheme() {
 }
 
 async function downloadAndroidSource() {
+  if (!canDownloadTheme()) {
+    return;
+  }
+
   setBusy(true);
   setStatus("Android 생성 중");
 

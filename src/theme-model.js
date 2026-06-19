@@ -134,6 +134,19 @@ export const CHAT_BUBBLE_IMAGE_KEYS = [
   "receiveBubbleTaillessSelected",
 ];
 
+export const TAB_ICON_IMAGE_KEYS = [
+  "tabFriendIcon",
+  "tabFriendIconSelected",
+  "tabChatIcon",
+  "tabChatIconSelected",
+  "tabOpenChatIcon",
+  "tabOpenChatIconSelected",
+  "tabShoppingIcon",
+  "tabShoppingIconSelected",
+  "tabMoreIcon",
+  "tabMoreIconSelected",
+];
+
 function bubbleTarget({ label, size, ios2x, ios3x, android = [] }) {
   return {
     label,
@@ -170,77 +183,112 @@ export const IMAGE_TARGETS = {
     androidRequiresNinePatch: true,
   },
   tabFriendIcon: {
-    label: "친구 탭 아이콘",
+    label: "친구 탭 아이콘 - 기본",
     ios: [
       "Images/maintabIcoFriends@2x.png",
       "Images/maintabIcoFriends@3x.png",
+    ],
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_image.png",
+    ],
+  },
+  tabFriendIconSelected: {
+    label: "친구 탭 아이콘 - 선택",
+    ios: [
       "Images/maintabIcoFriendsSelected@2x.png",
       "Images/maintabIcoFriendsSelected@3x.png",
     ],
     android: [
-      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_image.png",
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_focused_image.png",
-      "src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_focused_image.png",
     ],
   },
   tabChatIcon: {
-    label: "대화 탭 아이콘",
+    label: "대화 탭 아이콘 - 기본",
     ios: [
       "Images/maintabIcoChats@2x.png",
       "Images/maintabIcoChats@3x.png",
+    ],
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_image.png",
+    ],
+  },
+  tabChatIconSelected: {
+    label: "대화 탭 아이콘 - 선택",
+    ios: [
       "Images/maintabIcoChatsSelected@2x.png",
       "Images/maintabIcoChatsSelected@3x.png",
     ],
     android: [
-      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_image.png",
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_focused_image.png",
-      "src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_focused_image.png",
     ],
   },
   tabOpenChatIcon: {
-    label: "오픈채팅 탭 아이콘",
+    label: "오픈채팅 탭 아이콘 - 기본",
     ios: [
       "Images/maintabIcoNow@2x.png",
       "Images/maintabIcoNow@3x.png",
+    ],
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_now_image.png",
+    ],
+  },
+  tabOpenChatIconSelected: {
+    label: "오픈채팅 탭 아이콘 - 선택",
+    ios: [
       "Images/maintabIcoNowSelected@2x.png",
       "Images/maintabIcoNowSelected@3x.png",
     ],
     android: [
-      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_image.png",
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_focused_image.png",
-      "src/main/theme/drawable-sw600dp/theme_maintab_ico_now_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_now_focused_image.png",
     ],
   },
   tabShoppingIcon: {
-    label: "쇼핑 탭 아이콘",
+    label: "쇼핑 탭 아이콘 - 기본",
     ios: [
       "Images/maintabIcoShopping@2x.png",
       "Images/maintabIcoShopping@3x.png",
+    ],
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_image.png",
+    ],
+  },
+  tabShoppingIconSelected: {
+    label: "쇼핑 탭 아이콘 - 선택",
+    ios: [
       "Images/maintabIcoShoppingSelected@2x.png",
       "Images/maintabIcoShoppingSelected@3x.png",
     ],
     android: [
-      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_image.png",
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_focused_image.png",
-      "src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_focused_image.png",
     ],
   },
   tabMoreIcon: {
-    label: "더보기 탭 아이콘",
+    label: "더보기 탭 아이콘 - 기본",
     ios: [
       "Images/maintabIcoMore@2x.png",
       "Images/maintabIcoMore@3x.png",
+    ],
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_image.png",
+      "src/main/theme/drawable-sw600dp/theme_maintab_ico_more_image.png",
+    ],
+  },
+  tabMoreIconSelected: {
+    label: "더보기 탭 아이콘 - 선택",
+    ios: [
       "Images/maintabIcoMoreSelected@2x.png",
       "Images/maintabIcoMoreSelected@3x.png",
     ],
     android: [
-      "src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_image.png",
       "src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_focused_image.png",
-      "src/main/theme/drawable-sw600dp/theme_maintab_ico_more_image.png",
       "src/main/theme/drawable-sw600dp/theme_maintab_ico_more_focused_image.png",
     ],
   },
@@ -260,54 +308,66 @@ export const IMAGE_TARGETS = {
       "src/main/res/mipmap-xxxhdpi/ic_launcher.png",
     ],
   },
+  splashImage: {
+    label: "로딩 화면",
+    previewPath: "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png",
+    android: [
+      "src/main/theme/drawable-xxhdpi/theme_splash_image.png",
+      "src/main/theme/drawable-xhdpi/theme_splash_image.png",
+      "src/main/theme/drawable-sw600dp/theme_splash_image.png",
+      "src/main/theme/drawable-land-xxhdpi/theme_splash_image.png",
+      "src/main/theme/drawable-land-xhdpi/theme_splash_image.png",
+      "src/main/theme/drawable-sw600dp-land/theme_splash_image.png",
+    ],
+  },
   sendBubbleNormal: bubbleTarget({
-    label: "나의 말풍선 - 그냥 말풍선",
+    label: "나의 말풍선 - 기본",
     size: [120, 105],
     ios2x: "Images/chatroomBubbleSend01@2x.png",
     ios3x: "Images/chatroomBubbleSend01@3x.png",
     android: ["src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png"],
   }),
   sendBubbleSelected: bubbleTarget({
-    label: "나의 말풍선 - 선택된 말풍선",
+    label: "나의 말풍선 - 기본+선택",
     size: [120, 105],
     ios2x: "Images/chatroomBubbleSend01Selected@2x.png",
     ios3x: "Images/chatroomBubbleSend01Selected@3x.png",
   }),
   sendBubbleTailless: bubbleTarget({
-    label: "나의 말풍선 - 꼬리 없는 말풍선",
+    label: "나의 말풍선 - 추가",
     size: [120, 105],
     ios2x: "Images/chatroomBubbleSend02@2x.png",
     ios3x: "Images/chatroomBubbleSend02@3x.png",
     android: ["src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png"],
   }),
   sendBubbleTaillessSelected: bubbleTarget({
-    label: "나의 말풍선 - 선택된 꼬리 없는 말풍선",
+    label: "나의 말풍선 - 추가+선택",
     size: [120, 105],
     ios2x: "Images/chatroomBubbleSend02Selected@2x.png",
     ios3x: "Images/chatroomBubbleSend02Selected@3x.png",
   }),
   receiveBubbleNormal: bubbleTarget({
-    label: "상대 말풍선 - 그냥 말풍선",
+    label: "상대 말풍선 - 기본",
     size: [120, 105],
     ios2x: "Images/chatroomBubbleReceive01@2x.png",
     ios3x: "Images/chatroomBubbleReceive01@3x.png",
     android: ["src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_01_image.9.png"],
   }),
   receiveBubbleSelected: bubbleTarget({
-    label: "상대 말풍선 - 선택된 말풍선",
+    label: "상대 말풍선 - 기본+선택",
     size: [121, 105],
     ios2x: "Images/chatroomBubbleReceive01Selected@2x.png",
     ios3x: "Images/chatroomBubbleReceive01Selected@3x.png",
   }),
   receiveBubbleTailless: bubbleTarget({
-    label: "상대 말풍선 - 꼬리 없는 말풍선",
+    label: "상대 말풍선 - 추가",
     size: [120, 105],
     ios2x: "Images/chatroomBubbleReceive02@2x.png",
     ios3x: "Images/chatroomBubbleReceive02@3x.png",
     android: ["src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png"],
   }),
   receiveBubbleTaillessSelected: bubbleTarget({
-    label: "상대 말풍선 - 선택된 꼬리 없는 말풍선",
+    label: "상대 말풍선 - 추가+선택",
     size: [121, 105],
     ios2x: "Images/chatroomBubbleReceive02Selected@2x.png",
     ios3x: "Images/chatroomBubbleReceive02Selected@3x.png",
@@ -383,6 +443,21 @@ export function sanitizeThemeIdSegment(value) {
   }
 
   return sanitized;
+}
+
+export function normalizeThemeVersion(value) {
+  return String(value ?? "")
+    .trim()
+    .replace(/[^\d.]+/g, "")
+    .replace(/\.+/g, ".")
+    .replace(/^\.+|\.+$/g, "")
+    .split(".")
+    .slice(0, 3)
+    .join(".");
+}
+
+export function isValidThemeVersion(value) {
+  return /^\d+\.\d+\.\d+$/.test(String(value ?? "").trim());
 }
 
 export function getThemeId(state) {

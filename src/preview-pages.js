@@ -1,23 +1,21 @@
-import { CHAT_BUBBLE_IMAGE_KEYS } from "./theme-model.js";
+import { CHAT_BUBBLE_IMAGE_KEYS, TAB_ICON_IMAGE_KEYS } from "./theme-model.js";
 
-export { CHAT_BUBBLE_IMAGE_KEYS };
+export { CHAT_BUBBLE_IMAGE_KEYS, TAB_ICON_IMAGE_KEYS };
 
 export const PREVIEW_PAGES = [
   {
     id: "home",
     label: "메인",
     iconUrl: "https://cdn-icons-png.flaticon.com/512/25/25694.png",
+    colorKeys: ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle", "bodyPressed", "titlePressed"],
+    imageKeys: ["mainBackground", "tabBackground", ...TAB_ICON_IMAGE_KEYS, "profileImage"],
+  },
+  {
+    id: "chat-list",
+    label: "대화 목록",
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/2076/2076218.png",
     colorKeys: ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle"],
-    imageKeys: [
-      "mainBackground",
-      "tabBackground",
-      "tabFriendIcon",
-      "tabChatIcon",
-      "tabOpenChatIcon",
-      "tabShoppingIcon",
-      "tabMoreIcon",
-      "profileImage",
-    ],
+    imageKeys: ["mainBackground", "tabBackground", ...TAB_ICON_IMAGE_KEYS, "profileImage"],
   },
   {
     id: "chat",
@@ -44,6 +42,13 @@ export const PREVIEW_PAGES = [
     iconUrl: "https://cdn-icons-png.flaticon.com/512/483/483408.png",
     colorKeys: ["passcodeBackground", "passcodeText", "passcodeKeypadBackground"],
     imageKeys: ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"],
+  },
+  {
+    id: "splash",
+    label: "로딩화면",
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/3176/3176363.png",
+    colorKeys: [],
+    imageKeys: ["splashImage"],
   },
   {
     id: "theme-list",

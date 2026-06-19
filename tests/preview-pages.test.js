@@ -8,13 +8,14 @@ import {
   getPreviewIconUrl,
   getPreviewImageKeys,
   PREVIEW_PAGES,
+  TAB_ICON_IMAGE_KEYS,
 } from "../src/preview-pages.js";
 
 test("PREVIEW_PAGES exposes multiple KakaoTalk template screens", () => {
   assert.ok(PREVIEW_PAGES.length >= 4);
   assert.deepEqual(
     PREVIEW_PAGES.map((page) => page.id),
-    ["home", "chat", "passcode", "theme-list"],
+    ["home", "chat-list", "chat", "passcode", "splash", "theme-list"],
   );
 });
 
@@ -37,14 +38,28 @@ test("getPreviewColorKeys returns only colors used by the active preview page", 
     "passcodeText",
     "passcodeKeypadBackground",
   ]);
+  assert.deepEqual(getPreviewColorKeys("home"), [
+    "mainBackground",
+    "headerText",
+    "titleText",
+    "paragraphText",
+    "sectionTitle",
+    "bodyPressed",
+    "titlePressed",
+  ]);
 });
 
 test("getPreviewImageKeys returns only images used by the active preview page", () => {
-  const tabIconKeys = ["tabFriendIcon", "tabChatIcon", "tabOpenChatIcon", "tabShoppingIcon", "tabMoreIcon"];
-
-  assert.deepEqual(getPreviewImageKeys("home"), ["mainBackground", "tabBackground", ...tabIconKeys, "profileImage"]);
+  assert.deepEqual(getPreviewImageKeys("home"), ["mainBackground", "tabBackground", ...TAB_ICON_IMAGE_KEYS, "profileImage"]);
+  assert.deepEqual(getPreviewImageKeys("chat-list"), [
+    "mainBackground",
+    "tabBackground",
+    ...TAB_ICON_IMAGE_KEYS,
+    "profileImage",
+  ]);
   assert.deepEqual(getPreviewImageKeys("chat"), ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS]);
   assert.deepEqual(getPreviewImageKeys("passcode"), ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"]);
+  assert.deepEqual(getPreviewImageKeys("splash"), ["splashImage"]);
   assert.deepEqual(getPreviewImageKeys("theme-list"), ["themeIcon"]);
 });
 
