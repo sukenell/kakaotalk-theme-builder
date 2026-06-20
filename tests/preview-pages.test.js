@@ -16,7 +16,7 @@ test("PREVIEW_PAGES exposes multiple KakaoTalk template screens", () => {
   assert.ok(PREVIEW_PAGES.length >= 4);
   assert.deepEqual(
     PREVIEW_PAGES.map((page) => page.id),
-    ["home", "chat-list", "chat", "passcode", "splash", "theme-list"],
+    ["home", "chat-list", "open-chat", "shopping", "more", "chat", "passcode", "splash", "theme-list"],
   );
 });
 
@@ -69,6 +69,14 @@ test("getPreviewImageKeys returns only images used by the active preview page", 
     "addFriendButton",
     "addFriendButtonPressed",
   ]);
+  for (const pageId of ["open-chat", "shopping", "more"]) {
+    assert.deepEqual(getPreviewImageKeys(pageId), [
+      "mainBackground",
+      "tabBackground",
+      ...TAB_ICON_IMAGE_KEYS,
+      "profileImage",
+    ]);
+  }
   assert.deepEqual(getPreviewImageKeys("chat"), ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS]);
   assert.deepEqual(getPreviewImageKeys("passcode"), ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"]);
   assert.deepEqual(getPreviewImageKeys("splash"), ["splashImage"]);
@@ -85,6 +93,7 @@ test("PREVIEW_PAGES uses Flaticon image assets for page icons", () => {
 
   assert.equal(getPreviewIconUrl("splash"), "https://cdn-icons-png.flaticon.com/512/2499/2499339.png");
   assert.equal(getPreviewIconUrl("theme-list"), "https://cdn-icons-png.flaticon.com/512/5112/5112614.png");
+  assert.equal(PREVIEW_PAGES.find((page) => page.id === "open-chat")?.label, "지금");
 });
 
 test("getNextPreviewIndex moves left and right with wraparound", () => {

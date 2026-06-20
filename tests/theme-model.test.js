@@ -319,7 +319,10 @@ test("IMAGE_TARGETS maps the Android splash loading image upload", () => {
     "src/main/theme/drawable-land-xhdpi/theme_splash_image.png",
     "src/main/theme/drawable-sw600dp-land/theme_splash_image.png",
   ]);
-  assert.equal(PREVIEW_DEFAULT_IMAGE_PATHS.splashImage, "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png");
+  assert.equal(
+    PREVIEW_DEFAULT_IMAGE_PATHS.splashImage,
+    "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png",
+  );
 });
 
 test("getAuthorName keeps reha first and appends user input with a comma", () => {

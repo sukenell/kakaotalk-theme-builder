@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 import zlib from "node:zlib";
 
@@ -92,19 +92,19 @@ function alphaAt(image, x, y) {
 }
 
 test("additional chat bubble template images do not include a visible tail", async () => {
-  const sendAdditional = await readRgbaPng("../assets/templates/ios/Images/chatroomBubbleSend02@3x.png");
-  const sendAdditional2x = await readRgbaPng("../assets/templates/ios/Images/chatroomBubbleSend02@2x.png");
-  const sendAdditionalSelected = await readRgbaPng("../assets/templates/ios/Images/chatroomBubbleSend02Selected@3x.png");
-  const sendAdditionalSelected2x = await readRgbaPng("../assets/templates/ios/Images/chatroomBubbleSend02Selected@2x.png");
-  const receiveAdditional = await readRgbaPng("../assets/templates/ios/Images/chatroomBubbleReceive02@3x.png");
-  const receiveAdditional2x = await readRgbaPng("../assets/templates/ios/Images/chatroomBubbleReceive02@2x.png");
-  const receiveAdditionalSelected = await readRgbaPng("../assets/templates/ios/Images/chatroomBubbleReceive02Selected@3x.png");
-  const receiveAdditionalSelected2x = await readRgbaPng("../assets/templates/ios/Images/chatroomBubbleReceive02Selected@2x.png");
+  const sendAdditional = await readRgbaPng("../assets/template-images/ios/Images/chatroomBubbleSend02@3x.png");
+  const sendAdditional2x = await readRgbaPng("../assets/template-images/ios/Images/chatroomBubbleSend02@2x.png");
+  const sendAdditionalSelected = await readRgbaPng("../assets/template-images/ios/Images/chatroomBubbleSend02Selected@3x.png");
+  const sendAdditionalSelected2x = await readRgbaPng("../assets/template-images/ios/Images/chatroomBubbleSend02Selected@2x.png");
+  const receiveAdditional = await readRgbaPng("../assets/template-images/ios/Images/chatroomBubbleReceive02@3x.png");
+  const receiveAdditional2x = await readRgbaPng("../assets/template-images/ios/Images/chatroomBubbleReceive02@2x.png");
+  const receiveAdditionalSelected = await readRgbaPng("../assets/template-images/ios/Images/chatroomBubbleReceive02Selected@3x.png");
+  const receiveAdditionalSelected2x = await readRgbaPng("../assets/template-images/ios/Images/chatroomBubbleReceive02Selected@2x.png");
   const androidSendAdditional = await readRgbaPng(
-    "../assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png",
+    "../assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png",
   );
   const androidReceiveAdditional = await readRgbaPng(
-    "../assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png",
+    "../assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png",
   );
 
   assert.equal(alphaAt(sendAdditional, 116, 98), 0);
@@ -117,4 +117,25 @@ test("additional chat bubble template images do not include a visible tail", asy
   assert.equal(alphaAt(receiveAdditionalSelected2x, 3, 65), 0);
   assert.equal(alphaAt(androidSendAdditional, 119, 106), 0);
   assert.equal(alphaAt(androidReceiveAdditional, 5, 106), 0);
+});
+
+test("download manifest sources image entries from the replacement image root", async () => {
+  const manifest = JSON.parse(await readFile(new URL("../assets/template-manifest.json", import.meta.url), "utf8"));
+  const imageEntries = [...manifest.ios, ...manifest.android].filter((entry) => entry.name.endsWith(".png"));
+
+  assert.ok(imageEntries.length > 0);
+
+  for (const entry of imageEntries) {
+    assert.match(entry.url, /^assets\/template-images\//);
+    await access(new URL(`../${entry.url}`, import.meta.url));
+  }
+
+  assert.equal(
+    manifest.ios.find((entry) => entry.name === "Images/mainBgImage@3x.png").url,
+    "assets/template-images/ios/Images/mainBgImage@3x.png",
+  );
+  assert.equal(
+    manifest.android.find((entry) => entry.name === "src/main/theme/drawable-xxhdpi/theme_splash_image.png").url,
+    "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png",
+  );
 });

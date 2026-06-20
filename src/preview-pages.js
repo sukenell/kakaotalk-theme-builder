@@ -2,6 +2,15 @@ import { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, TAB_ICON_IMAGE_KEYS } fr
 
 export { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, TAB_ICON_IMAGE_KEYS };
 
+const mainTabColorKeys = ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle", "bodyPressed", "titlePressed"];
+
+const mainTabImageKeys = [
+  "mainBackground",
+  "tabBackground",
+  ...TAB_ICON_IMAGE_KEYS,
+  "profileImage",
+];
+
 export const PREVIEW_PAGES = [
   {
     id: "home",
@@ -32,6 +41,27 @@ export const PREVIEW_PAGES = [
       "addFriendButton",
       "addFriendButtonPressed",
     ],
+  },
+  {
+    id: "open-chat",
+    label: "지금",
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/2076/2076218.png",
+    colorKeys: mainTabColorKeys,
+    imageKeys: mainTabImageKeys,
+  },
+  {
+    id: "shopping",
+    label: "쇼핑",
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/1170/1170678.png",
+    colorKeys: mainTabColorKeys,
+    imageKeys: mainTabImageKeys,
+  },
+  {
+    id: "more",
+    label: "더보기",
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/1828/1828859.png",
+    colorKeys: mainTabColorKeys,
+    imageKeys: mainTabImageKeys,
   },
   {
     id: "chat",

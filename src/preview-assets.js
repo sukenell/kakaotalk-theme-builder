@@ -1,6 +1,6 @@
 export const PREVIEW_IMAGE_FOLDERS = {
-  iosImages: "assets/templates/ios/Images",
-  androidDrawableXxhdpi: "assets/templates/android-source/src/main/theme/drawable-xxhdpi",
+  iosImages: "assets/template-images/ios/Images",
+  androidDrawableXxhdpi: "assets/template-images/android-source/src/main/theme/drawable-xxhdpi",
 };
 
 const iosImage = (name) => `${PREVIEW_IMAGE_FOLDERS.iosImages}/${name}`;

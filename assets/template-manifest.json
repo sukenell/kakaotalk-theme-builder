@@ -2,292 +2,292 @@
   "ios": [
     {
       "name": "Images/chatroomBgImage@3x.png",
-      "url": "assets/templates/ios/Images/chatroomBgImage@3x.png",
+      "url": "assets/template-images/ios/Images/chatroomBgImage@3x.png",
       "size": 23118
     },
     {
       "name": "Images/chatroomBubbleReceive01@2x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleReceive01@2x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleReceive01@2x.png",
       "size": 268
     },
     {
       "name": "Images/chatroomBubbleReceive01@3x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleReceive01@3x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleReceive01@3x.png",
       "size": 395
     },
     {
       "name": "Images/chatroomBubbleReceive01Selected@2x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleReceive01Selected@2x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleReceive01Selected@2x.png",
       "size": 270
     },
     {
       "name": "Images/chatroomBubbleReceive01Selected@3x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleReceive01Selected@3x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleReceive01Selected@3x.png",
       "size": 397
     },
     {
       "name": "Images/chatroomBubbleReceive02@2x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleReceive02@2x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleReceive02@2x.png",
       "size": 246
     },
     {
       "name": "Images/chatroomBubbleReceive02@3x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleReceive02@3x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleReceive02@3x.png",
       "size": 389
     },
     {
       "name": "Images/chatroomBubbleReceive02Selected@2x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleReceive02Selected@2x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleReceive02Selected@2x.png",
       "size": 247
     },
     {
       "name": "Images/chatroomBubbleReceive02Selected@3x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleReceive02Selected@3x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleReceive02Selected@3x.png",
       "size": 387
     },
     {
       "name": "Images/chatroomBubbleSend01@2x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleSend01@2x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleSend01@2x.png",
       "size": 271
     },
     {
       "name": "Images/chatroomBubbleSend01@3x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleSend01@3x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleSend01@3x.png",
       "size": 393
     },
     {
       "name": "Images/chatroomBubbleSend01Selected@2x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleSend01Selected@2x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleSend01Selected@2x.png",
       "size": 271
     },
     {
       "name": "Images/chatroomBubbleSend01Selected@3x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleSend01Selected@3x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleSend01Selected@3x.png",
       "size": 394
     },
     {
       "name": "Images/chatroomBubbleSend02@2x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleSend02@2x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleSend02@2x.png",
       "size": 246
     },
     {
       "name": "Images/chatroomBubbleSend02@3x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleSend02@3x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleSend02@3x.png",
       "size": 389
     },
     {
       "name": "Images/chatroomBubbleSend02Selected@2x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleSend02Selected@2x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleSend02Selected@2x.png",
       "size": 246
     },
     {
       "name": "Images/chatroomBubbleSend02Selected@3x.png",
-      "url": "assets/templates/ios/Images/chatroomBubbleSend02Selected@3x.png",
+      "url": "assets/template-images/ios/Images/chatroomBubbleSend02Selected@3x.png",
       "size": 389
     },
     {
       "name": "Images/commonIcoTheme.png",
-      "url": "assets/templates/ios/Images/commonIcoTheme.png",
+      "url": "assets/template-images/ios/Images/commonIcoTheme.png",
       "size": 1074
     },
     {
       "name": "Images/findBtnAddFriend@2x.png",
-      "url": "assets/templates/ios/Images/findBtnAddFriend@2x.png",
+      "url": "assets/template-images/ios/Images/findBtnAddFriend@2x.png",
       "size": 372
     },
     {
       "name": "Images/findBtnAddFriend@3x.png",
-      "url": "assets/templates/ios/Images/findBtnAddFriend@3x.png",
+      "url": "assets/template-images/ios/Images/findBtnAddFriend@3x.png",
       "size": 536
     },
     {
       "name": "Images/mainBgImage@3x.png",
-      "url": "assets/templates/ios/Images/mainBgImage@3x.png",
+      "url": "assets/template-images/ios/Images/mainBgImage@3x.png",
       "size": 23475
     },
     {
       "name": "Images/maintabBgImage@2x.png",
-      "url": "assets/templates/ios/Images/maintabBgImage@2x.png",
+      "url": "assets/template-images/ios/Images/maintabBgImage@2x.png",
       "size": 1496
     },
     {
       "name": "Images/maintabBgImage@3x.png",
-      "url": "assets/templates/ios/Images/maintabBgImage@3x.png",
+      "url": "assets/template-images/ios/Images/maintabBgImage@3x.png",
       "size": 2352
     },
     {
       "name": "Images/maintabIcoCall@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoCall@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoCall@2x.png",
       "size": 381
     },
     {
       "name": "Images/maintabIcoCall@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoCall@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoCall@3x.png",
       "size": 522
     },
     {
       "name": "Images/maintabIcoCallSelected@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoCallSelected@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoCallSelected@2x.png",
       "size": 382
     },
     {
       "name": "Images/maintabIcoCallSelected@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoCallSelected@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoCallSelected@3x.png",
       "size": 524
     },
     {
       "name": "Images/maintabIcoChats@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoChats@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoChats@2x.png",
       "size": 316
     },
     {
       "name": "Images/maintabIcoChats@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoChats@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoChats@3x.png",
       "size": 391
     },
     {
       "name": "Images/maintabIcoChatsSelected@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoChatsSelected@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoChatsSelected@2x.png",
       "size": 317
     },
     {
       "name": "Images/maintabIcoChatsSelected@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoChatsSelected@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoChatsSelected@3x.png",
       "size": 392
     },
     {
       "name": "Images/maintabIcoFriends@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoFriends@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoFriends@2x.png",
       "size": 381
     },
     {
       "name": "Images/maintabIcoFriends@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoFriends@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoFriends@3x.png",
       "size": 522
     },
     {
       "name": "Images/maintabIcoFriendsSelected@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoFriendsSelected@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoFriendsSelected@2x.png",
       "size": 382
     },
     {
       "name": "Images/maintabIcoFriendsSelected@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoFriendsSelected@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoFriendsSelected@3x.png",
       "size": 524
     },
     {
       "name": "Images/maintabIcoMore@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoMore@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoMore@2x.png",
       "size": 170
     },
     {
       "name": "Images/maintabIcoMore@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoMore@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoMore@3x.png",
       "size": 252
     },
     {
       "name": "Images/maintabIcoMoreSelected@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoMoreSelected@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoMoreSelected@2x.png",
       "size": 172
     },
     {
       "name": "Images/maintabIcoMoreSelected@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoMoreSelected@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoMoreSelected@3x.png",
       "size": 254
     },
     {
       "name": "Images/maintabIcoNow@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoNow@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoNow@2x.png",
       "size": 434
     },
     {
       "name": "Images/maintabIcoNow@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoNow@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoNow@3x.png",
       "size": 604
     },
     {
       "name": "Images/maintabIcoNowSelected@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoNowSelected@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoNowSelected@2x.png",
       "size": 436
     },
     {
       "name": "Images/maintabIcoNowSelected@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoNowSelected@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoNowSelected@3x.png",
       "size": 606
     },
     {
       "name": "Images/maintabIcoShopping@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoShopping@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoShopping@2x.png",
       "size": 288
     },
     {
       "name": "Images/maintabIcoShopping@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoShopping@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoShopping@3x.png",
       "size": 363
     },
     {
       "name": "Images/maintabIcoShoppingSelected@2x.png",
-      "url": "assets/templates/ios/Images/maintabIcoShoppingSelected@2x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoShoppingSelected@2x.png",
       "size": 290
     },
     {
       "name": "Images/maintabIcoShoppingSelected@3x.png",
-      "url": "assets/templates/ios/Images/maintabIcoShoppingSelected@3x.png",
+      "url": "assets/template-images/ios/Images/maintabIcoShoppingSelected@3x.png",
       "size": 366
     },
     {
       "name": "Images/passcodeBgImage@3x.png",
-      "url": "assets/templates/ios/Images/passcodeBgImage@3x.png",
+      "url": "assets/template-images/ios/Images/passcodeBgImage@3x.png",
       "size": 13674
     },
     {
       "name": "Images/passcodeImgCode01@3x.png",
-      "url": "assets/templates/ios/Images/passcodeImgCode01@3x.png",
+      "url": "assets/template-images/ios/Images/passcodeImgCode01@3x.png",
       "size": 711
     },
     {
       "name": "Images/passcodeImgCode01Selected@3x.png",
-      "url": "assets/templates/ios/Images/passcodeImgCode01Selected@3x.png",
+      "url": "assets/template-images/ios/Images/passcodeImgCode01Selected@3x.png",
       "size": 848
     },
     {
       "name": "Images/passcodeImgCode02@3x.png",
-      "url": "assets/templates/ios/Images/passcodeImgCode02@3x.png",
+      "url": "assets/template-images/ios/Images/passcodeImgCode02@3x.png",
       "size": 711
     },
     {
       "name": "Images/passcodeImgCode02Selected@3x.png",
-      "url": "assets/templates/ios/Images/passcodeImgCode02Selected@3x.png",
+      "url": "assets/template-images/ios/Images/passcodeImgCode02Selected@3x.png",
       "size": 848
     },
     {
       "name": "Images/passcodeImgCode03@3x.png",
-      "url": "assets/templates/ios/Images/passcodeImgCode03@3x.png",
+      "url": "assets/template-images/ios/Images/passcodeImgCode03@3x.png",
       "size": 711
     },
     {
       "name": "Images/passcodeImgCode03Selected@3x.png",
-      "url": "assets/templates/ios/Images/passcodeImgCode03Selected@3x.png",
+      "url": "assets/template-images/ios/Images/passcodeImgCode03Selected@3x.png",
       "size": 848
     },
     {
       "name": "Images/passcodeImgCode04@3x.png",
-      "url": "assets/templates/ios/Images/passcodeImgCode04@3x.png",
+      "url": "assets/template-images/ios/Images/passcodeImgCode04@3x.png",
       "size": 711
     },
     {
       "name": "Images/passcodeImgCode04Selected@3x.png",
-      "url": "assets/templates/ios/Images/passcodeImgCode04Selected@3x.png",
+      "url": "assets/template-images/ios/Images/passcodeImgCode04Selected@3x.png",
       "size": 848
     },
     {
       "name": "Images/passcodeKeypadPressed@3x.png",
-      "url": "assets/templates/ios/Images/passcodeKeypadPressed@3x.png",
+      "url": "assets/template-images/ios/Images/passcodeKeypadPressed@3x.png",
       "size": 1055
     },
     {
       "name": "Images/profileImg01@3x.png",
-      "url": "assets/templates/ios/Images/profileImg01@3x.png",
+      "url": "assets/template-images/ios/Images/profileImg01@3x.png",
       "size": 3763
     },
     {
@@ -334,7 +334,7 @@
     },
     {
       "name": "src/main/ic_launcher-web.png",
-      "url": "assets/templates/android-source/src/main/ic_launcher-web.png",
+      "url": "assets/template-images/android-source/src/main/ic_launcher-web.png",
       "size": 3430
     },
     {
@@ -364,102 +364,102 @@
     },
     {
       "name": "src/main/res/mipmap-hdpi/ic_launcher_background.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-hdpi/ic_launcher_background.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-hdpi/ic_launcher_background.png",
       "size": 1356
     },
     {
       "name": "src/main/res/mipmap-hdpi/ic_launcher_foreground.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-hdpi/ic_launcher_foreground.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-hdpi/ic_launcher_foreground.png",
       "size": 1074
     },
     {
       "name": "src/main/res/mipmap-hdpi/ic_launcher_round.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-hdpi/ic_launcher_round.png",
       "size": 511
     },
     {
       "name": "src/main/res/mipmap-hdpi/ic_launcher.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-hdpi/ic_launcher.png",
       "size": 511
     },
     {
       "name": "src/main/res/mipmap-mdpi/ic_launcher_background.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-mdpi/ic_launcher_background.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-mdpi/ic_launcher_background.png",
       "size": 990
     },
     {
       "name": "src/main/res/mipmap-mdpi/ic_launcher_foreground.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-mdpi/ic_launcher_foreground.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-mdpi/ic_launcher_foreground.png",
       "size": 742
     },
     {
       "name": "src/main/res/mipmap-mdpi/ic_launcher_round.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-mdpi/ic_launcher_round.png",
       "size": 368
     },
     {
       "name": "src/main/res/mipmap-mdpi/ic_launcher.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-mdpi/ic_launcher.png",
       "size": 368
     },
     {
       "name": "src/main/res/mipmap-xhdpi/ic_launcher_background.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xhdpi/ic_launcher_background.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xhdpi/ic_launcher_background.png",
       "size": 1765
     },
     {
       "name": "src/main/res/mipmap-xhdpi/ic_launcher_foreground.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png",
       "size": 1352
     },
     {
       "name": "src/main/res/mipmap-xhdpi/ic_launcher_round.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
       "size": 691
     },
     {
       "name": "src/main/res/mipmap-xhdpi/ic_launcher.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xhdpi/ic_launcher.png",
       "size": 691
     },
     {
       "name": "src/main/res/mipmap-xxhdpi/ic_launcher_background.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xxhdpi/ic_launcher_background.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xxhdpi/ic_launcher_background.png",
       "size": 2611
     },
     {
       "name": "src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png",
       "size": 2027
     },
     {
       "name": "src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
       "size": 973
     },
     {
       "name": "src/main/res/mipmap-xxhdpi/ic_launcher.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xxhdpi/ic_launcher.png",
       "size": 973
     },
     {
       "name": "src/main/res/mipmap-xxxhdpi/ic_launcher_background.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xxxhdpi/ic_launcher_background.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xxxhdpi/ic_launcher_background.png",
       "size": 3566
     },
     {
       "name": "src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
       "size": 2726
     },
     {
       "name": "src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
       "size": 1233
     },
     {
       "name": "src/main/res/mipmap-xxxhdpi/ic_launcher.png",
-      "url": "assets/templates/android-source/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "url": "assets/template-images/android-source/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
       "size": 1233
     },
     {
@@ -589,287 +589,287 @@
     },
     {
       "name": "src/main/theme/drawable-land-xhdpi/theme_splash_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-land-xhdpi/theme_splash_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-land-xhdpi/theme_splash_image.png",
       "size": 10420
     },
     {
       "name": "src/main/theme/drawable-land-xxhdpi/theme_splash_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-land-xxhdpi/theme_splash_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-land-xxhdpi/theme_splash_image.png",
       "size": 28762
     },
     {
       "name": "src/main/theme/drawable-sw600dp-land/theme_splash_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp-land/theme_splash_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp-land/theme_splash_image.png",
       "size": 28762
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_background_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_background_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_background_image.png",
       "size": 33176
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_chatroom_background_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_chatroom_background_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_chatroom_background_image.png",
       "size": 33034
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_cell_image.9.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_cell_image.9.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_cell_image.9.png",
       "size": 2735
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_call_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_call_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_call_focused_image.png",
       "size": 695
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_call_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_call_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_call_image.png",
       "size": 693
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_focused_image.png",
       "size": 514
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_chats_image.png",
       "size": 513
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_focused_image.png",
       "size": 695
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_friends_image.png",
       "size": 693
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_more_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_more_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_more_focused_image.png",
       "size": 281
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_more_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_more_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_more_image.png",
       "size": 278
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_now_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_now_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_now_focused_image.png",
       "size": 782
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_now_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_now_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_now_image.png",
       "size": 780
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_piccoma_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_piccoma_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_piccoma_focused_image.png",
       "size": 364
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_piccoma_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_piccoma_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_piccoma_image.png",
       "size": 362
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_focused_image.png",
       "size": 471
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_maintab_ico_shopping_image.png",
       "size": 469
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_passcode_background_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_passcode_background_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_passcode_background_image.png",
       "size": 17741
     },
     {
       "name": "src/main/theme/drawable-sw600dp/theme_splash_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-sw600dp/theme_splash_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-sw600dp/theme_splash_image.png",
       "size": 32847
     },
     {
       "name": "src/main/theme/drawable-xhdpi/theme_splash_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xhdpi/theme_splash_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xhdpi/theme_splash_image.png",
       "size": 12213
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_background_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_background_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_background_image.png",
       "size": 33176
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_chatroom_background_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_background_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_background_image.png",
       "size": 33034
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png",
       "size": 438
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png",
       "size": 447
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_01_image.9.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_01_image.9.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_01_image.9.png",
       "size": 430
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png",
       "size": 445
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_find_add_friend_button_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_find_add_friend_button_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_find_add_friend_button_image.png",
       "size": 536
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_find_add_friend_button_pressed_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_find_add_friend_button_pressed_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_find_add_friend_button_pressed_image.png",
       "size": 536
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png",
       "size": 2735
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_call_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_call_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_call_focused_image.png",
       "size": 524
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_call_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_call_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_call_image.png",
       "size": 522
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_focused_image.png",
       "size": 392
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_image.png",
       "size": 391
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_focused_image.png",
       "size": 524
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_image.png",
       "size": 522
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_focused_image.png",
       "size": 254
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_more_image.png",
       "size": 252
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_focused_image.png",
       "size": 606
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_now_image.png",
       "size": 604
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_piccoma_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_piccoma_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_piccoma_focused_image.png",
       "size": 283
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_piccoma_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_piccoma_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_piccoma_image.png",
       "size": 281
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_focused_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_focused_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_focused_image.png",
       "size": 366
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_maintab_ico_shopping_image.png",
       "size": 363
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_passcode_01_checked_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_01_checked_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_01_checked_image.png",
       "size": 848
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_passcode_01_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_01_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_01_image.png",
       "size": 711
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_passcode_02_checked_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_02_checked_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_02_checked_image.png",
       "size": 848
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_passcode_02_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_02_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_02_image.png",
       "size": 711
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_passcode_03_checked_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_03_checked_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_03_checked_image.png",
       "size": 848
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_passcode_03_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_03_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_03_image.png",
       "size": 711
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_passcode_04_checked_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_04_checked_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_04_checked_image.png",
       "size": 848
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_passcode_04_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_04_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_04_image.png",
       "size": 711
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_passcode_background_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_background_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_passcode_background_image.png",
       "size": 17741
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_profile_01_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_profile_01_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_profile_01_image.png",
       "size": 2625
     },
     {
       "name": "src/main/theme/drawable-xxhdpi/theme_splash_image.png",
-      "url": "assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png",
+      "url": "assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png",
       "size": 32847
     },
     {

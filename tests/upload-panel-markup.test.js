@@ -282,6 +282,63 @@ test("preview includes a chat list screen before the chat room", async () => {
   assert.doesNotMatch(tabletChatListCss, /grid-template-columns/);
 });
 
+test("preview includes open chat, shopping, and more tab screens", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const openChatStart = html.indexOf('class="preview-slide open-chat-preview"');
+  const shoppingStart = html.indexOf('class="preview-slide shopping-preview"');
+  const moreStart = html.indexOf('class="preview-slide more-preview"');
+  const chatStart = html.indexOf('class="preview-slide chat-preview"');
+
+  assert.ok(openChatStart > -1);
+  assert.ok(shoppingStart > openChatStart);
+  assert.ok(moreStart > shoppingStart);
+  assert.ok(chatStart > moreStart);
+
+  const openChatMarkup = html.slice(openChatStart, shoppingStart);
+  const shoppingMarkup = html.slice(shoppingStart, moreStart);
+  const moreMarkup = html.slice(moreStart, chatStart);
+
+  assert.match(openChatMarkup, /aria-label="오픈채팅 프리뷰"/);
+  assert.match(openChatMarkup, /class="phone-header chat-list-header"[\s\S]*<strong>지금<\/strong>/);
+  assert.match(openChatMarkup, /class="chat-list-screen open-chat-screen"[\s\S]*class="chat-list-row[^"]*"[\s\S]*data-preview-time[\s\S]*class="unread-badge"/);
+  assert.doesNotMatch(openChatMarkup, /지금 뜨는 오픈채팅/);
+  assert.doesNotMatch(openChatMarkup, /open-room-card|room-count|tab-section-title/);
+  assert.match(openChatMarkup, /class="tab-openchat is-selected"/);
+  assert.doesNotMatch(openChatMarkup, /class="tab-chat is-selected"/);
+  assert.match(shoppingMarkup, /aria-label="쇼핑 프리뷰"/);
+  assert.match(shoppingMarkup, /class="tab-shopping is-selected"/);
+  assert.match(moreMarkup, /aria-label="더보기 프리뷰"/);
+  assert.match(moreMarkup, /class="more-segment is-active"[^>]*>홈<\/button>[\s\S]*class="more-segment"[^>]*>지갑<\/button>/);
+  for (const label of [
+    "선물하기",
+    "받은선물",
+    "톡딜",
+    "이모티콘",
+    "라이브쇼핑",
+    "메이커스",
+    "프렌즈",
+    "게임",
+    "모바일신분증",
+    "톡클라우드",
+    "캘린더",
+    "예약하기",
+  ]) {
+    assert.match(moreMarkup, new RegExp(`<strong>${label}<\\/strong>`));
+  }
+  assert.match(moreMarkup, /class="more-ad-card"[\s\S]*메이플 키우기[\s\S]*다운로드/);
+  assert.match(moreMarkup, /class="more-section-heading">게임플레이<\/div>/);
+  assert.doesNotMatch(moreMarkup, /pay|페이|0원|송금|자산|결제/);
+  assert.match(moreMarkup, /class="tab-more is-selected"/);
+  assert.match(css, /\.open-chat-preview,\s*\.shopping-preview,\s*\.more-preview\s*\{[\s\S]*grid-template-rows: 30px 68px 1fr 68px;/);
+  assert.match(css, /\.tab-preview-screen\s*\{[\s\S]*background:[\s\S]*var\(--preview-main-image, none\)/);
+  assert.match(css, /\.more-service-panel\s*\{[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
+  assert.match(css, /\.more-service-icon\s*\{[\s\S]*border-radius: 50%;/);
+  assert.doesNotMatch(css, /\.more-service-icon\.(?:gift|giftbox|deal|emoticon|live|makers|friends|game|idcard|cloud|calendar|reservation)::before\s*\{[\s\S]*border-radius:/);
+  assert.doesNotMatch(css, /\.more-service-icon::(?:before|after)\s*\{/);
+  assert.match(css, /\.more-ad-art\s*\{[\s\S]*aspect-ratio: 16 \/ 9;/);
+});
+
 test("chat preview title is chat room and its trailing action is a menu", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const chatStart = html.indexOf('class="preview-slide chat-preview"');
@@ -372,7 +429,7 @@ test("preview includes an Android loading screen from the source splash layout",
   assert.match(css, /--preview-splash-image, none/);
   assert.equal(
     PREVIEW_CSS_IMAGE_VARIABLES["--preview-splash-image"],
-    'url("./assets/templates/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png")',
+    'url("./assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png")',
   );
   assert.match(css, /\.splash-screen\s*\{[\s\S]*background:[\s\S]*center \/ cover no-repeat/);
   assert.doesNotMatch(css, /\.splash-apply-button/);
@@ -423,19 +480,19 @@ test("chat bubbles use 9-slice template images instead of stretching the full as
   assert.match(css, /border-image-source: var\(--preview-receive-additional-image, none\);/);
   assert.equal(
     PREVIEW_CSS_IMAGE_VARIABLES["--preview-send-image"],
-    'image-set(url("./assets/templates/ios/Images/chatroomBubbleSend01@3x.png") 3x)',
+    'image-set(url("./assets/template-images/ios/Images/chatroomBubbleSend01@3x.png") 3x)',
   );
   assert.equal(
     PREVIEW_CSS_IMAGE_VARIABLES["--preview-receive-image"],
-    'image-set(url("./assets/templates/ios/Images/chatroomBubbleReceive01@3x.png") 3x)',
+    'image-set(url("./assets/template-images/ios/Images/chatroomBubbleReceive01@3x.png") 3x)',
   );
   assert.equal(
     PREVIEW_CSS_IMAGE_VARIABLES["--preview-send-additional-image"],
-    'image-set(url("./assets/templates/ios/Images/chatroomBubbleSend02@3x.png") 3x)',
+    'image-set(url("./assets/template-images/ios/Images/chatroomBubbleSend02@3x.png") 3x)',
   );
   assert.equal(
     PREVIEW_CSS_IMAGE_VARIABLES["--preview-receive-additional-image"],
-    'image-set(url("./assets/templates/ios/Images/chatroomBubbleReceive02@3x.png") 3x)',
+    'image-set(url("./assets/template-images/ios/Images/chatroomBubbleReceive02@3x.png") 3x)',
   );
   assert.match(css, /\.bubble\s*\{[\s\S]*--preview-bubble-slice: 17 17 17 17;[\s\S]*--preview-bubble-border-width: 10px;/);
   assert.match(css, /border-width: var\(--preview-bubble-border-width\);/);

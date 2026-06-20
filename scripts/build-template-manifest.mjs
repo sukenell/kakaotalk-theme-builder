@@ -1,14 +1,38 @@
-import { readdir, stat, writeFile } from "node:fs/promises";
+import { access, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const root = process.cwd();
 const templateRoot = path.join(root, "assets", "templates");
+const templateImageRoot = path.join(root, "assets", "template-images");
 const outputPath = path.join(root, "assets", "template-manifest.json");
 
 const groups = {
   ios: "ios",
   android: "android-source",
 };
+
+const isTemplateImage = (filePath) => filePath.endsWith(".png");
+const toUrlPath = (filePath) => filePath.split(path.sep).join("/");
+
+async function fileExists(filePath) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function getEntrySource(fullPath) {
+  const templateRelativePath = path.relative(templateRoot, fullPath);
+  const imageSourcePath = path.join(templateImageRoot, templateRelativePath);
+
+  if (isTemplateImage(fullPath) && (await fileExists(imageSourcePath))) {
+    return imageSourcePath;
+  }
+
+  return fullPath;
+}
 
 async function walk(directory, baseDirectory) {
   const entries = [];
@@ -27,10 +51,11 @@ async function walk(directory, baseDirectory) {
       continue;
     }
 
-    const fileStat = await stat(fullPath);
+    const sourcePath = await getEntrySource(fullPath);
+    const fileStat = await stat(sourcePath);
     entries.push({
       name: relativePath,
-      url: `assets/templates/${path.relative(templateRoot, fullPath).split(path.sep).join("/")}`,
+      url: toUrlPath(path.relative(root, sourcePath)),
       size: fileStat.size,
     });
   }
