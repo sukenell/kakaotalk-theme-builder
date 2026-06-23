@@ -80,6 +80,38 @@ const previewBubbleSources = {
   "--preview-receive-additional-image": ["receiveBubbleTailless"],
 };
 
+const friendProfileImages = [
+  "./assets/preview/profile-images/profileImage_01.png",
+  "./assets/preview/profile-images/profileImage_02.png",
+  "./assets/preview/profile-images/profileImage_03.png",
+  "./assets/preview/profile-images/profileImage_04.png",
+  "./assets/preview/profile-images/profileImage_05.png",
+  "./assets/preview/profile-images/profileImage_06.png",
+  "./assets/preview/profile-images/profileImage_07.png",
+];
+
+const shoppingPreviewImages = [
+  "./assets/preview/shopping-images/shoppingImage_01.png",
+  "./assets/preview/shopping-images/shoppingImage_02.png",
+  "./assets/preview/shopping-images/shoppingImage_03.png",
+  "./assets/preview/shopping-images/shoppingImage_04.png",
+];
+
+const groupAvatarImages = [
+  "./assets/preview/group-avatar-images/groupAvatar_01.jpg",
+  "./assets/preview/group-avatar-images/groupAvatar_02.jpg",
+  "./assets/preview/group-avatar-images/groupAvatar_03.jpg",
+  "./assets/preview/group-avatar-images/groupAvatar_04.jpg",
+  "./assets/preview/group-avatar-images/groupAvatar_05.jpg",
+  "./assets/preview/group-avatar-images/groupAvatar_06.jpg",
+  "./assets/preview/group-avatar-images/groupAvatar_07.jpg",
+  "./assets/preview/group-avatar-images/groupAvatar_08.jpg",
+  "./assets/preview/group-avatar-images/groupAvatar_09.jpg",
+  "./assets/preview/group-avatar-images/groupAvatar_10.jpg",
+  "./assets/preview/group-avatar-images/groupAvatar_11.jpg",
+  "./assets/preview/group-avatar-images/groupAvatar_12.jpg",
+];
+
 const iosImageSizes = {
   "Images/maintabIcoFriends@2x.png": [76, 76],
   "Images/maintabIcoFriends@3x.png": [114, 114],
@@ -173,9 +205,44 @@ const previewTimeElements = document.querySelectorAll("[data-preview-time]");
 const documentRoot = document.documentElement;
 
 applyPreviewDefaultImages(documentRoot);
+applyFriendProfileImages();
+applyShoppingPreviewImages();
+applyGroupAvatarImages();
 
 function setStatus(message) {
   statusText.textContent = message;
+}
+
+function applyFriendProfileImages() {
+  document.querySelectorAll("[data-profile-image-index]").forEach((avatar) => {
+    const imageIndex = Number(avatar.dataset.profileImageIndex);
+    const imagePath = friendProfileImages[imageIndex];
+
+    if (imagePath) {
+      avatar.style.setProperty("--friend-profile-image", `url("${imagePath}")`);
+    }
+  });
+}
+
+function applyShoppingPreviewImages() {
+  document.querySelectorAll("[data-shopping-image-index]").forEach((thumbnail) => {
+    const imageIndex = Number(thumbnail.dataset.shoppingImageIndex);
+    const imagePath = shoppingPreviewImages[imageIndex];
+
+    if (imagePath) {
+      thumbnail.style.setProperty("--shopping-preview-image", `url("${imagePath}")`);
+    }
+  });
+}
+
+function applyGroupAvatarImages() {
+  document.querySelectorAll(".avatar.group-avatar .group-avatar-item").forEach((item, index) => {
+    const imagePath = groupAvatarImages[index % groupAvatarImages.length];
+
+    if (imagePath) {
+      item.style.setProperty("--group-avatar-image", `url("${imagePath}")`);
+    }
+  });
 }
 
 function setBusy(isBusy) {
@@ -612,7 +679,9 @@ function updatePreview() {
   documentRoot.style.setProperty("--preview-main-bg", colors.mainBackground);
   documentRoot.style.setProperty("--preview-chat-bg", colors.chatBackground);
   documentRoot.style.setProperty("--preview-header", colors.headerText);
+  documentRoot.style.setProperty("--preview-title", colors.titleText);
   documentRoot.style.setProperty("--preview-description", colors.descriptionText);
+  documentRoot.style.setProperty("--preview-body-border", colors.bodyBorder);
   documentRoot.style.setProperty("--preview-send-text", colors.sendText);
   documentRoot.style.setProperty("--preview-receive-text", colors.receiveText);
   documentRoot.style.setProperty("--preview-input-bg", colors.inputBarBackground);

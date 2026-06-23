@@ -1,8 +1,41 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 import { PREVIEW_CSS_IMAGE_VARIABLES, PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY } from "../src/preview-assets.js";
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function chatListRowByTitle(markup, title) {
+  const titleIndex = markup.indexOf(`<strong>${title}</strong>`);
+  assert.ok(titleIndex > -1, `${title} row exists`);
+  const rowStart = markup.lastIndexOf('<div class="chat-list-row', titleIndex);
+  const rowEnd = markup.indexOf('<div class="chat-list-row', titleIndex);
+
+  return markup.slice(rowStart, rowEnd === -1 ? markup.length : rowEnd);
+}
+
+function chatListRowsByTitle(markup, title) {
+  const rows = [];
+  let searchIndex = 0;
+
+  while (true) {
+    const titleIndex = markup.indexOf(`<strong>${title}</strong>`, searchIndex);
+
+    if (titleIndex === -1) {
+      break;
+    }
+
+    const rowStart = markup.lastIndexOf('<div class="chat-list-row', titleIndex);
+    const rowEnd = markup.indexOf('<div class="chat-list-row', titleIndex);
+    rows.push(markup.slice(rowStart, rowEnd === -1 ? markup.length : rowEnd));
+    searchIndex = titleIndex + title.length;
+  }
+
+  return rows;
+}
 
 test("upload panel starts with the official guide download link", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
@@ -70,6 +103,15 @@ test("theme id and author wrapper inputs keep rounded focus treatment", async ()
   assert.match(css, /\.package-input input,\s*\.author-input input\s*\{[\s\S]*border-radius: inherit;/);
 });
 
+test("chat list screens hide scrollbars while keeping vertical scroll", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+
+  assert.match(css, /\.chat-list-screen\s*\{[\s\S]*overflow-y: auto;/);
+  assert.match(css, /\.chat-list-screen\s*\{[\s\S]*scrollbar-width: none;/);
+  assert.match(css, /\.chat-list-screen\s*\{[\s\S]*-ms-overflow-style: none;/);
+  assert.match(css, /\.chat-list-screen::-webkit-scrollbar\s*\{[\s\S]*display: none;/);
+});
+
 test("chat preview has a date chip and no bottom tabs", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const chatStart = html.indexOf('class="preview-slide chat-preview"');
@@ -91,8 +133,10 @@ test("chat preview includes default profile and extra basic/additional bubble sa
   const passcodeStart = html.indexOf('class="preview-slide passcode-preview"');
   const chatMarkup = html.slice(chatStart, passcodeStart);
 
-  assert.match(chatMarkup, /class="message-group receive"[\s\S]*<div class="avatar default-profile"><\/div>[\s\S]*<span class="sender">친구<\/span>[\s\S]*<p class="bubble receive-bubble short">좋아\.<\/p>[\s\S]*<p class="bubble receive-bubble additional-bubble">/);
-  assert.match(chatMarkup, /class="message-group send"[\s\S]*<p class="bubble send-bubble">기본 말풍선\.<\/p>[\s\S]*<p class="bubble send-bubble additional-bubble">추가 말풍선\.<\/p>/);
+  assert.match(chatMarkup, /class="message-group receive"[\s\S]*<span class="sender">가야<\/span>[\s\S]*<p class="bubble receive-bubble">ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ<\/p>/);
+  assert.match(chatMarkup, /class="message-group receive"[\s\S]*<div class="avatar default-profile"><\/div>[\s\S]*<span class="sender">가야<\/span>[\s\S]*<p class="bubble receive-bubble additional-bubble">아 웃겨 근데 어떻게 우연히 그럴수 있지\?ㅠㅠㅠ<\/p>[\s\S]*<p class="bubble receive-bubble additional-bubble">/);
+  assert.match(chatMarkup, /class="message-group send"[\s\S]*<p class="bubble send-bubble">진심 너무 웃기지ㅠ\?\?<\/p>[\s\S]*<p class="bubble send-bubble additional-bubble">나도 그래서 보면서 이게 실환가 했잖어ㅠ<\/p>/);
+  assert.doesNotMatch(chatMarkup, /<span class="sender">친구<\/span>|<span class="sender">슈슈님<\/span>|오늘 테마 분위기 좋다\./);
   assert.match(chatMarkup, /<time class="message-time" data-preview-time>00:00<\/time>/);
   assert.match(css, /\.message-group\.receive\s*\{[\s\S]*align-items: start;/);
   assert.match(css, /\.message-stack\s*\{[\s\S]*align-items: flex-start;/);
@@ -152,38 +196,31 @@ test("friends preview follows the reference friends layout", async () => {
   assert.ok(favoriteIndex > updatedIndex);
   assert.match(screenMarkup, /class="friend-segment is-active"[^>]*>친구<\/button>/);
   assert.match(screenMarkup, /class="friend-segment"[^>]*>소식<\/button>/);
-  assert.match(screenMarkup, /class="friends-promo-card"[\s\S]*새로운 친구 이야기를 확인해 보세요/);
-  assert.match(screenMarkup, /class="updated-friends-section"[\s\S]*업데이트한 친구 1[\s\S]*<strong>고양이<\/strong>/);
+  assert.match(screenMarkup, /class="friends-promo-card"[\s\S]*\[광고\] 연성 교환을 구하고 있습니다\.[\s\S]*폼 :[\s\S]*\*해당 광고는 실제 들어가지 않습니다\./);
+  assert.doesNotMatch(screenMarkup, /폼은 이쪽으로 :/);
+  assert.doesNotMatch(screenMarkup, /\[AI\] 카카오톡 친구보기|새로운 친구 이야기를 확인해 보세요/);
+  assert.match(screenMarkup, /class="updated-friends-section"[\s\S]*업데이트한 친구 1[\s\S]*<strong>레하<\/strong>/);
   assert.doesNotMatch(screenMarkup, /소식 만들기/);
   assert.doesNotMatch(screenMarkup, /create-story-button/);
   assert.match(screenMarkup, /class="favorite-friends-section"[\s\S]*즐겨찾는 친구 6/);
   assert.ok(allFriendsIndex > favoriteIndex);
   assert.match(screenMarkup, /class="all-friends-section"[\s\S]*친구 999/);
-  for (const name of [
-    "요정하우",
-    "여왕이 친구",
-    "위대한 못 고양이",
-    "힘힘이 친구",
-    "고독이 친구",
-    "행복자 친구",
-    "토끼 친구",
-    "구름 친구",
-    "민트 친구",
+  for (const [name, status] of [
+    ["이그레인", "문자/전화 불가능. 카카오톡/인스타 연락 바람."],
+    ["로나웰", "임상실험 알바 상시 구인중이에요😊 연락 주세요~! 010-1234-5678"],
+    ["호시노 타카라", "[BGM] 🎶별의 아이🎵"],
+    ["당이령", "舍利子 色不異空 空不異色 色卽是空 空卽是色 受想行識 亦復如是"],
+    ["니콜라이 카덜틴", "비젤 사랑해❤️"],
+    ["위즈덤 베리모어", "오늘도 러프크래프트 이름에 먹질할 용기~"],
   ]) {
-    assert.match(screenMarkup, new RegExp(`<strong>${name}<\\/strong>`));
+    assert.match(
+      screenMarkup,
+      new RegExp(`<strong>${escapeRegExp(name)}<\\/strong>[\\s\\S]*<span>${escapeRegExp(status)}<\\/span>`),
+    );
   }
-  for (const status of [
-    "오늘도 좋은 하루",
-    "반짝이는 오후",
-    "잠시 쉬어가는 중",
-    "새로운 소식 업데이트",
-    "조용한 하루",
-    "행복 수집 중",
-    "산책 다녀오는 중",
-    "커피 한 잔의 여유",
-    "답장은 천천히",
-  ]) {
-    assert.match(screenMarkup, new RegExp(`<span>${status}<\\/span>`));
+  assert.doesNotMatch(screenMarkup, /고양이|요정하우|여왕이 친구|위대한 못 고양이|힘힘이 친구|고독이 친구|행복자 친구|오늘도 좋은 하루|반짝이는 오후|잠시 쉬어가는 중|새로운 소식 업데이트|조용한 하루|행복 수집 중/);
+  for (let index = 0; index < 7; index += 1) {
+    assert.match(screenMarkup, new RegExp(`data-profile-image-index="${index}"`));
   }
   assert.doesNotMatch(screenMarkup, />카카오톡 친구<\/span>/);
   assert.doesNotMatch(screenMarkup, /펑/);
@@ -199,6 +236,14 @@ test("friends preview follows the reference friends layout", async () => {
   assert.match(css, /\.friends-promo-card\s*\{[\s\S]*min-height: 78px;/);
   assert.match(css, /\.favorite-profile-row\s*\{[\s\S]*grid-template-columns: 50px minmax\(0, 1fr\);/);
   assert.match(css, /\.favorite-profile-row \.avatar\s*\{[\s\S]*width: 44px;[\s\S]*height: 44px;/);
+  assert.match(css, /\.avatar\.profile-avatar\s*\{[\s\S]*--friend-profile-image/);
+  assert.match(app, /const friendProfileImages = \[/);
+  for (let index = 1; index <= 7; index += 1) {
+    const imagePath = `./assets/preview/profile-images/profileImage_${String(index).padStart(2, "0")}.png`;
+
+    assert.match(app, new RegExp(escapeRegExp(imagePath)));
+  }
+  assert.match(app, /applyFriendProfileImages\(\);/);
   assert.match(app, /\["bodyPressed", "선택 배경"\]/);
   assert.match(app, /\["titlePressed", "선택 텍스트"\]/);
   assert.match(app, /documentRoot\.style\.setProperty\("--preview-selected-bg", colors\.bodyPressed\);/);
@@ -265,19 +310,92 @@ test("preview includes a chat list screen before the chat room", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   const chatListStart = html.indexOf('class="preview-slide chat-list-preview"');
+  const openChatStart = html.indexOf('class="preview-slide open-chat-preview"');
   const chatStart = html.indexOf('class="preview-slide chat-preview"');
-  const chatListMarkup = html.slice(chatListStart, chatStart);
+  const chatListMarkup = html.slice(chatListStart, openChatStart);
   const tabletChatListCss = css.match(/\.phone-preview\.is-tablet \.chat-list-screen\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const groupAvatarItemCss = css.match(/\.avatar\.group-avatar \.group-avatar-item\s*\{[\s\S]*?\}/)?.[0] ?? "";
 
   assert.ok(chatListStart > -1);
+  assert.ok(openChatStart > chatListStart);
   assert.ok(chatStart > chatListStart);
   assert.match(chatListMarkup, /aria-label="대화 목록 프리뷰"/);
   assert.match(chatListMarkup, /class="phone-header chat-list-header"[\s\S]*<strong>대화<\/strong>/);
   assert.match(chatListMarkup, /class="chat-list-row"[\s\S]*data-preview-time/);
+  for (const [name, message, unread] of [
+    ["수매", "지금 뭐하고 있어요?", "1"],
+    ["수기람", "이번에 개봉한 영화 봤어? 안 봤음 같이 보자!", "5"],
+    ["허약 4인방", "오늘 저녁 OO역 맞지?", "38"],
+    ["쭈디, 건이", "오늘 잼썼어 다들 잘 들어가고~", "3"],
+    ["금요일 조아", "(사진)", "10"],
+  ]) {
+    assert.match(
+      chatListMarkup,
+      new RegExp(
+        `<strong>${escapeRegExp(name)}<\\/strong>[\\s\\S]*<span>${escapeRegExp(message)}<\\/span>[\\s\\S]*<span class="unread-badge">${unread}<\\/span>`,
+      ),
+    );
+  }
+  for (const [name, message] of [
+    ["대표님", "OK~"],
+    ["학원 13기모임 - 일등이조", "메일 보냈습니다. 다들 좋은 밤 되세요"],
+    ["엄마", "내일 아침에 비온대, 우산 꼭 챙겨"],
+    ["선배", "매번 고맙고, 땡큐~ 잘 자!"],
+  ]) {
+    assert.match(
+      chatListMarkup,
+      new RegExp(
+        `<strong>${escapeRegExp(name)}<\\/strong>[\\s\\S]*<span>${escapeRegExp(message)}<\\/span>[\\s\\S]*<div class="chat-list-meta">\\s*<time data-preview-time>00:00<\\/time>\\s*<\\/div>`,
+      ),
+    );
+  }
+  for (const [name, groupClass, profileCount] of [
+    ["허약 4인방", "group-4", 4],
+    ["학원 13기모임 - 일등이조", "group-4", 4],
+    ["쭈디, 건이", "group-2", 2],
+    ["금요일 조아", "group-4", 4],
+  ]) {
+    const row = chatListRowByTitle(chatListMarkup, name);
+
+    assert.match(row, new RegExp(`class="avatar group-avatar ${groupClass}"`));
+    assert.equal((row.match(/<span class="group-avatar-item"><\/span>/g) ?? []).length, profileCount);
+  }
+  for (const [name, memberCount] of [
+    ["허약 4인방", "4"],
+    ["학원 13기모임 - 일등이조", "7"],
+    ["쭈디, 건이", "3"],
+    ["금요일 조아", "6"],
+  ]) {
+    assert.match(
+      chatListRowByTitle(chatListMarkup, name),
+      new RegExp(
+        `<div class="chat-list-title">\\s*<strong>${escapeRegExp(name)}<\\/strong>\\s*<span class="room-member-count">${memberCount}<\\/span>\\s*<\\/div>`,
+      ),
+    );
+  }
+  for (const name of ["수매", "수기람", "대표님", "엄마", "선배"]) {
+    assert.doesNotMatch(chatListRowByTitle(chatListMarkup, name), /group-avatar/);
+    assert.doesNotMatch(chatListRowByTitle(chatListMarkup, name), /room-member-count/);
+  }
+  assert.doesNotMatch(chatListMarkup, /<strong>친구<\/strong>|<strong>슈슈님<\/strong>|오늘 테마 분위기 좋다\.|나와의 채팅|이미지와 컬러를 확인해봐\.|테마 미리보기|채팅방 화면으로 들어가기 전 목록\./);
   assert.match(chatListMarkup, /class="tab-chat is-selected"/);
   assert.doesNotMatch(chatListMarkup, /class="tab-friends is-selected"/);
   assert.match(css, /\.chat-list-preview\s*\{[\s\S]*grid-template-rows: 30px 68px 1fr 68px;/);
+  assert.match(css, /\.chat-list-screen\s*\{[\s\S]*overflow-y: auto;/);
+  assert.match(css, /\.chat-list-screen\s*\{[\s\S]*scrollbar-width: none;/);
+  assert.match(css, /\.chat-list-screen\s*\{[\s\S]*-ms-overflow-style: none;/);
+  assert.match(css, /\.chat-list-screen::-webkit-scrollbar\s*\{[\s\S]*display: none;/);
   assert.match(css, /\.chat-list-row\s*\{[\s\S]*grid-template-columns: 48px minmax\(0, 1fr\) auto;/);
+  assert.match(css, /\.chat-list-title\s*\{[\s\S]*display: flex;[\s\S]*align-items: baseline;/);
+  assert.match(css, /\.room-member-count\s*\{[\s\S]*font-size: 13px;[\s\S]*font-weight: 800;/);
+  assert.match(css, /\.avatar\.group-avatar\s*\{[\s\S]*position: relative;[\s\S]*width: 34px;[\s\S]*height: 34px;/);
+  assert.match(groupAvatarItemCss, /position: absolute;/);
+  assert.match(groupAvatarItemCss, /border-radius: 5px;/);
+  assert.match(groupAvatarItemCss, /--group-avatar-image/);
+  assert.doesNotMatch(groupAvatarItemCss, /linear-gradient|radial-gradient/);
+  assert.doesNotMatch(groupAvatarItemCss, /border-radius:\s*999px/);
+  assert.match(css, /\.avatar\.group-avatar\.group-2 \.group-avatar-item\s*\{/);
+  assert.match(css, /\.avatar\.group-avatar\.group-4 \.group-avatar-item\s*\{/);
   assert.match(tabletChatListCss, /display: block;/);
   assert.doesNotMatch(tabletChatListCss, /grid-template-columns/);
 });
@@ -302,7 +420,51 @@ test("preview includes open chat, shopping, and more tab screens", async () => {
   assert.match(openChatMarkup, /aria-label="오픈채팅 프리뷰"/);
   assert.match(openChatMarkup, /class="phone-header chat-list-header"[\s\S]*<strong>지금<\/strong>/);
   assert.match(openChatMarkup, /class="chat-list-screen open-chat-screen"[\s\S]*class="chat-list-row[^"]*"[\s\S]*data-preview-time[\s\S]*class="unread-badge"/);
+  for (const [name, message, unread] of [
+    ["롤체 단톡방", "디코방 공지 ㄱ", "3"],
+    ["세션 사담방", "ㅋㅋㅋ아니ㅋㅋㅋㅋ주사위 소금쳐요 빨리ㅋㅋㅋㅋ", "48"],
+    ["반려견 단톡방", "왕크왕귀", "8"],
+    ["월간 독서모임", "혹시 이번에 읽은 책 추천드려도 될까요? 저 정말 감동있게 읽었어요..!", "1"],
+    ["러닝 함께 해요", "이번주 금요일날 8시 넘어서 러닝 계획 있으니 다들 공지 읽어주세요!", "4"],
+    ["주식 단타방", "으아 씨게 물렸네요ㅠㅠ", "20"],
+  ]) {
+    assert.match(
+      openChatMarkup,
+      new RegExp(
+        `<strong>${escapeRegExp(name)}<\\/strong>[\\s\\S]*<span>${escapeRegExp(message)}<\\/span>[\\s\\S]*<span class="unread-badge">${unread}<\\/span>`,
+      ),
+    );
+  }
+  for (const [name, groupClass, profileCount] of [
+    ["롤체 단톡방", "group-4", 4],
+    ["세션 사담방", "group-4", 4],
+    ["반려견 단톡방", "group-4", 4],
+    ["월간 독서모임", "group-4", 4],
+    ["러닝 함께 해요", "group-4", 4],
+    ["주식 단타방", "group-4", 4],
+  ]) {
+    const row = chatListRowByTitle(openChatMarkup, name);
+
+    assert.match(row, new RegExp(`class="avatar group-avatar ${groupClass}"`));
+    assert.equal((row.match(/<span class="group-avatar-item"><\/span>/g) ?? []).length, profileCount);
+  }
+  for (const [name, memberCount] of [
+    ["롤체 단톡방", "8"],
+    ["세션 사담방", "4"],
+    ["반려견 단톡방", "12"],
+    ["월간 독서모임", "9"],
+    ["러닝 함께 해요", "14"],
+    ["주식 단타방", "21"],
+  ]) {
+    assert.match(
+      chatListRowByTitle(openChatMarkup, name),
+      new RegExp(
+        `<div class="chat-list-title">\\s*<strong>${escapeRegExp(name)}<\\/strong>\\s*<span class="room-member-count">${memberCount}<\\/span>\\s*<\\/div>`,
+      ),
+    );
+  }
   assert.doesNotMatch(openChatMarkup, /지금 뜨는 오픈채팅/);
+  assert.doesNotMatch(openChatMarkup, /테마 제작자 모임|새 말풍선과 탭 아이콘을 함께 확인해요\.|오늘의 감성 채팅|배경 이미지와 컬러 조합 공유\.|반려견 단톡방 @강아지정보 @친목|\(사진\)|아이콘 테스트방|책덕후들의 아지트|선택된 지금 탭을 확인해 보세요\.|초보 헬스인 모임|요새 안 보이시던데, 헬스장 언제 오시나요\./);
   assert.doesNotMatch(openChatMarkup, /open-room-card|room-count|tab-section-title/);
   assert.match(openChatMarkup, /class="tab-openchat is-selected"/);
   assert.doesNotMatch(openChatMarkup, /class="tab-chat is-selected"/);
@@ -326,7 +488,8 @@ test("preview includes open chat, shopping, and more tab screens", async () => {
   ]) {
     assert.match(moreMarkup, new RegExp(`<strong>${label}<\\/strong>`));
   }
-  assert.match(moreMarkup, /class="more-ad-card"[\s\S]*메이플 키우기[\s\S]*다운로드/);
+  assert.match(moreMarkup, /class="more-ad-card"[\s\S]*리딩로그[\s\S]*TTS로 당신의 플레이 로그를 읽어보세요\.[\s\S]*리딩로그ReadingLog[\s\S]*다운로드/);
+  assert.doesNotMatch(moreMarkup, /메이플 키우기|테마 프리뷰 광고 영역/);
   assert.match(moreMarkup, /class="more-section-heading">게임플레이<\/div>/);
   assert.doesNotMatch(moreMarkup, /pay|페이|0원|송금|자산|결제/);
   assert.match(moreMarkup, /class="tab-more is-selected"/);
@@ -337,6 +500,235 @@ test("preview includes open chat, shopping, and more tab screens", async () => {
   assert.doesNotMatch(css, /\.more-service-icon\.(?:gift|giftbox|deal|emoticon|live|makers|friends|game|idcard|cloud|calendar|reservation)::before\s*\{[\s\S]*border-radius:/);
   assert.doesNotMatch(css, /\.more-service-icon::(?:before|after)\s*\{/);
   assert.match(css, /\.more-ad-art\s*\{[\s\S]*aspect-ratio: 16 \/ 9;/);
+});
+
+test("preview ad copy stays out of downloadable theme source templates", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const iosTemplate = await readFile(new URL("../assets/templates/ios/KakaoTalkTheme.css", import.meta.url), "utf8");
+  const androidThemeStrings = await readFile(
+    new URL("../assets/templates/android-source/src/main/theme/values/strings.xml", import.meta.url),
+    "utf8",
+  );
+  const androidAppStrings = await readFile(
+    new URL("../assets/templates/android-source/src/main/res/values/strings.xml", import.meta.url),
+    "utf8",
+  );
+  const previewOnlyPhrases = [
+    "[광고] 연성 교환을 구하고 있습니다.",
+    "폼 :",
+    "*해당 광고는 실제 들어가지 않습니다.",
+    "TTS로 당신의 플레이 로그를 읽어보세요.",
+    "리딩로그ReadingLog",
+  ];
+
+  for (const phrase of previewOnlyPhrases) {
+    const pattern = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+
+    assert.match(html, pattern);
+    assert.doesNotMatch(iosTemplate, pattern);
+    assert.doesNotMatch(androidThemeStrings, pattern);
+    assert.doesNotMatch(androidAppStrings, pattern);
+  }
+});
+
+test("open chat list keeps added group rooms before stock room", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const openChatStart = html.indexOf('class="preview-slide open-chat-preview"');
+  const shoppingStart = html.indexOf('class="preview-slide shopping-preview"');
+  const openChatMarkup = html.slice(openChatStart, shoppingStart);
+  const stockRoomIndex = openChatMarkup.indexOf("<strong>주식 단타방</strong>");
+  const renamedRooms = [
+    ["레이드 공대팟", "20", "확인했습니다"],
+    ["맛있는 케이크를 먹으러", "5", "맛있겠다~"],
+    ["앤솔로지 마감방", "12", "모두 수고하셨습니다!"],
+    ["아파트 단톡방", "55", "플라스틱 발판 교체건에 대한 투표입니다! 공지 확인해주시고 많은 참여 바랍니다!"],
+  ];
+
+  assert.equal(chatListRowsByTitle(openChatMarkup, "어쩌구 저쩌구1").length, 0);
+  assert.ok(stockRoomIndex > -1);
+
+  for (const [name, memberCount, message] of renamedRooms) {
+    const row = chatListRowByTitle(openChatMarkup, name);
+    const roomIndex = openChatMarkup.indexOf(`<strong>${name}</strong>`);
+
+    assert.ok(roomIndex > -1);
+    assert.ok(roomIndex < stockRoomIndex);
+    assert.match(row, /class="avatar group-avatar group-4"/);
+    assert.equal((row.match(/<span class="group-avatar-item"><\/span>/g) ?? []).length, 4);
+    assert.match(row, new RegExp(`<span class="room-member-count">${memberCount}<\\/span>`));
+    assert.match(row, new RegExp(`<span>${escapeRegExp(message)}<\\/span>`));
+    assert.doesNotMatch(row, /class="unread-badge"/);
+  }
+
+  assert.doesNotMatch(openChatMarkup, /이러쿵 저러쿵2/);
+});
+
+test("shopping preview uses home ranking tabs, summary cards, and today pick products", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const shoppingStart = html.indexOf('class="preview-slide shopping-preview"');
+  const moreStart = html.indexOf('class="preview-slide more-preview"');
+  const shoppingMarkup = html.slice(shoppingStart, moreStart);
+
+  assert.match(shoppingMarkup, /class="shopping-tab is-active"[^>]*>홈<\/button>/);
+  assert.match(shoppingMarkup, /class="shopping-tab"[^>]*>랭킹<\/button>/);
+  assert.doesNotMatch(shoppingMarkup, /쟁쟁한특가|더블할인/);
+  for (const label of ["최근 본 상품", "찜한 상품", "더보기", "주문내역"]) {
+    assert.match(shoppingMarkup, new RegExp(escapeRegExp(label)));
+  }
+  assert.match(shoppingMarkup, /class="shopping-pick-title"[\s\S]*오늘의 PICK/);
+  assert.match(shoppingMarkup, /class="shopping-pick-grid"[\s\S]*class="shop-card"/);
+  assert.match(shoppingMarkup, /class="shopping-summary-track"/);
+  assert.doesNotMatch(shoppingMarkup, /shopping-service|선물하기|톡딜|라이브쇼핑|브랜드딜|FOR ME/);
+
+  for (let index = 0; index < 4; index += 1) {
+    assert.match(shoppingMarkup, new RegExp(`data-shopping-image-index="${index}"`));
+  }
+
+  assert.match(css, /\.shopping-screen\s*\{[\s\S]*var\(--preview-main-image, none\)[\s\S]*var\(--preview-main-bg, #ffdddd\);/);
+  assert.doesNotMatch(css, /#050505/);
+  assert.match(css, /\.shopping-tabs\s*\{[\s\S]*display: flex;/);
+  assert.match(css, /\.shopping-summary-card\s*\{[\s\S]*background: rgba\(255, 255, 255, 0\.9\);/);
+  assert.match(css, /\.shopping-summary-track\s*\{[\s\S]*overflow-x: auto;/);
+  assert.match(css, /\.shopping-pick-grid\s*\{[\s\S]*grid-auto-flow: column;/);
+});
+
+test("preview segment controls use the same pressed color data as downloadable themes", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const themeModel = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
+  const friendSegmentCss = css.match(/\.friend-segment\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const shoppingTabCss = css.match(/\.shopping-tab\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const moreSegmentCss = css.match(/\.more-segment\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const shoppingTabActiveCss = css.match(/\.shopping-tab\.is-active\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const moreSegmentActiveCss = css.match(/\.more-segment\.is-active\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const friendSegmentActiveCss = css.match(/\.friend-segment\.is-active\s*\{[\s\S]*?\}/)?.[0] ?? "";
+
+  assert.match(themeModel, /\["MainViewStyle-Primary", "-ios-text-color", "titleText"\]/);
+  assert.match(themeModel, /\["MainViewStyle-Primary", "-ios-selected-background-color", "bodyPressed"\]/);
+  assert.match(themeModel, /theme_title_color:\s*"titleText"/);
+  assert.match(themeModel, /theme_body_cell_pressed_color:\s*"bodyPressed"/);
+  assert.match(themeModel, /theme_body_cell_border_color:\s*"bodyBorder"/);
+  assert.match(themeModel, /theme_title_pressed_color:\s*"titlePressed"/);
+  assert.match(app, /documentRoot\.style\.setProperty\("--preview-title", colors\.titleText\);/);
+  assert.match(app, /documentRoot\.style\.setProperty\("--preview-body-border", colors\.bodyBorder\);/);
+  assert.match(app, /documentRoot\.style\.setProperty\("--preview-selected-bg", colors\.bodyPressed\);/);
+  assert.match(app, /documentRoot\.style\.setProperty\("--preview-selected-text", colors\.titlePressed\);/);
+
+  for (const segmentCss of [friendSegmentCss, shoppingTabCss, moreSegmentCss]) {
+    assert.match(segmentCss, /border: 1px solid var\(--preview-body-border, #26664242\);/);
+    assert.match(segmentCss, /background: transparent;/);
+    assert.match(segmentCss, /color: var\(--preview-title, #664242\);/);
+    assert.doesNotMatch(segmentCss, /--preview-header|color-mix/);
+  }
+
+  for (const segmentCss of [friendSegmentActiveCss, shoppingTabActiveCss, moreSegmentActiveCss]) {
+    assert.match(segmentCss, /background: var\(--preview-selected-bg, #ffb3b3\);/);
+    assert.match(segmentCss, /color: var\(--preview-selected-text, #b06b6b\);/);
+    assert.doesNotMatch(segmentCss, /--preview-header|--preview-main-bg/);
+  }
+});
+
+test("reading log ad background image is replaceable and stays preview-only", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const iosTemplate = await readFile(new URL("../assets/templates/ios/KakaoTalkTheme.css", import.meta.url), "utf8");
+  const androidThemeColors = await readFile(
+    new URL("../assets/templates/android-source/src/main/theme/values/colors.xml", import.meta.url),
+    "utf8",
+  );
+  const androidThemeStrings = await readFile(
+    new URL("../assets/templates/android-source/src/main/theme/values/strings.xml", import.meta.url),
+    "utf8",
+  );
+  const imageStat = await stat(new URL("../assets/preview/more-ad-images/readingLogAd.png", import.meta.url));
+
+  assert.equal(imageStat.isFile(), true);
+  assert.match(css, /url\("\.\/assets\/preview\/more-ad-images\/readingLogAd\.png"\)/);
+  for (const downloadableSource of [iosTemplate, androidThemeColors, androidThemeStrings]) {
+    assert.doesNotMatch(downloadableSource, /readingLogAd|more-ad-images|shopping-preview|shopping-screen|#050505/);
+  }
+});
+
+test("friend preview profile image files are sequentially replaceable", async () => {
+  for (let index = 1; index <= 7; index += 1) {
+    const imagePath = `../assets/preview/profile-images/profileImage_${String(index).padStart(2, "0")}.png`;
+    const imageStat = await stat(new URL(imagePath, import.meta.url));
+
+    assert.equal(imageStat.isFile(), true);
+  }
+});
+
+test("group chat preview avatars use replaceable Unsplash image tiles", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const iosTemplate = await readFile(new URL("../assets/templates/ios/KakaoTalkTheme.css", import.meta.url), "utf8");
+  const androidThemeColors = await readFile(
+    new URL("../assets/templates/android-source/src/main/theme/values/colors.xml", import.meta.url),
+    "utf8",
+  );
+  const groupAvatarItemCss = css.match(/\.avatar\.group-avatar \.group-avatar-item\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const groupTwoCss = css.match(/\.avatar\.group-avatar\.group-2 \.group-avatar-item\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const groupTwoFirstCss =
+    css.match(/\.avatar\.group-avatar\.group-2 \.group-avatar-item:nth-child\(1\)\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const groupTwoSecondCss =
+    css.match(/\.avatar\.group-avatar\.group-2 \.group-avatar-item:nth-child\(2\)\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const groupFourCss = css.match(/\.avatar\.group-avatar\.group-4 \.group-avatar-item\s*\{[\s\S]*?\}/)?.[0] ?? "";
+
+  assert.match(app, /const groupAvatarImages = \[/);
+  assert.match(app, /applyGroupAvatarImages\(\);/);
+  assert.match(app, /--group-avatar-image/);
+
+  for (let index = 1; index <= 12; index += 1) {
+    const imagePath = `../assets/preview/group-avatar-images/groupAvatar_${String(index).padStart(2, "0")}.jpg`;
+    const appImagePath = `./assets/preview/group-avatar-images/groupAvatar_${String(index).padStart(2, "0")}.jpg`;
+    const imageStat = await stat(new URL(imagePath, import.meta.url));
+
+    assert.equal(imageStat.isFile(), true);
+    assert.match(app, new RegExp(escapeRegExp(appImagePath)));
+  }
+
+  assert.match(groupAvatarItemCss, /background:\s*var\(--group-avatar-image, none\) center \/ cover no-repeat,/);
+  assert.doesNotMatch(groupAvatarItemCss, /linear-gradient|radial-gradient/);
+  assert.doesNotMatch(css, /\.avatar\.group-avatar \.group-avatar-item:nth-child\(\d\)\s*\{[\s\S]*?background:/);
+  assert.match(groupAvatarItemCss, /border: 0;/);
+  assert.match(groupAvatarItemCss, /box-shadow: none;/);
+  assert.doesNotMatch(groupAvatarItemCss, /preview-main-bg|color-mix/);
+  assert.match(groupAvatarItemCss, /border-radius: 5px;/);
+  assert.match(groupTwoCss, /width: 21px;/);
+  assert.match(groupTwoCss, /height: 21px;/);
+  assert.match(groupTwoCss, /border-radius: 6px;/);
+  assert.match(groupTwoFirstCss, /top: 0;/);
+  assert.match(groupTwoFirstCss, /left: 0;/);
+  assert.match(groupTwoSecondCss, /right: 0;/);
+  assert.match(groupTwoSecondCss, /bottom: 0;/);
+  assert.doesNotMatch(groupTwoSecondCss, /border-width:/);
+  assert.match(groupFourCss, /border-radius: 5px;/);
+  assert.doesNotMatch(iosTemplate, /group-avatar|groupAvatar|--group-avatar-image|preview-main-bg/);
+  assert.doesNotMatch(androidThemeColors, /group-avatar|groupAvatar|--group-avatar-image|preview-main-bg/);
+});
+
+test("shopping preview image files are sequentially replaceable", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  for (let index = 0; index < 4; index += 1) {
+    assert.match(html, new RegExp(`data-shopping-image-index="${index}"`));
+  }
+
+  assert.match(css, /\.shop-thumb\s*\{[\s\S]*--shopping-preview-image/);
+  assert.match(app, /const shoppingPreviewImages = \[/);
+
+  for (let index = 1; index <= 4; index += 1) {
+    const imagePath = `../assets/preview/shopping-images/shoppingImage_${String(index).padStart(2, "0")}.png`;
+    const appImagePath = `./assets/preview/shopping-images/shoppingImage_${String(index).padStart(2, "0")}.png`;
+    const imageStat = await stat(new URL(imagePath, import.meta.url));
+
+    assert.equal(imageStat.isFile(), true);
+    assert.match(app, new RegExp(escapeRegExp(appImagePath)));
+  }
+
+  assert.match(app, /applyShoppingPreviewImages\(\);/);
 });
 
 test("chat preview title is chat room and its trailing action is a menu", async () => {
