@@ -37,6 +37,26 @@ function chatListRowsByTitle(markup, title) {
   return rows;
 }
 
+test("document head defines explicit social preview metadata", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const previewTitle = "카톡 테마 만들기 by reha";
+
+  assert.match(html, new RegExp(`<title>${escapeRegExp(previewTitle)}<\\/title>`));
+  assert.match(
+    html,
+    new RegExp(`<meta name="description" content="${escapeRegExp(previewTitle)}" \\/>`),
+  );
+  assert.match(
+    html,
+    new RegExp(`<meta property="og:title" content="${escapeRegExp(previewTitle)}" \\/>`),
+  );
+  assert.match(
+    html,
+    new RegExp(`<meta property="og:description" content="${escapeRegExp(previewTitle)}" \\/>`),
+  );
+  assert.match(html, /<meta property="og:type" content="website" \/>/);
+});
+
 test("upload panel starts with the official guide download link", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const linkIndex = html.indexOf('id="original-image-download"');
@@ -271,7 +291,7 @@ test("friends preview follows the reference friends layout", async () => {
     ["당이령", "舍利子 色不異空 空不異色 色卽是空 空卽是色 受想行識 亦復如是"],
     ["니콜라이", "비젤 사랑해❤️"],
     ["위즈덤 교수님", "오늘도 러프크래프트 이름에 먹질할 용기를."],
-    ["핀님", "👼아기천사 🐲이그레인 🖤니콜라이 🪶크로우 👼"],
+    ["Pin님", "👼아기천사 🐲이그레인 🖤니콜라이 🪶크로우 👼"],
   ]) {
     assert.match(
       screenMarkup,
