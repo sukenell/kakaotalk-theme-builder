@@ -748,12 +748,21 @@ test("group chat preview avatars use replaceable Unsplash image tiles", async ()
     "utf8",
   );
   const groupAvatarItemCss = css.match(/\.avatar\.group-avatar \.group-avatar-item\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const groupTwoAvatarCss = css.match(/\.avatar\.group-avatar\.group-2\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const groupTwoCss = css.match(/\.avatar\.group-avatar\.group-2 \.group-avatar-item\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const groupTwoFirstCss =
     css.match(/\.avatar\.group-avatar\.group-2 \.group-avatar-item:nth-child\(1\)\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const groupTwoSecondCss =
     css.match(/\.avatar\.group-avatar\.group-2 \.group-avatar-item:nth-child\(2\)\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const groupFourCss = css.match(/\.avatar\.group-avatar\.group-4 \.group-avatar-item\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const groupFourFirstCss =
+    css.match(/\.avatar\.group-avatar\.group-4 \.group-avatar-item:nth-child\(1\)\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const groupFourSecondCss =
+    css.match(/\.avatar\.group-avatar\.group-4 \.group-avatar-item:nth-child\(2\)\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const groupFourThirdCss =
+    css.match(/\.avatar\.group-avatar\.group-4 \.group-avatar-item:nth-child\(3\)\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const groupFourFourthCss =
+    css.match(/\.avatar\.group-avatar\.group-4 \.group-avatar-item:nth-child\(4\)\s*\{[\s\S]*?\}/)?.[0] ?? "";
 
   assert.match(app, /const groupAvatarImages = \[/);
   assert.match(app, /applyGroupAvatarImages\(\);/);
@@ -772,18 +781,31 @@ test("group chat preview avatars use replaceable Unsplash image tiles", async ()
   assert.doesNotMatch(groupAvatarItemCss, /linear-gradient|radial-gradient/);
   assert.doesNotMatch(css, /\.avatar\.group-avatar \.group-avatar-item:nth-child\(\d\)\s*\{[\s\S]*?background:/);
   assert.match(groupAvatarItemCss, /border: 0;/);
-  assert.match(groupAvatarItemCss, /box-shadow:\s*0 0 0 2px var\(--preview-main-bg, #ffdddd\);/);
-  assert.doesNotMatch(groupAvatarItemCss, /box-shadow: none;|color-mix/);
+  assert.match(groupAvatarItemCss, /box-shadow: none;/);
+  assert.doesNotMatch(groupAvatarItemCss, /preview-main-bg|color-mix/);
   assert.match(groupAvatarItemCss, /border-radius: 5px;/);
-  assert.match(groupTwoCss, /width: 21px;/);
-  assert.match(groupTwoCss, /height: 21px;/);
+  assert.match(groupTwoAvatarCss, /width: 40px;/);
+  assert.match(groupTwoAvatarCss, /height: 40px;/);
+  assert.match(groupTwoCss, /width: 19px;/);
+  assert.match(groupTwoCss, /height: 19px;/);
   assert.match(groupTwoCss, /border-radius: 6px;/);
   assert.match(groupTwoFirstCss, /top: 0;/);
   assert.match(groupTwoFirstCss, /left: 0;/);
   assert.match(groupTwoSecondCss, /right: 0;/);
   assert.match(groupTwoSecondCss, /bottom: 0;/);
   assert.doesNotMatch(groupTwoSecondCss, /border-width:/);
+  assert.match(groupFourCss, /width: 16px;/);
+  assert.match(groupFourCss, /height: 16px;/);
   assert.match(groupFourCss, /border-radius: 5px;/);
+  assert.match(groupFourFirstCss, /top: 0;/);
+  assert.match(groupFourFirstCss, /left: 0;/);
+  assert.match(groupFourSecondCss, /top: 0;/);
+  assert.match(groupFourSecondCss, /right: 0;/);
+  assert.match(groupFourThirdCss, /bottom: 0;/);
+  assert.match(groupFourThirdCss, /left: 0;/);
+  assert.match(groupFourFourthCss, /right: 0;/);
+  assert.match(groupFourFourthCss, /bottom: 0;/);
+  assert.doesNotMatch(groupFourFirstCss + groupFourSecondCss + groupFourThirdCss + groupFourFourthCss, /left: 1px|right: 1px|bottom: 1px/);
   assert.doesNotMatch(iosTemplate, /group-avatar|groupAvatar|--group-avatar-image|preview-main-bg/);
   assert.doesNotMatch(androidThemeColors, /group-avatar|groupAvatar|--group-avatar-image|preview-main-bg/);
 });
