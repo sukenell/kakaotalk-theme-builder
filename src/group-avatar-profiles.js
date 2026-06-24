@@ -1,21 +1,28 @@
-export const DEFAULT_GROUP_AVATAR_PROFILE_RATE = 0.28;
+export const DEFAULT_GROUP_AVATAR_PROFILE_COUNT = 3;
 
-export function shouldUseDefaultGroupAvatarProfile(random = Math.random) {
-  const value = random();
-
-  return Number.isFinite(value) && value >= 0 && value < DEFAULT_GROUP_AVATAR_PROFILE_RATE;
-}
-
-export function getDefaultGroupAvatarItemIndex(itemCount, random = Math.random) {
-  const count = Math.max(0, Math.floor(Number(itemCount)));
-
-  if (count < 1) {
-    return -1;
+function normalizeRandomValue(value) {
+  if (!Number.isFinite(value)) {
+    return 0;
   }
 
-  const value = random();
-  const normalizedValue = Number.isFinite(value) ? value : 0;
-  const boundedValue = Math.min(0.999999, Math.max(0, normalizedValue));
+  return Math.min(0.999999, Math.max(0, value));
+}
 
-  return Math.floor(boundedValue * count);
+export function getDefaultGroupAvatarItemIndexes(
+  itemCount,
+  random = Math.random,
+  defaultCount = DEFAULT_GROUP_AVATAR_PROFILE_COUNT,
+) {
+  const count = Math.max(0, Math.floor(Number(itemCount)));
+  const targetCount = Math.min(count, Math.max(0, Math.floor(Number(defaultCount))));
+  const indexes = Array.from({ length: count }, (_, index) => index);
+
+  for (let index = 0; index < targetCount; index += 1) {
+    const randomOffset = Math.floor(normalizeRandomValue(random()) * (count - index));
+    const swapIndex = index + randomOffset;
+
+    [indexes[index], indexes[swapIndex]] = [indexes[swapIndex], indexes[index]];
+  }
+
+  return new Set(indexes.slice(0, targetCount).sort((left, right) => left - right));
 }
