@@ -1,13 +1,13 @@
-import { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, TAB_ICON_IMAGE_KEYS } from "./theme-model.js";
+import { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, VISIBLE_TAB_ICON_IMAGE_KEYS } from "./theme-model.js";
 
-export { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, TAB_ICON_IMAGE_KEYS };
+export { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, VISIBLE_TAB_ICON_IMAGE_KEYS };
 
 const mainTabColorKeys = ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle", "bodyPressed", "titlePressed"];
 
 const mainTabImageKeys = [
   "mainBackground",
   "tabBackground",
-  ...TAB_ICON_IMAGE_KEYS,
+  ...VISIBLE_TAB_ICON_IMAGE_KEYS,
   "profileImage",
 ];
 
@@ -20,7 +20,7 @@ export const PREVIEW_PAGES = [
     imageKeys: [
       "mainBackground",
       "tabBackground",
-      ...TAB_ICON_IMAGE_KEYS,
+      ...VISIBLE_TAB_ICON_IMAGE_KEYS,
       "profileImage",
       "profileFullImage",
       "addFriendButton",
@@ -35,7 +35,7 @@ export const PREVIEW_PAGES = [
     imageKeys: [
       "mainBackground",
       "tabBackground",
-      ...TAB_ICON_IMAGE_KEYS,
+      ...VISIBLE_TAB_ICON_IMAGE_KEYS,
       "profileImage",
       "profileFullImage",
       "addFriendButton",

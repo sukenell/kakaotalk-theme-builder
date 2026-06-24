@@ -171,10 +171,12 @@ test("tab icon uploads expose optional PNG tinting before theme export", async (
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
   assert.match(app, /import \{ normalizeTintColor, tintImageDataPixels \} from "\.\/image-tint\.js";/);
-  assert.match(app, /const tintableUploadKeys = new Set\(TAB_ICON_IMAGE_KEYS\);/);
+  assert.match(app, /const tintableUploadKeys = new Set\(VISIBLE_TAB_ICON_IMAGE_KEYS\);/);
   assert.match(app, /const uploadTints = \{\};/);
   assert.match(app, /input\.type = "color";/);
   assert.match(app, /checkbox\.type = "checkbox";/);
+  assert.doesNotMatch(app, /text\.textContent = "색";/);
+  assert.match(app, /control\.append\(checkbox, input\);/);
   assert.match(app, /await refreshUploadImage\(key\);/);
   assert.match(app, /await getDefaultUploadSource\(key\);/);
   assert.match(app, /sourceKind = "default";/);
@@ -189,6 +191,38 @@ test("tab icon upload actions place the color control before the upload button",
     app,
     /if \(tintableUploadKeys\.has\(key\)\) \{[\s\S]*actions\.append\(createUploadTintControl\(key, target\)\);[\s\S]*\}[\s\S]*actions\.append\(button\);/,
   );
+});
+
+test("tab icon upload labels stay compact and only expose previewed bottom tabs", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const previewPages = await readFile(new URL("../src/preview-pages.js", import.meta.url), "utf8");
+  const model = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
+
+  assert.match(model, /export const VISIBLE_TAB_ICON_IMAGE_KEYS = \[/);
+  assert.match(app, /import \{[\s\S]*VISIBLE_TAB_ICON_IMAGE_KEYS/);
+  assert.match(app, /const uploadKeys = \[[\s\S]*\.\.\.VISIBLE_TAB_ICON_IMAGE_KEYS/);
+  assert.doesNotMatch(app, /const uploadKeys = \[[\s\S]*\.\.\.TAB_ICON_IMAGE_KEYS/);
+  assert.match(previewPages, /const mainTabImageKeys = \[[\s\S]*\.\.\.VISIBLE_TAB_ICON_IMAGE_KEYS/);
+  for (const [key, label] of [
+    ["tabFriendIcon", "친구1"],
+    ["tabFriendIconSelected", "친구2"],
+    ["tabChatIcon", "대화1"],
+    ["tabChatIconSelected", "대화2"],
+    ["tabOpenChatIcon", "지금1"],
+    ["tabOpenChatIconSelected", "지금2"],
+    ["tabShoppingIcon", "쇼핑1"],
+    ["tabShoppingIconSelected", "쇼핑2"],
+    ["tabMoreIcon", "더보기1"],
+    ["tabMoreIconSelected", "더보기2"],
+  ]) {
+    assert.match(app, new RegExp(`${key}: "${label}"`));
+  }
+  for (const hiddenKey of ["tabCallIcon", "tabPiccomaIcon", "tabFindIcon", "tabGameIcon"]) {
+    assert.doesNotMatch(previewPages, new RegExp(`\\.\\.\\.VISIBLE_TAB_ICON_IMAGE_KEYS[\\s\\S]*${hiddenKey}`));
+  }
+  assert.match(app, /formatUploadLabel\(target, key\)/);
+  assert.match(app, /\$\{label\}\(\$\{width\}x\$\{height\}px\)/);
+  assert.doesNotMatch(app, /\$\{target\.label\}\(\$\{width\}px x \$\{height\}px\)/);
 });
 
 test("friends preview follows the reference friends layout", async () => {
@@ -514,6 +548,11 @@ test("preview includes open chat, shopping, and more tab screens", async () => {
     assert.match(moreMarkup, new RegExp(`<strong>${label}<\\/strong>`));
   }
   assert.match(moreMarkup, /class="more-ad-card"[\s\S]*리딩로그[\s\S]*TTS로 당신의 플레이 로그를 읽어보세요\.[\s\S]*리딩로그ReadingLog[\s\S]*다운로드/);
+  assert.match(
+    moreMarkup,
+    /<a href="https:\/\/play\.google\.com\/store\/apps\/details\?id=com\.reha\.readinglog" target="_blank" rel="noopener noreferrer">다운로드<\/a>/,
+  );
+  assert.doesNotMatch(moreMarkup, /<button type="button">다운로드<\/button>/);
   assert.doesNotMatch(moreMarkup, /메이플 키우기|테마 프리뷰 광고 영역/);
   assert.match(moreMarkup, /class="more-section-heading">게임플레이<\/div>/);
   assert.doesNotMatch(moreMarkup, /pay|페이|0원|송금|자산|결제/);
@@ -525,6 +564,8 @@ test("preview includes open chat, shopping, and more tab screens", async () => {
   assert.doesNotMatch(css, /\.more-service-icon\.(?:gift|giftbox|deal|emoticon|live|makers|friends|game|idcard|cloud|calendar|reservation)::before\s*\{[\s\S]*border-radius:/);
   assert.doesNotMatch(css, /\.more-service-icon::(?:before|after)\s*\{/);
   assert.match(css, /\.more-ad-art\s*\{[\s\S]*aspect-ratio: 16 \/ 9;/);
+  assert.match(css, /\.more-ad-footer a\s*\{/);
+  assert.doesNotMatch(css, /\.more-ad-footer button\s*\{/);
 });
 
 test("preview ad copy stays out of downloadable theme source templates", async () => {
@@ -731,8 +772,8 @@ test("group chat preview avatars use replaceable Unsplash image tiles", async ()
   assert.doesNotMatch(groupAvatarItemCss, /linear-gradient|radial-gradient/);
   assert.doesNotMatch(css, /\.avatar\.group-avatar \.group-avatar-item:nth-child\(\d\)\s*\{[\s\S]*?background:/);
   assert.match(groupAvatarItemCss, /border: 0;/);
-  assert.match(groupAvatarItemCss, /box-shadow: none;/);
-  assert.doesNotMatch(groupAvatarItemCss, /preview-main-bg|color-mix/);
+  assert.match(groupAvatarItemCss, /box-shadow:\s*0 0 0 2px var\(--preview-main-bg, #ffdddd\);/);
+  assert.doesNotMatch(groupAvatarItemCss, /box-shadow: none;|color-mix/);
   assert.match(groupAvatarItemCss, /border-radius: 5px;/);
   assert.match(groupTwoCss, /width: 21px;/);
   assert.match(groupTwoCss, /height: 21px;/);
@@ -935,7 +976,7 @@ test("chat bubbles use 9-slice template images instead of stretching the full as
   assert.match(css, /border-image-repeat: stretch;/);
   assert.doesNotMatch(css, /background:[\s\S]*--preview-send-image[\s\S]*100% 100% no-repeat/);
   assert.match(app, /function formatUploadLabel/);
-  assert.match(app, /\$\{target\.label\}\(\$\{width\}px x \$\{height\}px\)/);
+  assert.match(app, /\$\{label\}\(\$\{width\}x\$\{height\}px\)/);
   assert.match(app, /"--preview-send-additional-image": \["sendBubbleTailless"\]/);
   assert.match(app, /"--preview-receive-additional-image": \["receiveBubbleTailless"\]/);
   assert.doesNotMatch(css, /border-bottom-(?:right|left)-radius:\s*6px/);

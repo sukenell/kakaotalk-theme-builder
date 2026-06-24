@@ -9,7 +9,7 @@ import {
   getPreviewIconUrl,
   getPreviewImageKeys,
   PREVIEW_PAGES,
-  TAB_ICON_IMAGE_KEYS,
+  VISIBLE_TAB_ICON_IMAGE_KEYS,
 } from "../src/preview-pages.js";
 
 test("PREVIEW_PAGES exposes multiple KakaoTalk template screens", () => {
@@ -54,7 +54,7 @@ test("getPreviewImageKeys returns only images used by the active preview page", 
   assert.deepEqual(getPreviewImageKeys("home"), [
     "mainBackground",
     "tabBackground",
-    ...TAB_ICON_IMAGE_KEYS,
+    ...VISIBLE_TAB_ICON_IMAGE_KEYS,
     "profileImage",
     "profileFullImage",
     "addFriendButton",
@@ -63,7 +63,7 @@ test("getPreviewImageKeys returns only images used by the active preview page", 
   assert.deepEqual(getPreviewImageKeys("chat-list"), [
     "mainBackground",
     "tabBackground",
-    ...TAB_ICON_IMAGE_KEYS,
+    ...VISIBLE_TAB_ICON_IMAGE_KEYS,
     "profileImage",
     "profileFullImage",
     "addFriendButton",
@@ -73,9 +73,22 @@ test("getPreviewImageKeys returns only images used by the active preview page", 
     assert.deepEqual(getPreviewImageKeys(pageId), [
       "mainBackground",
       "tabBackground",
-      ...TAB_ICON_IMAGE_KEYS,
+      ...VISIBLE_TAB_ICON_IMAGE_KEYS,
       "profileImage",
     ]);
+  }
+  for (const hiddenTabIconKey of [
+    "tabCallIcon",
+    "tabCallIconSelected",
+    "tabPiccomaIcon",
+    "tabPiccomaIconSelected",
+    "tabFindIcon",
+    "tabFindIconSelected",
+    "tabGameIcon",
+    "tabGameIconSelected",
+  ]) {
+    assert.equal(getPreviewImageKeys("home").includes(hiddenTabIconKey), false);
+    assert.equal(getPreviewImageKeys("more").includes(hiddenTabIconKey), false);
   }
   assert.deepEqual(getPreviewImageKeys("chat"), ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS]);
   assert.deepEqual(getPreviewImageKeys("passcode"), ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"]);

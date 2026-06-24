@@ -5,6 +5,7 @@ import {
   ADDITIONAL_IMAGE_KEYS,
   CHAT_BUBBLE_IMAGE_KEYS,
   TAB_ICON_IMAGE_KEYS,
+  VISIBLE_TAB_ICON_IMAGE_KEYS,
   cloneDefaultThemeState,
   getActiveColors,
   IMAGE_TARGETS,
@@ -53,7 +54,7 @@ const uploadKeys = [
   "mainBackground",
   "chatBackground",
   "tabBackground",
-  ...TAB_ICON_IMAGE_KEYS,
+  ...VISIBLE_TAB_ICON_IMAGE_KEYS,
   "profileImage",
   "themeIcon",
   ...ADDITIONAL_IMAGE_KEYS,
@@ -68,13 +69,25 @@ const previewImageVariables = PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY;
 
 const bubbleUploadKeys = new Set(CHAT_BUBBLE_IMAGE_KEYS);
 const tabIconUploadKeys = new Set(TAB_ICON_IMAGE_KEYS);
-const tintableUploadKeys = new Set(TAB_ICON_IMAGE_KEYS);
+const tintableUploadKeys = new Set(VISIBLE_TAB_ICON_IMAGE_KEYS);
 const clearableBackgroundImageKeys = new Set(["mainBackground", "chatBackground", "passcodeBackgroundImage"]);
 const defaultUploadTintColor = "#000000";
 const backgroundImageColorKeys = {
   mainBackground: "mainBackground",
   chatBackground: "chatBackground",
   passcodeBackgroundImage: "passcodeBackground",
+};
+const tabIconUploadLabels = {
+  tabFriendIcon: "친구1",
+  tabFriendIconSelected: "친구2",
+  tabChatIcon: "대화1",
+  tabChatIconSelected: "대화2",
+  tabOpenChatIcon: "지금1",
+  tabOpenChatIconSelected: "지금2",
+  tabShoppingIcon: "쇼핑1",
+  tabShoppingIconSelected: "쇼핑2",
+  tabMoreIcon: "더보기1",
+  tabMoreIconSelected: "더보기2",
 };
 
 const previewBubbleSources = {
@@ -385,7 +398,7 @@ function renderUploadControls() {
       const label = document.createElement("div");
       label.className = "upload-label";
       const title = document.createElement("strong");
-      title.textContent = formatUploadLabel(target);
+      title.textContent = formatUploadLabel(target, key);
       const metaText = getUploadMeta(key, target);
       label.append(title);
       if (metaText) {
@@ -426,13 +439,15 @@ function renderUploadControls() {
   );
 }
 
-function formatUploadLabel(target) {
+function formatUploadLabel(target, key) {
+  const label = tabIconUploadLabels[key] ?? target.label;
+
   if (!target.displaySize) {
-    return target.label;
+    return label;
   }
 
   const [width, height] = target.displaySize;
-  return `${target.label}(${width}px x ${height}px)`;
+  return `${label}(${width}x${height}px)`;
 }
 
 function getUploadMeta(key, target) {
@@ -464,9 +479,6 @@ function createUploadTintControl(key, target) {
   input.disabled = !checkbox.checked;
   input.ariaLabel = `${target.label} 색상`;
 
-  const text = document.createElement("span");
-  text.textContent = "색";
-
   checkbox.addEventListener("change", async () => {
     if (checkbox.checked) {
       uploadTints[key] = input.value;
@@ -487,7 +499,7 @@ function createUploadTintControl(key, target) {
     await refreshUploadImage(key);
   });
 
-  control.append(checkbox, input, text);
+  control.append(checkbox, input);
   return control;
 }
 
