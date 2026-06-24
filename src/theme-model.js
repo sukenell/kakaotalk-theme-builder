@@ -221,6 +221,7 @@ function androidMipmapTargets(name) {
 export const IMAGE_TARGETS = {
   mainBackground: {
     label: "메인 배경",
+    displaySize: [1125, 2250],
     ios: ["Images/mainBgImage@3x.png"],
     android: [
       "src/main/theme/drawable-xxhdpi/theme_background_image.png",
@@ -237,6 +238,7 @@ export const IMAGE_TARGETS = {
   },
   tabBackground: {
     label: "탭 배경",
+    displaySize: [1410, 147],
     ios: ["Images/maintabBgImage@2x.png", "Images/maintabBgImage@3x.png"],
     android: ["src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png"],
     androidRequiresNinePatch: true,

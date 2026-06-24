@@ -87,6 +87,11 @@ test("IMAGE_TARGETS maps passcode normal and selected images for preview and out
   assert.ok(IMAGE_TARGETS.passcodeDotSelected.android.includes("src/main/theme/drawable-xxhdpi/theme_passcode_01_checked_image.png"));
 });
 
+test("IMAGE_TARGETS exposes display sizes for main and tab backgrounds", () => {
+  assert.deepEqual(IMAGE_TARGETS.mainBackground.displaySize, [1125, 2250]);
+  assert.deepEqual(IMAGE_TARGETS.tabBackground.displaySize, [1410, 147]);
+});
+
 test("IMAGE_TARGETS maps each 3x chat bubble upload to generated 2x and 3x outputs", () => {
   assert.deepEqual(CHAT_BUBBLE_IMAGE_KEYS, [
     "sendBubbleNormal",
