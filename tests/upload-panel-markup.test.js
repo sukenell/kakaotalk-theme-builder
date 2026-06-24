@@ -258,19 +258,20 @@ test("friends preview follows the reference friends layout", async () => {
   assert.match(screenMarkup, /class="friends-promo-card"[\s\S]*\[광고\] 연성 교환을 구하고 있습니다\.[\s\S]*폼 :[\s\S]*\*해당 광고는 실제 들어가지 않습니다\./);
   assert.doesNotMatch(screenMarkup, /폼은 이쪽으로 :/);
   assert.doesNotMatch(screenMarkup, /\[AI\] 카카오톡 친구보기|새로운 친구 이야기를 확인해 보세요/);
-  assert.match(screenMarkup, /class="updated-friends-section"[\s\S]*업데이트한 친구 1[\s\S]*<strong>레하<\/strong>/);
+  assert.match(screenMarkup, /class="updated-friends-section"[\s\S]*업데이트한 친구 1[\s\S]*<strong>레하님<\/strong>/);
   assert.doesNotMatch(screenMarkup, /소식 만들기/);
   assert.doesNotMatch(screenMarkup, /create-story-button/);
   assert.match(screenMarkup, /class="favorite-friends-section"[\s\S]*즐겨찾는 친구 6/);
   assert.ok(allFriendsIndex > favoriteIndex);
   assert.match(screenMarkup, /class="all-friends-section"[\s\S]*친구 999/);
   for (const [name, status] of [
-    ["이그레인", "문자/전화 불가능. 카카오톡/인스타 연락 바람."],
-    ["로나웰", "임상실험 알바 상시 구인중이에요😊 연락 주세요~! 010-1234-5678"],
-    ["호시노 타카라", "[BGM] 🎶별의 아이🎵"],
+    ["이래인", "문자/전화 불가능. 카카오톡/인스타 연락 바람."],
+    ["유로나", "임상실험 알바 상시 구인중이에요😊 연락 주세요~! 010-1234-5678"],
+    ["신라", "[BGM] 별의 아이🎵🎶"],
     ["당이령", "舍利子 色不異空 空不異色 色卽是空 空卽是色 受想行識 亦復如是"],
-    ["니콜라이 카덜틴", "비젤 사랑해❤️"],
-    ["위즈덤 베리모어", "오늘도 러프크래프트 이름에 먹질할 용기~"],
+    ["니콜라이", "비젤 사랑해❤️"],
+    ["위즈덤 교수님", "오늘도 러프크래프트 이름에 먹질할 용기를."],
+    ["핀님", "👼아기천사 🐲이그레인 🖤니콜라이 🪶크로우 👼"],
   ]) {
     assert.match(
       screenMarkup,
