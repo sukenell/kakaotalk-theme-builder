@@ -19,9 +19,11 @@ import {
   getPreviewDefaultCssVariableValue,
   getPreviewDefaultImagePath,
   PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY,
+  PREVIEW_IMAGE_FOLDERS,
 } from "./preview-assets.js";
 import { createStoredZip } from "./zip-utils.js";
 import { formatKoreanDate, formatKoreanTime } from "./date-format.js";
+import { normalizeTintColor, tintImageDataPixels } from "./image-tint.js";
 
 const colorControls = [
   ["mainBackground", "메인 배경"],
@@ -66,7 +68,9 @@ const previewImageVariables = PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY;
 
 const bubbleUploadKeys = new Set(CHAT_BUBBLE_IMAGE_KEYS);
 const tabIconUploadKeys = new Set(TAB_ICON_IMAGE_KEYS);
+const tintableUploadKeys = new Set(TAB_ICON_IMAGE_KEYS);
 const clearableBackgroundImageKeys = new Set(["mainBackground", "chatBackground", "passcodeBackgroundImage"]);
+const defaultUploadTintColor = "#000000";
 const backgroundImageColorKeys = {
   mainBackground: "mainBackground",
   chatBackground: "chatBackground",
@@ -178,6 +182,8 @@ const androidNinePatchMarkers = {
 const state = cloneDefaultThemeState();
 const uploads = {};
 const previews = {};
+const uploadTints = {};
+const uploadRenderVersions = {};
 const templateCache = new Map();
 let currentPreviewIndex = 1;
 let currentPreviewDevice = "phone";
@@ -208,6 +214,7 @@ applyPreviewDefaultImages(documentRoot);
 applyFriendProfileImages();
 applyShoppingPreviewImages();
 applyGroupAvatarImages();
+enableHorizontalDragScroll(".shopping-pick-carousel");
 
 function setStatus(message) {
   statusText.textContent = message;
@@ -232,6 +239,51 @@ function applyShoppingPreviewImages() {
     if (imagePath) {
       thumbnail.style.setProperty("--shopping-preview-image", `url("${imagePath}")`);
     }
+  });
+}
+
+function enableHorizontalDragScroll(selector) {
+  document.querySelectorAll(selector).forEach((scroller) => {
+    let startX = 0;
+    let startScrollLeft = 0;
+    let activePointerId = null;
+
+    scroller.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) {
+        return;
+      }
+
+      activePointerId = event.pointerId;
+      startX = event.clientX;
+      startScrollLeft = scroller.scrollLeft;
+      scroller.classList.add("is-dragging");
+      scroller.setPointerCapture(event.pointerId);
+    });
+
+    scroller.addEventListener("pointermove", (event) => {
+      if (activePointerId !== event.pointerId) {
+        return;
+      }
+
+      const deltaX = event.clientX - startX;
+      scroller.scrollLeft = startScrollLeft - deltaX;
+      event.preventDefault();
+    });
+
+    const stopDrag = (event) => {
+      if (activePointerId !== event.pointerId) {
+        return;
+      }
+
+      activePointerId = null;
+      scroller.classList.remove("is-dragging");
+      if (scroller.hasPointerCapture(event.pointerId)) {
+        scroller.releasePointerCapture(event.pointerId);
+      }
+    };
+
+    scroller.addEventListener("pointerup", stopDrag);
+    scroller.addEventListener("pointercancel", stopDrag);
   });
 }
 
@@ -353,6 +405,9 @@ function renderUploadControls() {
 
       const actions = document.createElement("div");
       actions.className = "upload-actions";
+      if (tintableUploadKeys.has(key)) {
+        actions.append(createUploadTintControl(key, target));
+      }
       actions.append(button);
       if (clearableBackgroundImageKeys.has(key)) {
         const clearButton = document.createElement("button");
@@ -390,6 +445,50 @@ function getUploadMeta(key, target) {
   }
 
   return target.androidRequiresNinePatch ? "iOS 자동 적용" : "iOS / Android 적용";
+}
+
+function createUploadTintControl(key, target) {
+  const control = document.createElement("label");
+  control.className = "upload-tint-control";
+  control.title = "아이콘 색상 적용";
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = Boolean(uploadTints[key]);
+  checkbox.ariaLabel = `${target.label} 색상 적용`;
+
+  const input = document.createElement("input");
+  input.type = "color";
+  input.className = "upload-tint-color";
+  input.value = normalizeTintColor(uploadTints[key]) || defaultUploadTintColor;
+  input.disabled = !checkbox.checked;
+  input.ariaLabel = `${target.label} 색상`;
+
+  const text = document.createElement("span");
+  text.textContent = "색";
+
+  checkbox.addEventListener("change", async () => {
+    if (checkbox.checked) {
+      uploadTints[key] = input.value;
+      input.disabled = false;
+    } else {
+      delete uploadTints[key];
+      input.disabled = true;
+    }
+
+    await refreshUploadImage(key);
+  });
+
+  input.addEventListener("input", async () => {
+    uploadTints[key] = input.value;
+    checkbox.checked = true;
+    input.disabled = false;
+
+    await refreshUploadImage(key);
+  });
+
+  control.append(checkbox, input, text);
+  return control;
 }
 
 function renderPreviewTabs() {
@@ -472,15 +571,12 @@ async function handleUpload(key, file) {
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const variants = shouldGenerateUploadVariants(key) ? await createUploadImageVariants(key, file) : undefined;
-  uploads[key] = variants ? { data: bytes, variants } : bytes;
+  uploads[key] = await createUploadRecord(key, file, bytes, file.type);
 
   if (previews[key]) {
     URL.revokeObjectURL(previews[key]);
   }
-  previews[key] = variants
-    ? createPreviewUrlFromBytes(getPreviewBytesForUpload(key, bytes, variants))
-    : URL.createObjectURL(file);
+  previews[key] = createPreviewUrlForUpload(key, uploads[key], file);
 
   const thumb = document.querySelector(`[data-upload-thumb="${key}"]`);
   if (thumb) {
@@ -490,6 +586,72 @@ async function handleUpload(key, file) {
   updatePreview();
   updateUploadControlsState();
   setStatus(`${IMAGE_TARGETS[key].label} 반영`);
+}
+
+async function refreshUploadImage(key) {
+  const tintColor = tintableUploadKeys.has(key) ? normalizeTintColor(uploadTints[key]) : "";
+  const upload = uploads[key];
+  if (isClearedImageUpload(key) || (!upload && !tintColor)) {
+    return;
+  }
+
+  if (upload && getUploadSourceKind(upload) === "default" && !tintColor) {
+    clearGeneratedTintUpload(key);
+    return;
+  }
+
+  const renderVersion = (uploadRenderVersions[key] ?? 0) + 1;
+  uploadRenderVersions[key] = renderVersion;
+  let sourceData = getUploadSourceData(upload);
+  let sourceType = getUploadSourceType(upload);
+  let sourceKind = getUploadSourceKind(upload) || "upload";
+
+  if (!sourceData && tintColor) {
+    const defaultSource = await getDefaultUploadSource(key);
+    if (!defaultSource) {
+      return;
+    }
+
+    sourceData = defaultSource.data;
+    sourceType = defaultSource.type;
+    sourceKind = "default";
+  }
+
+  if (!sourceData) {
+    return;
+  }
+
+  const sourceBlob = new Blob([sourceData], { type: sourceType || "image/png" });
+  const nextUpload = await createUploadRecord(key, sourceBlob, sourceData, sourceType, { sourceKind });
+
+  if (uploadRenderVersions[key] !== renderVersion) {
+    return;
+  }
+
+  uploads[key] = nextUpload;
+  if (previews[key]) {
+    URL.revokeObjectURL(previews[key]);
+  }
+  previews[key] = createPreviewUrlForUpload(key, uploads[key]);
+
+  const thumb = document.querySelector(`[data-upload-thumb="${key}"]`);
+  if (thumb) {
+    thumb.style.backgroundImage = `url("${previews[key]}")`;
+  }
+
+  updatePreview();
+  updateUploadControlsState();
+}
+
+function clearGeneratedTintUpload(key) {
+  if (previews[key]) {
+    URL.revokeObjectURL(previews[key]);
+  }
+
+  delete previews[key];
+  delete uploads[key];
+  updatePreview();
+  updateUploadControlsState();
 }
 
 function handleClearUpload(key) {
@@ -526,8 +688,113 @@ function getPreviewBytesForUpload(key, bytes, variants) {
   return previewIos ? variants?.[previewIos] ?? bytes : bytes;
 }
 
-function createPreviewUrlFromBytes(bytes) {
-  return URL.createObjectURL(new Blob([bytes], { type: "image/png" }));
+function createPreviewUrlForUpload(key, upload, sourceFile) {
+  const data = getUploadData(upload);
+  const variants = upload?.variants;
+
+  if (variants) {
+    return createPreviewUrlFromBytes(getPreviewBytesForUpload(key, data, variants), "image/png");
+  }
+
+  return createPreviewUrlFromBytes(data, getUploadSourceType(upload) || sourceFile?.type || "image/png");
+}
+
+function createPreviewUrlFromBytes(bytes, type = "image/png") {
+  return URL.createObjectURL(new Blob([bytes], { type }));
+}
+
+function getUploadData(upload) {
+  if (upload instanceof Uint8Array || upload instanceof ArrayBuffer) {
+    return upload;
+  }
+
+  return upload?.data ?? upload?.bytes;
+}
+
+function getUploadSourceData(upload) {
+  if (upload instanceof Uint8Array || upload instanceof ArrayBuffer) {
+    return upload;
+  }
+
+  return upload?.sourceData ?? getUploadData(upload);
+}
+
+function getUploadSourceType(upload) {
+  return typeof upload?.sourceType === "string" ? upload.sourceType : "";
+}
+
+function getUploadSourceKind(upload) {
+  return typeof upload?.sourceKind === "string" ? upload.sourceKind : "";
+}
+
+async function getDefaultUploadSource(key) {
+  const path = getDefaultUploadSourcePath(key);
+  if (!path) {
+    return undefined;
+  }
+
+  const response = await fetch(`./${path}`);
+  if (!response.ok) {
+    return undefined;
+  }
+
+  return {
+    data: new Uint8Array(await response.arrayBuffer()),
+    type: getDefaultUploadSourceType(path),
+  };
+}
+
+function getDefaultUploadSourcePath(key) {
+  const previewPath = getPreviewDefaultImagePath(key);
+  if (previewPath) {
+    return previewPath;
+  }
+
+  const target = IMAGE_TARGETS[key];
+  const iosPath = target?.previewIos ?? target?.ios?.find((name) => name.endsWith("@3x.png")) ?? target?.ios?.[0];
+  if (iosPath) {
+    return `${PREVIEW_IMAGE_FOLDERS.iosImages}/${iosPath.replace(/^Images\//, "")}`;
+  }
+
+  const androidPath = target?.android?.[0];
+  return androidPath ? `assets/template-images/android-source/${androidPath}` : "";
+}
+
+function getDefaultUploadSourceType(path) {
+  if (/\.jpe?g$/i.test(path)) {
+    return "image/jpeg";
+  }
+
+  if (/\.webp$/i.test(path)) {
+    return "image/webp";
+  }
+
+  return "image/png";
+}
+
+async function createUploadRecord(key, source, sourceBytes, sourceType = "", { sourceKind = "upload" } = {}) {
+  const tintColor = tintableUploadKeys.has(key) ? normalizeTintColor(uploadTints[key]) : "";
+  if (!shouldGenerateUploadVariants(key) && !tintColor) {
+    return sourceBytes;
+  }
+
+  const image = await loadImage(source);
+  try {
+    const variants = shouldGenerateUploadVariants(key) ? await createUploadImageVariants(key, image, tintColor) : undefined;
+    const data = tintColor
+      ? await renderImageToPngBytes(image, image.width, image.height, { tintColor })
+      : sourceBytes;
+
+    return {
+      data,
+      sourceData: sourceBytes,
+      sourceType,
+      sourceKind,
+      variants,
+    };
+  } finally {
+    releaseLoadedImage(image);
+  }
 }
 
 function shouldGenerateUploadVariants(key) {
@@ -540,9 +807,8 @@ function shouldGenerateUploadVariants(key) {
   );
 }
 
-async function createUploadImageVariants(key, file) {
+async function createUploadImageVariants(key, image, tintColor = "") {
   const target = IMAGE_TARGETS[key];
-  const image = await loadImage(file);
   const variants = {};
 
   for (const name of target.ios || []) {
@@ -550,7 +816,7 @@ async function createUploadImageVariants(key, file) {
     if (!size) {
       continue;
     }
-    variants[name] = await renderImageToPngBytes(image, size[0], size[1]);
+    variants[name] = await renderImageToPngBytes(image, size[0], size[1], { tintColor });
   }
 
   for (const name of target.android || []) {
@@ -558,10 +824,9 @@ async function createUploadImageVariants(key, file) {
     if (!size) {
       continue;
     }
-    variants[name] = await renderImageToNinePatchPngBytes(image, size[0], size[1]);
+    variants[name] = await renderImageToNinePatchPngBytes(image, size[0], size[1], { tintColor });
   }
 
-  releaseLoadedImage(image);
   return variants;
 }
 
@@ -609,25 +874,38 @@ function drawImageCover(context, image, width, height) {
   drawImageCoverRect(context, image, 0, 0, width, height);
 }
 
-async function renderImageToPngBytes(image, width, height) {
+async function renderImageToPngBytes(image, width, height, { tintColor = "" } = {}) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  drawImageCover(canvas.getContext("2d"), image, width, height);
+  const context = canvas.getContext("2d");
+  drawImageCover(context, image, width, height);
+  applyCanvasTint(context, tintColor, width, height);
 
   return canvasToPngBytes(canvas);
 }
 
-async function renderImageToNinePatchPngBytes(image, width, height) {
+async function renderImageToNinePatchPngBytes(image, width, height, { tintColor = "" } = {}) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext("2d");
   context.clearRect(0, 0, width, height);
   drawImageCoverRect(context, image, 1, 1, width - 2, height - 2);
+  applyCanvasTint(context, tintColor, width, height);
   drawNinePatchMarkers(context, width, height);
 
   return canvasToPngBytes(canvas);
+}
+
+function applyCanvasTint(context, tintColor, width, height) {
+  if (!normalizeTintColor(tintColor)) {
+    return;
+  }
+
+  const imageData = context.getImageData(0, 0, width, height);
+  tintImageDataPixels(imageData, tintColor);
+  context.putImageData(imageData, 0, 0);
 }
 
 function drawNinePatchMarkers(context, width, height) {

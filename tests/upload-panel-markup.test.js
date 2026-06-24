@@ -60,6 +60,7 @@ test("theme mode controls are not shown because generated themes use one palette
 test("preview has device switches, five bottom tabs, and unofficial footer notice", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
   assert.match(html, /data-preview-device="phone"/);
   assert.match(html, /data-preview-device="tablet"/);
@@ -164,6 +165,30 @@ test("background image uploads expose a delete action that falls back to the sel
   assert.match(app, /clearButton\.textContent = "삭제";/);
   assert.match(app, /uploads\[key\] = \{ cleared: true \};/);
   assert.match(app, /documentRoot\.style\.setProperty\(variableName, "none"\);/);
+});
+
+test("tab icon uploads expose optional PNG tinting before theme export", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /import \{ normalizeTintColor, tintImageDataPixels \} from "\.\/image-tint\.js";/);
+  assert.match(app, /const tintableUploadKeys = new Set\(TAB_ICON_IMAGE_KEYS\);/);
+  assert.match(app, /const uploadTints = \{\};/);
+  assert.match(app, /input\.type = "color";/);
+  assert.match(app, /checkbox\.type = "checkbox";/);
+  assert.match(app, /await refreshUploadImage\(key\);/);
+  assert.match(app, /await getDefaultUploadSource\(key\);/);
+  assert.match(app, /sourceKind = "default";/);
+  assert.match(app, /function clearGeneratedTintUpload/);
+  assert.match(app, /tintImageDataPixels\(imageData, tintColor\);/);
+});
+
+test("tab icon upload actions place the color control before the upload button", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(
+    app,
+    /if \(tintableUploadKeys\.has\(key\)\) \{[\s\S]*actions\.append\(createUploadTintControl\(key, target\)\);[\s\S]*\}[\s\S]*actions\.append\(button\);/,
+  );
 });
 
 test("friends preview follows the reference friends layout", async () => {
@@ -566,6 +591,7 @@ test("open chat list keeps added group rooms before stock room", async () => {
 test("shopping preview uses home ranking tabs, summary cards, and today pick products", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const shoppingStart = html.indexOf('class="preview-slide shopping-preview"');
   const moreStart = html.indexOf('class="preview-slide more-preview"');
   const shoppingMarkup = html.slice(shoppingStart, moreStart);
@@ -577,12 +603,15 @@ test("shopping preview uses home ranking tabs, summary cards, and today pick pro
     assert.match(shoppingMarkup, new RegExp(escapeRegExp(label)));
   }
   assert.match(shoppingMarkup, /class="shopping-pick-title"[\s\S]*오늘의 PICK/);
-  assert.match(shoppingMarkup, /class="shopping-pick-grid"[\s\S]*class="shop-card"/);
+  assert.match(shoppingMarkup, /class="shopping-pick-carousel"[\s\S]*class="shop-card"/);
   assert.match(shoppingMarkup, /class="shopping-summary-track"/);
   assert.doesNotMatch(shoppingMarkup, /shopping-service|선물하기|톡딜|라이브쇼핑|브랜드딜|FOR ME/);
 
   for (let index = 0; index < 4; index += 1) {
     assert.match(shoppingMarkup, new RegExp(`data-shopping-image-index="${index}"`));
+  }
+  for (const badge of ["단독", "요즘인기", "베스트"]) {
+    assert.match(shoppingMarkup, new RegExp(`<span class="shop-badge">${escapeRegExp(badge)}<\\/span>`));
   }
 
   assert.match(css, /\.shopping-screen\s*\{[\s\S]*var\(--preview-main-image, none\)[\s\S]*var\(--preview-main-bg, #ffdddd\);/);
@@ -590,7 +619,18 @@ test("shopping preview uses home ranking tabs, summary cards, and today pick pro
   assert.match(css, /\.shopping-tabs\s*\{[\s\S]*display: flex;/);
   assert.match(css, /\.shopping-summary-card\s*\{[\s\S]*background: rgba\(255, 255, 255, 0\.9\);/);
   assert.match(css, /\.shopping-summary-track\s*\{[\s\S]*overflow-x: auto;/);
-  assert.match(css, /\.shopping-pick-grid\s*\{[\s\S]*grid-auto-flow: column;/);
+  assert.match(css, /\.shopping-pick-title strong\s*\{[\s\S]*font-size: 19px;/);
+  assert.match(css, /\.shopping-pick-carousel\s*\{[\s\S]*grid-auto-flow: column;[\s\S]*grid-auto-columns: minmax\(214px, 86%\);[\s\S]*overflow-x: auto;[\s\S]*touch-action: pan-x;[\s\S]*user-select: none;/);
+  assert.match(css, /\.shopping-pick-carousel\.is-dragging\s*\{[\s\S]*cursor: grabbing;/);
+  assert.match(css, /\.shop-card\s*\{[\s\S]*position: relative;[\s\S]*min-height: 338px;[\s\S]*overflow: hidden;/);
+  assert.match(css, /\.shop-card::before\s*\{[\s\S]*linear-gradient\(180deg, rgba\(0, 0, 0, 0\) 64%, rgba\(0, 0, 0, 0\.3\) 86%, rgba\(0, 0, 0, 0\.52\) 100%\)/);
+  assert.match(css, /\.shop-thumb\s*\{[\s\S]*position: absolute;[\s\S]*inset: 0;[\s\S]*height: 100%;/);
+  assert.match(css, /\.shop-card::after\s*\{[\s\S]*inset: auto 0 0;[\s\S]*height: 25%;[\s\S]*backdrop-filter: blur\(10px\);[\s\S]*mask-image: linear-gradient\(180deg, transparent 0%, #000 42%, #000 100%\);/);
+  assert.match(css, /\.shop-card-content\s*\{[\s\S]*position: absolute;[\s\S]*bottom: 14px;[\s\S]*z-index: 2;[\s\S]*gap: 4px;/);
+  assert.match(css, /\.shop-card \.shop-badge\s*\{[\s\S]*position: relative;[\s\S]*display: inline-flex;[\s\S]*align-items: center;[\s\S]*justify-content: center;[\s\S]*height: 28px;[\s\S]*padding: 1px 12px 0;[\s\S]*border-radius: 999px;[\s\S]*line-height: 1;[\s\S]*transform: translateY\(2px\);/);
+  assert.match(css, /\.shop-card \.shop-badge::after\s*\{/);
+  assert.match(app, /enableHorizontalDragScroll\("\.shopping-pick-carousel"\);/);
+  assert.match(app, /scroller\.scrollLeft = startScrollLeft - deltaX;/);
 });
 
 test("preview segment controls use the same pressed color data as downloadable themes", async () => {
@@ -921,7 +961,8 @@ test("tab icon uploads use a 3x source and generate 2x plus 3x outputs", async (
   assert.match(app, /"Images\/maintabIcoNow@3x\.png": \[114, 114\]/);
   assert.match(app, /"Images\/maintabIcoCall@2x\.png": \[76, 76\]/);
   assert.match(app, /"Images\/maintabIcoPiccoma@3x\.png": \[114, 114\]/);
-  assert.match(app, /createUploadImageVariants\(key, file\)/);
+  assert.match(app, /createUploadRecord\(key, file, bytes, file\.type\)/);
+  assert.match(app, /createUploadImageVariants\(key, image, tintColor\)/);
   assert.match(model, /previewIos: ios3x/);
   assert.match(model, /displaySize: \[114, 114\]/);
 });
