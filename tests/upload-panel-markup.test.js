@@ -289,7 +289,8 @@ test("friends preview follows the reference friends layout", async () => {
   assert.doesNotMatch(screenMarkup, /채널/);
   assert.match(css, /\.main-header \.home-owner-title strong\s*\{[^}]*font-size: 18px;/);
   assert.match(css, /\.friend-header-actions\s*\{[\s\S]*grid-template-columns: repeat\(4, 28px\);[\s\S]*gap: 12px;/);
-  assert.match(css, /\.main-screen\s*\{[\s\S]*overflow-y: auto;[\s\S]*padding: 0 16px 12px;/);
+  assert.match(css, /\.main-screen\s*\{[\s\S]*min-height: 0;[\s\S]*overflow-y: auto;[\s\S]*padding: 0 16px 12px;/);
+  assert.match(css, /\.main-screen\s*\{[\s\S]*-webkit-overflow-scrolling: touch;[\s\S]*overscroll-behavior: contain;[\s\S]*touch-action: pan-y;/);
   assert.match(css, /\.friend-segment\.is-active\s*\{[\s\S]*background: var\(--preview-selected-bg, #ffb3b3\);[\s\S]*color: var\(--preview-selected-text, #b06b6b\);/);
   assert.match(css, /\.avatar\.header-avatar\s*\{[\s\S]*width: 34px;[\s\S]*height: 34px;/);
   assert.match(css, /\.friends-promo-card\s*\{[\s\S]*background: rgba\(255, 255, 255, 0\.94\);/);
