@@ -87,9 +87,16 @@ test("IMAGE_TARGETS maps passcode normal and selected images for preview and out
   assert.ok(IMAGE_TARGETS.passcodeDotSelected.android.includes("src/main/theme/drawable-xxhdpi/theme_passcode_01_checked_image.png"));
 });
 
-test("IMAGE_TARGETS exposes display sizes for main and tab backgrounds", () => {
+test("IMAGE_TARGETS exposes display sizes for preview upload images", () => {
   assert.deepEqual(IMAGE_TARGETS.mainBackground.displaySize, [1125, 2250]);
+  assert.deepEqual(IMAGE_TARGETS.chatBackground.displaySize, [1125, 2250]);
   assert.deepEqual(IMAGE_TARGETS.tabBackground.displaySize, [1410, 147]);
+  assert.deepEqual(IMAGE_TARGETS.profileImage.displaySize, [360, 360]);
+  assert.deepEqual(IMAGE_TARGETS.passcodeBackgroundImage.displaySize, [1200, 1200]);
+  assert.deepEqual(IMAGE_TARGETS.passcodeDot.displaySize, [132, 132]);
+  assert.deepEqual(IMAGE_TARGETS.passcodeDotSelected.displaySize, [132, 132]);
+  assert.deepEqual(IMAGE_TARGETS.splashImage.displaySize, [1440, 2560]);
+  assert.deepEqual(IMAGE_TARGETS.themeIcon.displaySize, [162, 162]);
 });
 
 test("IMAGE_TARGETS maps each 3x chat bubble upload to generated 2x and 3x outputs", () => {

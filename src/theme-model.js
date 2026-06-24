@@ -230,6 +230,7 @@ export const IMAGE_TARGETS = {
   },
   chatBackground: {
     label: "채팅방 배경",
+    displaySize: [1125, 2250],
     ios: ["Images/chatroomBgImage@3x.png"],
     android: [
       "src/main/theme/drawable-xxhdpi/theme_chatroom_background_image.png",
@@ -403,6 +404,7 @@ export const IMAGE_TARGETS = {
   }),
   profileImage: {
     label: "기본 프로필",
+    displaySize: [360, 360],
     ios: ["Images/profileImg01@3x.png"],
     android: ["src/main/theme/drawable-xxhdpi/theme_profile_01_image.png"],
   },
@@ -425,6 +427,7 @@ export const IMAGE_TARGETS = {
   },
   themeIcon: {
     label: "테마 아이콘",
+    displaySize: [162, 162],
     ios: ["Images/commonIcoTheme.png"],
     android: [
       "src/main/res/mipmap-mdpi/ic_launcher.png",
@@ -448,6 +451,7 @@ export const IMAGE_TARGETS = {
   },
   splashImage: {
     label: "로딩 화면",
+    displaySize: [1440, 2560],
     android: [
       "src/main/theme/drawable-xxhdpi/theme_splash_image.png",
       "src/main/theme/drawable-xhdpi/theme_splash_image.png",
@@ -511,6 +515,7 @@ export const IMAGE_TARGETS = {
   }),
   passcodeBackgroundImage: {
     label: "암호 화면 배경",
+    displaySize: [1200, 1200],
     ios: ["Images/passcodeBgImage@3x.png"],
     android: [
       "src/main/theme/drawable-xxhdpi/theme_passcode_background_image.png",
@@ -519,6 +524,7 @@ export const IMAGE_TARGETS = {
   },
   passcodeDot: {
     label: "암호 기본 이미지",
+    displaySize: [132, 132],
     ios: [
       "Images/passcodeImgCode01@3x.png",
       "Images/passcodeImgCode02@3x.png",
@@ -534,6 +540,7 @@ export const IMAGE_TARGETS = {
   },
   passcodeDotSelected: {
     label: "암호 입력 이미지",
+    displaySize: [132, 132],
     ios: [
       "Images/passcodeImgCode01Selected@3x.png",
       "Images/passcodeImgCode02Selected@3x.png",
