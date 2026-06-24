@@ -88,11 +88,20 @@ test("IMAGE_TARGETS maps passcode normal and selected images for preview and out
 });
 
 test("IMAGE_TARGETS exposes display sizes for preview upload images", () => {
-  assert.deepEqual(IMAGE_TARGETS.mainBackground.displaySize, [1125, 2250]);
-  assert.deepEqual(IMAGE_TARGETS.chatBackground.displaySize, [1125, 2250]);
+  assert.deepEqual(IMAGE_TARGETS.mainBackground.displaySizes, {
+    ios: [1125, 2250],
+    android: [1440, 2880],
+  });
+  assert.deepEqual(IMAGE_TARGETS.chatBackground.displaySizes, {
+    ios: [1125, 2250],
+    android: [1440, 2880],
+  });
   assert.deepEqual(IMAGE_TARGETS.tabBackground.displaySize, [1410, 147]);
   assert.deepEqual(IMAGE_TARGETS.profileImage.displaySize, [360, 360]);
-  assert.deepEqual(IMAGE_TARGETS.passcodeBackgroundImage.displaySize, [1200, 1200]);
+  assert.deepEqual(IMAGE_TARGETS.passcodeBackgroundImage.displaySizes, {
+    ios: [1200, 1200],
+    android: [1440, 1440],
+  });
   assert.deepEqual(IMAGE_TARGETS.passcodeDot.displaySize, [132, 132]);
   assert.deepEqual(IMAGE_TARGETS.passcodeDotSelected.displaySize, [132, 132]);
   assert.deepEqual(IMAGE_TARGETS.splashImage.displaySize, [1440, 2560]);

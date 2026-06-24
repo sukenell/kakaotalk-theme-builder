@@ -91,6 +91,11 @@ const tabIconUploadLabels = {
   tabMoreIconSelected: "더보기2",
 };
 
+const uploadDisplaySizePlatforms = [
+  ["ios", "iOS"],
+  ["android", "Android"],
+];
+
 const previewBubbleSources = {
   "--preview-send-image": ["sendBubbleNormal"],
   "--preview-receive-image": ["receiveBubbleNormal"],
@@ -453,13 +458,36 @@ function renderUploadControls() {
 
 function formatUploadLabel(target, key) {
   const label = tabIconUploadLabels[key] ?? target.label;
+  const sizeText = formatUploadSizeText(target);
 
-  if (!target.displaySize) {
+  if (!sizeText) {
     return label;
   }
 
+  return `${label}(${sizeText})`;
+}
+
+function formatUploadSizeText(target) {
+  if (target.displaySizes) {
+    const parts = uploadDisplaySizePlatforms.flatMap(([platformKey, platform]) => {
+      const size = target.displaySizes[platformKey];
+      if (!size) {
+        return [];
+      }
+
+      const [width, height] = size;
+      return `${platform} ${width}x${height}px`;
+    });
+
+    return parts.join(" / ");
+  }
+
+  if (!target.displaySize) {
+    return "";
+  }
+
   const [width, height] = target.displaySize;
-  return `${label}(${width}x${height}px)`;
+  return `${width}x${height}px`;
 }
 
 function getUploadMeta(key, target) {

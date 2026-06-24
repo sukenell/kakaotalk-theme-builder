@@ -241,7 +241,9 @@ test("tab icon upload labels stay compact and only expose previewed bottom tabs"
     assert.doesNotMatch(previewPages, new RegExp(`\\.\\.\\.VISIBLE_TAB_ICON_IMAGE_KEYS[\\s\\S]*${hiddenKey}`));
   }
   assert.match(app, /formatUploadLabel\(target, key\)/);
-  assert.match(app, /\$\{label\}\(\$\{width\}x\$\{height\}px\)/);
+  assert.match(app, /\$\{label\}\(\$\{sizeText\}\)/);
+  assert.match(app, /\$\{platform\} \$\{width\}x\$\{height\}px/);
+  assert.match(app, /target\.displaySizes/);
   assert.doesNotMatch(app, /\$\{target\.label\}\(\$\{width\}px x \$\{height\}px\)/);
 });
 
@@ -934,7 +936,7 @@ test("chat bubbles use 9-slice template images instead of stretching the full as
   assert.match(css, /border-image-repeat: stretch;/);
   assert.doesNotMatch(css, /background:[\s\S]*--preview-send-image[\s\S]*100% 100% no-repeat/);
   assert.match(app, /function formatUploadLabel/);
-  assert.match(app, /\$\{label\}\(\$\{width\}x\$\{height\}px\)/);
+  assert.match(app, /\$\{label\}\(\$\{sizeText\}\)/);
   assert.match(app, /"--preview-send-additional-image": \["sendBubbleTailless"\]/);
   assert.match(app, /"--preview-receive-additional-image": \["receiveBubbleTailless"\]/);
   assert.doesNotMatch(css, /border-bottom-(?:right|left)-radius:\s*6px/);

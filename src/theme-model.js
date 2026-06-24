@@ -221,7 +221,10 @@ function androidMipmapTargets(name) {
 export const IMAGE_TARGETS = {
   mainBackground: {
     label: "메인 배경",
-    displaySize: [1125, 2250],
+    displaySizes: {
+      ios: [1125, 2250],
+      android: [1440, 2880],
+    },
     ios: ["Images/mainBgImage@3x.png"],
     android: [
       "src/main/theme/drawable-xxhdpi/theme_background_image.png",
@@ -230,7 +233,10 @@ export const IMAGE_TARGETS = {
   },
   chatBackground: {
     label: "채팅방 배경",
-    displaySize: [1125, 2250],
+    displaySizes: {
+      ios: [1125, 2250],
+      android: [1440, 2880],
+    },
     ios: ["Images/chatroomBgImage@3x.png"],
     android: [
       "src/main/theme/drawable-xxhdpi/theme_chatroom_background_image.png",
@@ -515,7 +521,10 @@ export const IMAGE_TARGETS = {
   }),
   passcodeBackgroundImage: {
     label: "암호 화면 배경",
-    displaySize: [1200, 1200],
+    displaySizes: {
+      ios: [1200, 1200],
+      android: [1440, 1440],
+    },
     ios: ["Images/passcodeBgImage@3x.png"],
     android: [
       "src/main/theme/drawable-xxhdpi/theme_passcode_background_image.png",
