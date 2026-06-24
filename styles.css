@@ -2012,6 +2012,13 @@ h2 {
     #fff4f4;
 }
 
+.avatar.default-profile,
+.avatar.group-avatar .group-avatar-item.is-default-profile {
+  background:
+    var(--preview-default-profile-image, none) center / cover no-repeat,
+    #fff4f4;
+}
+
 .avatar.group-avatar {
   position: relative;
   width: 34px;

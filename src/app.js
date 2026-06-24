@@ -25,6 +25,10 @@ import {
 import { createStoredZip } from "./zip-utils.js";
 import { formatKoreanDate, formatKoreanTime } from "./date-format.js";
 import { normalizeTintColor, tintImageDataPixels } from "./image-tint.js";
+import {
+  getDefaultGroupAvatarItemIndex,
+  shouldUseDefaultGroupAvatarProfile,
+} from "./group-avatar-profiles.js";
 
 const colorControls = [
   ["mainBackground", "메인 배경"],
@@ -301,12 +305,30 @@ function enableHorizontalDragScroll(selector) {
 }
 
 function applyGroupAvatarImages() {
-  document.querySelectorAll(".avatar.group-avatar .group-avatar-item").forEach((item, index) => {
-    const imagePath = groupAvatarImages[index % groupAvatarImages.length];
+  let imageIndex = 0;
 
-    if (imagePath) {
-      item.style.setProperty("--group-avatar-image", `url("${imagePath}")`);
-    }
+  document.querySelectorAll(".avatar.group-avatar").forEach((avatar) => {
+    const items = Array.from(avatar.querySelectorAll(".group-avatar-item"));
+    const defaultProfileIndex = shouldUseDefaultGroupAvatarProfile()
+      ? getDefaultGroupAvatarItemIndex(items.length)
+      : -1;
+
+    items.forEach((item, itemIndex) => {
+      const imagePath = groupAvatarImages[imageIndex % groupAvatarImages.length];
+      imageIndex += 1;
+
+      if (itemIndex === defaultProfileIndex) {
+        item.classList.add("is-default-profile");
+        item.style.removeProperty("--group-avatar-image");
+        return;
+      }
+
+      item.classList.remove("is-default-profile");
+
+      if (imagePath) {
+        item.style.setProperty("--group-avatar-image", `url("${imagePath}")`);
+      }
+    });
   });
 }
 
