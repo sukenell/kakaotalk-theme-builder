@@ -215,6 +215,7 @@ test("tab icon upload actions place the color control before the upload button",
 
 test("tab icon upload labels stay compact and only expose previewed bottom tabs", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   const previewPages = await readFile(new URL("../src/preview-pages.js", import.meta.url), "utf8");
   const model = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
 
@@ -240,10 +241,17 @@ test("tab icon upload labels stay compact and only expose previewed bottom tabs"
   for (const hiddenKey of ["tabCallIcon", "tabPiccomaIcon", "tabFindIcon", "tabGameIcon"]) {
     assert.doesNotMatch(previewPages, new RegExp(`\\.\\.\\.VISIBLE_TAB_ICON_IMAGE_KEYS[\\s\\S]*${hiddenKey}`));
   }
-  assert.match(app, /formatUploadLabel\(target, key\)/);
-  assert.match(app, /\$\{label\}\(\$\{sizeText\}\)/);
+  assert.match(app, /appendUploadLabel\(label, target, key\)/);
+  assert.match(app, /function appendUploadLabel/);
+  assert.match(app, /formatUploadSizeLines\(target\)/);
+  assert.match(app, /className = "upload-size-lines"/);
+  assert.match(app, /className = "upload-size-line"/);
+  assert.match(app, /\["ios", "IOS"\]/);
   assert.match(app, /\$\{platform\} \$\{width\}x\$\{height\}px/);
   assert.match(app, /target\.displaySizes/);
+  assert.match(css, /\.upload-size-lines\s*\{[\s\S]*display: grid;/);
+  assert.match(css, /\.upload-size-line\s*\{[\s\S]*display: block;/);
+  assert.doesNotMatch(app, /\$\{label\}\(\$\{sizeText\}\)/);
   assert.doesNotMatch(app, /\$\{target\.label\}\(\$\{width\}px x \$\{height\}px\)/);
 });
 
@@ -935,8 +943,8 @@ test("chat bubbles use 9-slice template images instead of stretching the full as
   assert.match(css, /border-image-slice: var\(--preview-bubble-slice\) fill;/);
   assert.match(css, /border-image-repeat: stretch;/);
   assert.doesNotMatch(css, /background:[\s\S]*--preview-send-image[\s\S]*100% 100% no-repeat/);
-  assert.match(app, /function formatUploadLabel/);
-  assert.match(app, /\$\{label\}\(\$\{sizeText\}\)/);
+  assert.match(app, /function appendUploadLabel/);
+  assert.match(app, /formatUploadSizeLines\(target\)/);
   assert.match(app, /"--preview-send-additional-image": \["sendBubbleTailless"\]/);
   assert.match(app, /"--preview-receive-additional-image": \["receiveBubbleTailless"\]/);
   assert.doesNotMatch(css, /border-bottom-(?:right|left)-radius:\s*6px/);

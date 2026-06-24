@@ -266,6 +266,15 @@ h2 {
   font-size: 14px;
 }
 
+.upload-size-lines {
+  display: grid;
+  gap: 1px;
+}
+
+.upload-size-line {
+  display: block;
+}
+
 .upload-actions {
   display: inline-flex;
   align-items: center;

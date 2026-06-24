@@ -92,7 +92,7 @@ const tabIconUploadLabels = {
 };
 
 const uploadDisplaySizePlatforms = [
-  ["ios", "iOS"],
+  ["ios", "IOS"],
   ["android", "Android"],
 ];
 
@@ -414,10 +414,8 @@ function renderUploadControls() {
 
       const label = document.createElement("div");
       label.className = "upload-label";
-      const title = document.createElement("strong");
-      title.textContent = formatUploadLabel(target, key);
+      appendUploadLabel(label, target, key);
       const metaText = getUploadMeta(key, target);
-      label.append(title);
       if (metaText) {
         const meta = document.createElement("span");
         meta.textContent = metaText;
@@ -456,20 +454,32 @@ function renderUploadControls() {
   );
 }
 
-function formatUploadLabel(target, key) {
-  const label = tabIconUploadLabels[key] ?? target.label;
-  const sizeText = formatUploadSizeText(target);
+function appendUploadLabel(label, target, key) {
+  const title = document.createElement("strong");
+  title.textContent = tabIconUploadLabels[key] ?? target.label;
+  label.append(title);
 
-  if (!sizeText) {
-    return label;
+  const sizeLines = formatUploadSizeLines(target);
+  if (!sizeLines.length) {
+    return;
   }
 
-  return `${label}(${sizeText})`;
+  const sizeList = document.createElement("span");
+  sizeList.className = "upload-size-lines";
+  sizeList.append(
+    ...sizeLines.map((sizeLineText) => {
+      const sizeLine = document.createElement("span");
+      sizeLine.className = "upload-size-line";
+      sizeLine.textContent = sizeLineText;
+      return sizeLine;
+    }),
+  );
+  label.append(sizeList);
 }
 
-function formatUploadSizeText(target) {
+function formatUploadSizeLines(target) {
   if (target.displaySizes) {
-    const parts = uploadDisplaySizePlatforms.flatMap(([platformKey, platform]) => {
+    return uploadDisplaySizePlatforms.flatMap(([platformKey, platform]) => {
       const size = target.displaySizes[platformKey];
       if (!size) {
         return [];
@@ -478,16 +488,14 @@ function formatUploadSizeText(target) {
       const [width, height] = size;
       return `${platform} ${width}x${height}px`;
     });
-
-    return parts.join(" / ");
   }
 
   if (!target.displaySize) {
-    return "";
+    return [];
   }
 
   const [width, height] = target.displaySize;
-  return `${width}x${height}px`;
+  return [`${width}x${height}px`];
 }
 
 function getUploadMeta(key, target) {
