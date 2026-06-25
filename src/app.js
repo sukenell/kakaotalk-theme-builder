@@ -387,14 +387,19 @@ function renderColorControls() {
       const input = document.createElement("input");
       input.id = `color-${key}`;
       input.type = "color";
+      input.className = "color-picker-input";
+      input.ariaLabel = `${label} 색상 선택`;
       input.value = normalizeColorPickerValue(colors[key]);
 
-      const hexInput = document.createElement("input");
-      hexInput.type = "text";
-      hexInput.className = "color-hex-input";
-      hexInput.placeholder = "#RRGGBB";
-      hexInput.spellcheck = false;
-      hexInput.value = normalizeHexColorInput(colors[key]) || normalizeHexColorInput(defaultThemeState.colors[key]);
+      const picker = document.createElement("label");
+      picker.className = "color-picker-control";
+      picker.htmlFor = input.id;
+
+      const swatch = document.createElement("span");
+      swatch.className = "color-picker-swatch";
+
+      const valueText = document.createElement("span");
+      valueText.className = "color-picker-value";
 
       const resetButton = document.createElement("button");
       resetButton.type = "button";
@@ -405,38 +410,38 @@ function renderColorControls() {
         resetButton.disabled = normalizeHexColorInput(value) === normalizeHexColorInput(defaultThemeState.colors[key]);
       };
 
+      const syncPickerState = (value) => {
+        const normalizedValue = normalizeHexColorInput(value) || normalizeHexColorInput(defaultThemeState.colors[key]);
+        valueText.textContent = normalizedValue;
+        input.value = normalizeColorPickerValue(normalizedValue);
+        picker.style.setProperty("--color-picker-swatch", toPreviewCssColor(normalizedValue));
+        syncResetState(normalizedValue);
+      };
+
       const applyColorValue = (value) => {
         const normalizedValue = normalizeHexColorInput(value);
         if (!normalizedValue) {
-          hexInput.setAttribute("aria-invalid", "true");
-          hexInput.setCustomValidity("#RRGGBB 또는 #AARRGGBB 형식으로 입력해주세요.");
           return;
         }
 
-        hexInput.setAttribute("aria-invalid", "false");
-        hexInput.setCustomValidity("");
-        hexInput.value = normalizedValue;
-        input.value = normalizeColorPickerValue(normalizedValue);
         setActiveColor(state, key, normalizedValue);
-        syncResetState(normalizedValue);
+        syncPickerState(normalizedValue);
         updatePreview();
       };
 
       input.addEventListener("input", () => {
         applyColorValue(input.value);
       });
-      hexInput.addEventListener("input", () => {
-        applyColorValue(hexInput.value);
-      });
       resetButton.addEventListener("click", () => {
         applyColorValue(defaultThemeState.colors[key]);
       });
 
-      syncResetState(colors[key]);
+      syncPickerState(colors[key]);
+      picker.append(swatch, valueText, input);
 
       const inputs = document.createElement("div");
       inputs.className = "color-inputs";
-      inputs.append(input, hexInput, resetButton);
+      inputs.append(picker, resetButton);
 
       row.append(text, inputs);
       return row;

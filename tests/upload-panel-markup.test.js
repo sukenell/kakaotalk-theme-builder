@@ -188,22 +188,28 @@ test("background image uploads expose a delete action that falls back to the sel
   assert.match(app, /documentRoot\.style\.setProperty\(variableName, "none"\);/);
 });
 
-test("color controls expose editable hex codes and reset buttons", async () => {
+test("color controls show hex values on the picker and expose reset buttons", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 
   assert.match(app, /\["tabBackground", "탭 배경"\]/);
-  assert.match(app, /hexInput\.type = "text";/);
-  assert.match(app, /hexInput\.placeholder = "#RRGGBB";/);
+  assert.match(app, /const picker = document\.createElement\("label"\);/);
+  assert.match(app, /picker\.className = "color-picker-control";/);
+  assert.match(app, /const valueText = document\.createElement\("span"\);/);
+  assert.match(app, /valueText\.className = "color-picker-value";/);
+  assert.match(app, /valueText\.textContent = normalizedValue;/);
   assert.match(app, /normalizeHexColorInput/);
   assert.match(app, /function toPreviewCssColor/);
   assert.match(app, /setPreviewColorVariable\("--preview-tab-bg", colors\.tabBackground\);/);
   assert.match(app, /element\.style\.backgroundColor = toPreviewCssColor\(colors\[colorKey\]\);/);
   assert.match(app, /resetButton\.textContent = "초기화";/);
   assert.match(app, /defaultThemeState\.colors\[key\]/);
+  assert.doesNotMatch(app, /hexInput\.type = "text";/);
   assert.match(css, /\.color-inputs\s*\{/);
-  assert.match(css, /\.color-hex-input\s*\{/);
+  assert.match(css, /\.color-picker-control\s*\{/);
+  assert.match(css, /\.color-picker-value\s*\{/);
   assert.match(css, /\.color-reset-button\s*\{/);
+  assert.doesNotMatch(css, /\.color-hex-input/);
 });
 
 test("tab icon uploads expose optional PNG tinting before theme export", async () => {
