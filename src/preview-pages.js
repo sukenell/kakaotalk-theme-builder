@@ -2,7 +2,16 @@ import { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, VISIBLE_TAB_ICON_IMAGE_K
 
 export { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, VISIBLE_TAB_ICON_IMAGE_KEYS };
 
-const mainTabColorKeys = ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle", "bodyPressed", "titlePressed"];
+const mainTabColorKeys = [
+  "mainBackground",
+  "tabBackground",
+  "headerText",
+  "titleText",
+  "paragraphText",
+  "sectionTitle",
+  "bodyPressed",
+  "titlePressed",
+];
 
 const mainTabImageKeys = [
   "mainBackground",
@@ -16,7 +25,16 @@ export const PREVIEW_PAGES = [
     id: "home",
     label: "메인",
     iconUrl: "https://cdn-icons-png.flaticon.com/512/25/25694.png",
-    colorKeys: ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle", "bodyPressed", "titlePressed"],
+    colorKeys: [
+      "mainBackground",
+      "tabBackground",
+      "headerText",
+      "titleText",
+      "paragraphText",
+      "sectionTitle",
+      "bodyPressed",
+      "titlePressed",
+    ],
     imageKeys: [
       "mainBackground",
       "tabBackground",
@@ -31,7 +49,7 @@ export const PREVIEW_PAGES = [
     id: "chat-list",
     label: "대화 목록",
     iconUrl: "https://cdn-icons-png.flaticon.com/512/2076/2076218.png",
-    colorKeys: ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle"],
+    colorKeys: ["mainBackground", "tabBackground", "headerText", "titleText", "paragraphText", "sectionTitle"],
     imageKeys: [
       "mainBackground",
       "tabBackground",

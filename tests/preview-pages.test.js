@@ -41,6 +41,7 @@ test("getPreviewColorKeys returns only colors used by the active preview page", 
   ]);
   assert.deepEqual(getPreviewColorKeys("home"), [
     "mainBackground",
+    "tabBackground",
     "headerText",
     "titleText",
     "paragraphText",
@@ -48,6 +49,10 @@ test("getPreviewColorKeys returns only colors used by the active preview page", 
     "bodyPressed",
     "titlePressed",
   ]);
+  assert.equal(getPreviewColorKeys("chat-list").includes("tabBackground"), true);
+  assert.equal(getPreviewColorKeys("open-chat").includes("tabBackground"), true);
+  assert.equal(getPreviewColorKeys("shopping").includes("tabBackground"), true);
+  assert.equal(getPreviewColorKeys("more").includes("tabBackground"), true);
 });
 
 test("getPreviewImageKeys returns only images used by the active preview page", () => {

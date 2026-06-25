@@ -57,7 +57,7 @@ function asBytes(data) {
 
 function getUploadDataForTarget(upload, name, { allowFallback = true } = {}) {
   if (upload?.cleared) {
-    return transparentPngBytes;
+    return allowFallback ? transparentPngBytes : undefined;
   }
 
   if (!upload || upload instanceof Uint8Array || upload instanceof ArrayBuffer) {
@@ -213,6 +213,10 @@ export function getSkippedAndroidUploads(uploads) {
   return Object.keys(uploads || {})
     .filter((key) => {
       const target = IMAGE_TARGETS[key];
+      if (uploads[key]?.cleared) {
+        return false;
+      }
+
       if (!target?.androidRequiresNinePatch) {
         return false;
       }

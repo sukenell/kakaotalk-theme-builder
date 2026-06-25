@@ -420,6 +420,11 @@ HeaderStyle-Main
 {
     -ios-text-color: #664242;
 }
+TabBarStyle-Main
+{
+    background-color: ;
+    -ios-background-image: 'maintabBgImage.png';
+}
 MainViewStyle-Primary
 {
     background-color: #FFDEDE;
@@ -455,6 +460,7 @@ MessageCellStyle-Receive
     themeStyle: "dark",
     colors: {
       mainBackground: "#101418",
+      tabBackground: "#ABCDEF",
       chatBackground: "#202830",
       headerText: "#F7E7B3",
       titleText: "#F8F2DE",
@@ -471,6 +477,7 @@ MessageCellStyle-Receive
   assert.match(patched, /-kakaotalk-theme-id: 'com.nightpeach.kakaotalk.theme';/);
   assert.doesNotMatch(patched, /-kakaotalk-theme-style/);
   assert.match(patched, /HeaderStyle-Main[\s\S]*-ios-text-color: #F7E7B3;/);
+  assert.match(patched, /TabBarStyle-Main[\s\S]*background-color: #ABCDEF;/);
   assert.match(patched, /MainViewStyle-Primary[\s\S]*background-color: #101418;/);
   assert.match(patched, /BackgroundStyle-ChatRoom[\s\S]*background-color: #202830;/);
   assert.match(patched, /MessageCellStyle-Send[\s\S]*-ios-unread-text-color: #FFE066;/);
@@ -505,6 +512,7 @@ test("patchAndroidColorsXml updates named color resources", () => {
 <resources>
     <color name="theme_header_color">#664242</color>
     <color name="theme_background_color">#FFDEDE</color>
+    <color name="theme_maintab_cell_color">#00FFFFFF</color>
     <color name="theme_chatroom_background_color">#FFDEDE</color>
     <color name="theme_chatroom_bubble_me_color">#FFFFFF</color>
     <color name="theme_chatroom_bubble_you_color">#4D4D4D</color>
@@ -515,6 +523,7 @@ test("patchAndroidColorsXml updates named color resources", () => {
     colors: {
       headerText: "#233142",
       mainBackground: "#FAFAF7",
+      tabBackground: "#D2EFE9",
       chatBackground: "#DDE9EA",
       sendText: "#111111",
       receiveText: "#333333",
@@ -524,6 +533,7 @@ test("patchAndroidColorsXml updates named color resources", () => {
 
   assert.match(patched, /name="theme_header_color">#233142</);
   assert.match(patched, /name="theme_background_color">#FAFAF7</);
+  assert.match(patched, /name="theme_maintab_cell_color">#D2EFE9</);
   assert.match(patched, /name="theme_chatroom_background_color">#DDE9EA</);
   assert.match(patched, /name="theme_chatroom_unread_count_color">#F95D5D</);
 });

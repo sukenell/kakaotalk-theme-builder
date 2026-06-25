@@ -11,6 +11,7 @@ const IOS_COLOR_BINDINGS = [
   ["MainViewStyle-Primary", "-ios-paragraph-highlighted-text-color", "titlePressed"],
   ["MainViewStyle-Primary", "-ios-selected-background-color", "bodyPressed"],
   ["MainViewStyle-Secondary", "background-color", "mainBackground"],
+  ["TabBarStyle-Main", "background-color", "tabBackground"],
   ["SectionTitleStyle-Main", "border-color", "sectionTitle"],
   ["SectionTitleStyle-Main", "-ios-text-color", "sectionTitle"],
   ["FeatureStyle-Primary", "-ios-text-color", "featureText"],
@@ -60,6 +61,7 @@ const ANDROID_COLOR_BINDINGS = {
   theme_feature_browse_tab_color: "descriptionText",
   theme_feature_browse_tab_focused_color: "headerText",
   theme_background_color: "mainBackground",
+  theme_maintab_cell_color: "tabBackground",
   theme_chatroom_background_color: "chatBackground",
   theme_passcode_background_color: "passcodeBackground",
   theme_header_cell_color: "mainBackground",
@@ -93,6 +95,7 @@ const ANDROID_COLOR_BINDINGS = {
 
 const defaultColors = {
   mainBackground: "#FFDEDE",
+  tabBackground: "#00FFFFFF",
   chatBackground: "#FFDEDE",
   headerText: "#664242",
   titleText: "#664242",

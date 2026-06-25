@@ -210,6 +210,20 @@ test("buildAndroidEntries applies generated 9-patch variants for bubble uploads"
   );
 });
 
+test("cleared Android 9-patch uploads keep their template image", () => {
+  const tabTarget = "src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png";
+  const templateNinePatch = new Uint8Array([2, 2, 2]);
+  const result = buildAndroidEntries([{ name: tabTarget, data: templateNinePatch }], {
+    state: {},
+    uploads: {
+      tabBackground: { cleared: true },
+    },
+  });
+
+  assert.deepEqual(result.find((entry) => entry.name === tabTarget).data, templateNinePatch);
+  assert.deepEqual(getSkippedAndroidUploads({ tabBackground: { cleared: true } }), []);
+});
+
 test("buildAndroidEntries appends extended tab images and selectors when both states are uploaded", () => {
   const normal = new Uint8Array([1, 2, 3]);
   const selected = new Uint8Array([4, 5, 6]);

@@ -7,6 +7,7 @@ import {
   TAB_ICON_IMAGE_KEYS,
   VISIBLE_TAB_ICON_IMAGE_KEYS,
   cloneDefaultThemeState,
+  defaultThemeState,
   getActiveColors,
   IMAGE_TARGETS,
   isValidThemeVersion,
@@ -29,6 +30,7 @@ import { getDefaultGroupAvatarItemIndexes } from "./group-avatar-profiles.js";
 
 const colorControls = [
   ["mainBackground", "메인 배경"],
+  ["tabBackground", "탭 배경"],
   ["chatBackground", "채팅방 배경"],
   ["headerText", "헤더 텍스트"],
   ["titleText", "타이틀"],
@@ -71,11 +73,12 @@ const previewImageVariables = PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY;
 const bubbleUploadKeys = new Set(CHAT_BUBBLE_IMAGE_KEYS);
 const tabIconUploadKeys = new Set(TAB_ICON_IMAGE_KEYS);
 const tintableUploadKeys = new Set(VISIBLE_TAB_ICON_IMAGE_KEYS);
-const clearableBackgroundImageKeys = new Set(["mainBackground", "chatBackground", "passcodeBackgroundImage"]);
+const clearableBackgroundImageKeys = new Set(["mainBackground", "chatBackground", "tabBackground", "passcodeBackgroundImage"]);
 const defaultUploadTintColor = "#000000";
 const backgroundImageColorKeys = {
   mainBackground: "mainBackground",
   chatBackground: "chatBackground",
+  tabBackground: "tabBackground",
   passcodeBackgroundImage: "passcodeBackground",
 };
 const tabIconUploadLabels = {
@@ -384,13 +387,58 @@ function renderColorControls() {
       const input = document.createElement("input");
       input.id = `color-${key}`;
       input.type = "color";
-      input.value = normalizeColorInput(colors[key]);
-      input.addEventListener("input", () => {
-        setActiveColor(state, key, input.value);
+      input.value = normalizeColorPickerValue(colors[key]);
+
+      const hexInput = document.createElement("input");
+      hexInput.type = "text";
+      hexInput.className = "color-hex-input";
+      hexInput.placeholder = "#RRGGBB";
+      hexInput.spellcheck = false;
+      hexInput.value = normalizeHexColorInput(colors[key]) || normalizeHexColorInput(defaultThemeState.colors[key]);
+
+      const resetButton = document.createElement("button");
+      resetButton.type = "button";
+      resetButton.className = "color-reset-button";
+      resetButton.textContent = "초기화";
+
+      const syncResetState = (value) => {
+        resetButton.disabled = normalizeHexColorInput(value) === normalizeHexColorInput(defaultThemeState.colors[key]);
+      };
+
+      const applyColorValue = (value) => {
+        const normalizedValue = normalizeHexColorInput(value);
+        if (!normalizedValue) {
+          hexInput.setAttribute("aria-invalid", "true");
+          hexInput.setCustomValidity("#RRGGBB 또는 #AARRGGBB 형식으로 입력해주세요.");
+          return;
+        }
+
+        hexInput.setAttribute("aria-invalid", "false");
+        hexInput.setCustomValidity("");
+        hexInput.value = normalizedValue;
+        input.value = normalizeColorPickerValue(normalizedValue);
+        setActiveColor(state, key, normalizedValue);
+        syncResetState(normalizedValue);
         updatePreview();
+      };
+
+      input.addEventListener("input", () => {
+        applyColorValue(input.value);
+      });
+      hexInput.addEventListener("input", () => {
+        applyColorValue(hexInput.value);
+      });
+      resetButton.addEventListener("click", () => {
+        applyColorValue(defaultThemeState.colors[key]);
       });
 
-      row.append(text, input);
+      syncResetState(colors[key]);
+
+      const inputs = document.createElement("div");
+      inputs.className = "color-inputs";
+      inputs.append(input, hexInput, resetButton);
+
+      row.append(text, inputs);
       return row;
     }),
   );
@@ -609,7 +657,7 @@ function applyUploadThumb(element, key) {
   if (isClearedImageUpload(key)) {
     const colorKey = backgroundImageColorKeys[key];
     const colors = getActiveColors(state);
-    element.style.backgroundColor = colors[colorKey] ?? "";
+    element.style.backgroundColor = toPreviewCssColor(colors[colorKey]);
     element.style.backgroundImage = "none";
     return;
   }
@@ -991,8 +1039,21 @@ async function canvasToPngBytes(canvas) {
   return new Uint8Array(await blob.arrayBuffer());
 }
 
-function normalizeColorInput(value) {
-  const color = String(value || "#000000");
+function normalizeHexColorInput(value) {
+  const color = String(value || "").trim();
+  if (/^#[0-9a-f]{6}$/i.test(color)) {
+    return color.toUpperCase();
+  }
+
+  if (/^#[0-9a-f]{8}$/i.test(color)) {
+    return color.toUpperCase();
+  }
+
+  return "";
+}
+
+function normalizeColorPickerValue(value) {
+  const color = normalizeHexColorInput(value);
   if (/^#[0-9a-f]{6}$/i.test(color)) {
     return color;
   }
@@ -1002,6 +1063,19 @@ function normalizeColorInput(value) {
   }
 
   return "#000000";
+}
+
+function toPreviewCssColor(value) {
+  const color = normalizeHexColorInput(value);
+  if (/^#[0-9a-f]{8}$/i.test(color)) {
+    return `#${color.slice(3)}${color.slice(1, 3)}`;
+  }
+
+  return color || "#000000";
+}
+
+function setPreviewColorVariable(variableName, value) {
+  documentRoot.style.setProperty(variableName, toPreviewCssColor(value));
 }
 
 function updatePreview() {
@@ -1014,27 +1088,28 @@ function updatePreview() {
     element.textContent = formatKoreanTime();
   });
 
-  documentRoot.style.setProperty("--preview-main-bg", colors.mainBackground);
-  documentRoot.style.setProperty("--preview-chat-bg", colors.chatBackground);
-  documentRoot.style.setProperty("--preview-header", colors.headerText);
-  documentRoot.style.setProperty("--preview-title", colors.titleText);
-  documentRoot.style.setProperty("--preview-description", colors.descriptionText);
-  documentRoot.style.setProperty("--preview-body-border", colors.bodyBorder);
-  documentRoot.style.setProperty("--preview-send-text", colors.sendText);
-  documentRoot.style.setProperty("--preview-receive-text", colors.receiveText);
-  documentRoot.style.setProperty("--preview-input-bg", colors.inputBarBackground);
-  documentRoot.style.setProperty("--preview-input-text", colors.inputBarText);
-  documentRoot.style.setProperty("--preview-input-menu", colors.inputMenu);
-  documentRoot.style.setProperty("--preview-send-button", colors.sendButton);
-  documentRoot.style.setProperty("--preview-send-button-text", colors.sendButtonText);
-  documentRoot.style.setProperty("--preview-send-fill", colors.sendButton);
-  documentRoot.style.setProperty("--preview-passcode-bg", colors.passcodeBackground);
-  documentRoot.style.setProperty("--preview-passcode-text", colors.passcodeText);
-  documentRoot.style.setProperty("--preview-passcode-keypad-bg", colors.passcodeKeypadBackground);
-  documentRoot.style.setProperty("--preview-section-title", colors.sectionTitle);
-  documentRoot.style.setProperty("--preview-paragraph", colors.paragraphText);
-  documentRoot.style.setProperty("--preview-selected-bg", colors.bodyPressed);
-  documentRoot.style.setProperty("--preview-selected-text", colors.titlePressed);
+  setPreviewColorVariable("--preview-main-bg", colors.mainBackground);
+  setPreviewColorVariable("--preview-tab-bg", colors.tabBackground);
+  setPreviewColorVariable("--preview-chat-bg", colors.chatBackground);
+  setPreviewColorVariable("--preview-header", colors.headerText);
+  setPreviewColorVariable("--preview-title", colors.titleText);
+  setPreviewColorVariable("--preview-description", colors.descriptionText);
+  setPreviewColorVariable("--preview-body-border", colors.bodyBorder);
+  setPreviewColorVariable("--preview-send-text", colors.sendText);
+  setPreviewColorVariable("--preview-receive-text", colors.receiveText);
+  setPreviewColorVariable("--preview-input-bg", colors.inputBarBackground);
+  setPreviewColorVariable("--preview-input-text", colors.inputBarText);
+  setPreviewColorVariable("--preview-input-menu", colors.inputMenu);
+  setPreviewColorVariable("--preview-send-button", colors.sendButton);
+  setPreviewColorVariable("--preview-send-button-text", colors.sendButtonText);
+  setPreviewColorVariable("--preview-send-fill", colors.sendButton);
+  setPreviewColorVariable("--preview-passcode-bg", colors.passcodeBackground);
+  setPreviewColorVariable("--preview-passcode-text", colors.passcodeText);
+  setPreviewColorVariable("--preview-passcode-keypad-bg", colors.passcodeKeypadBackground);
+  setPreviewColorVariable("--preview-section-title", colors.sectionTitle);
+  setPreviewColorVariable("--preview-paragraph", colors.paragraphText);
+  setPreviewColorVariable("--preview-selected-bg", colors.bodyPressed);
+  setPreviewColorVariable("--preview-selected-text", colors.titlePressed);
 
   Object.entries(previewImageVariables).forEach(([key, variables]) => {
     variables.forEach((variableName) => setOptionalImage(variableName, key, previews[key]));

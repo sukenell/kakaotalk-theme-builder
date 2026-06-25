@@ -180,11 +180,30 @@ test("upload panel no longer shows bubble generation or Android 9-patch helper c
 test("background image uploads expose a delete action that falls back to the selected color", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
-  assert.match(app, /const clearableBackgroundImageKeys = new Set\(\[[\s\S]*"mainBackground"[\s\S]*"chatBackground"[\s\S]*"passcodeBackgroundImage"/);
+  assert.match(app, /const clearableBackgroundImageKeys = new Set\(\[[\s\S]*"mainBackground"[\s\S]*"chatBackground"[\s\S]*"tabBackground"[\s\S]*"passcodeBackgroundImage"/);
+  assert.match(app, /tabBackground: "tabBackground"/);
   assert.match(app, /clearButton\.dataset\.uploadClear = key;/);
   assert.match(app, /clearButton\.textContent = "삭제";/);
   assert.match(app, /uploads\[key\] = \{ cleared: true \};/);
   assert.match(app, /documentRoot\.style\.setProperty\(variableName, "none"\);/);
+});
+
+test("color controls expose editable hex codes and reset buttons", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+
+  assert.match(app, /\["tabBackground", "탭 배경"\]/);
+  assert.match(app, /hexInput\.type = "text";/);
+  assert.match(app, /hexInput\.placeholder = "#RRGGBB";/);
+  assert.match(app, /normalizeHexColorInput/);
+  assert.match(app, /function toPreviewCssColor/);
+  assert.match(app, /setPreviewColorVariable\("--preview-tab-bg", colors\.tabBackground\);/);
+  assert.match(app, /element\.style\.backgroundColor = toPreviewCssColor\(colors\[colorKey\]\);/);
+  assert.match(app, /resetButton\.textContent = "초기화";/);
+  assert.match(app, /defaultThemeState\.colors\[key\]/);
+  assert.match(css, /\.color-inputs\s*\{/);
+  assert.match(css, /\.color-hex-input\s*\{/);
+  assert.match(css, /\.color-reset-button\s*\{/);
 });
 
 test("tab icon uploads expose optional PNG tinting before theme export", async () => {
@@ -637,10 +656,10 @@ test("preview segment controls use the same pressed color data as downloadable t
   assert.match(themeModel, /theme_body_cell_pressed_color:\s*"bodyPressed"/);
   assert.match(themeModel, /theme_body_cell_border_color:\s*"bodyBorder"/);
   assert.match(themeModel, /theme_title_pressed_color:\s*"titlePressed"/);
-  assert.match(app, /documentRoot\.style\.setProperty\("--preview-title", colors\.titleText\);/);
-  assert.match(app, /documentRoot\.style\.setProperty\("--preview-body-border", colors\.bodyBorder\);/);
-  assert.match(app, /documentRoot\.style\.setProperty\("--preview-selected-bg", colors\.bodyPressed\);/);
-  assert.match(app, /documentRoot\.style\.setProperty\("--preview-selected-text", colors\.titlePressed\);/);
+  assert.match(app, /setPreviewColorVariable\("--preview-title", colors\.titleText\);/);
+  assert.match(app, /setPreviewColorVariable\("--preview-body-border", colors\.bodyBorder\);/);
+  assert.match(app, /setPreviewColorVariable\("--preview-selected-bg", colors\.bodyPressed\);/);
+  assert.match(app, /setPreviewColorVariable\("--preview-selected-text", colors\.titlePressed\);/);
 
   for (const segmentCss of [friendSegmentCss, shoppingTabCss, moreSegmentCss]) {
     assert.match(segmentCss, /border: 1px solid var\(--preview-body-border, #26664242\);/);
