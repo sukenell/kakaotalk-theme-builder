@@ -664,7 +664,7 @@ h2 {
 
 .chat-preview {
   display: grid;
-  grid-template-rows: 28px 58px 1fr 58px;
+  grid-template-rows: 28px 58px 1fr 68px;
 }
 
 .passcode-preview {
@@ -2273,9 +2273,18 @@ h2 {
 }
 
 .input-bar {
-  gap: 10px;
-  padding: 9px 12px;
+  --preview-input-content-height: 49px;
+  align-items: flex-start;
+  padding: 0 12px;
   background: var(--preview-input-bg, #ffffff);
+}
+
+.input-bar-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: var(--preview-input-content-height);
 }
 
 .input-bar button {
@@ -2285,7 +2294,7 @@ h2 {
   font-weight: 900;
 }
 
-.input-bar > button:first-child {
+.input-bar-content > button:first-child {
   width: 34px;
   background: rgba(0, 0, 0, 0.05);
   color: var(--preview-input-menu, #e86464);
@@ -2393,7 +2402,7 @@ h2 {
 }
 
 .phone-preview.is-tablet .chat-preview {
-  grid-template-rows: 30px 62px 1fr 62px;
+  grid-template-rows: 30px 62px 1fr 70px;
 }
 
 .phone-preview.is-tablet .phone-status {

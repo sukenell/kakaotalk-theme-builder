@@ -168,6 +168,29 @@ test("chat preview has a date chip and no bottom tabs", async () => {
   assert.doesNotMatch(chatMarkup, /<span>3<\/span>/);
 });
 
+test("chat input bar reserves the bottom safe area like tab bars", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const chatStart = html.indexOf('class="preview-slide chat-preview"');
+  const passcodeStart = html.indexOf('class="preview-slide passcode-preview"');
+  const chatMarkup = html.slice(chatStart, passcodeStart);
+
+  assert.match(chatMarkup, /<div class="input-bar">\s*<div class="input-bar-content">/);
+  assert.match(css, /\.chat-preview\s*\{[\s\S]*grid-template-rows: 28px 58px 1fr 68px;/);
+  assert.match(css, /\.phone-preview\.is-tablet \.chat-preview\s*\{[\s\S]*grid-template-rows: 30px 62px 1fr 70px;/);
+  assert.match(css, /\.bottom-tabs\s*\{[\s\S]*--preview-tab-content-height: 49px;/);
+  assert.match(
+    css,
+    /\.input-bar\s*\{[\s\S]*--preview-input-content-height: 49px;[\s\S]*align-items: flex-start;[\s\S]*padding: 0 12px;/,
+  );
+  assert.match(
+    css,
+    /\.input-bar-content\s*\{[\s\S]*display: flex;[\s\S]*align-items: center;[\s\S]*gap: 10px;[\s\S]*height: var\(--preview-input-content-height\);/,
+  );
+  assert.match(css, /\.input-bar-content > button:first-child\s*\{[\s\S]*width: 34px;/);
+  assert.doesNotMatch(css, /\.input-bar > button:first-child/);
+});
+
 test("chat preview includes default profile and extra basic/additional bubble samples", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
