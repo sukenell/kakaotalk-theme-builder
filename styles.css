@@ -2313,6 +2313,8 @@ h2 {
 }
 
 .bottom-tabs {
+  --preview-tab-content-height: 49px;
+  align-items: flex-start;
   justify-content: space-around;
   background:
     var(--preview-tab-image, none) center / cover no-repeat,
@@ -2324,7 +2326,7 @@ h2 {
   display: grid;
   place-items: center;
   min-width: 52px;
-  height: 100%;
+  height: var(--preview-tab-content-height);
   color: var(--preview-description, #805959);
   background: transparent;
 }
@@ -2333,7 +2335,6 @@ h2 {
   width: 38px;
   height: 38px;
   background: center / contain no-repeat;
-  transform: translateY(-6px);
 }
 
 .tab-friends .tab-icon {

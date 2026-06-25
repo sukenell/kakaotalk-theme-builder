@@ -353,13 +353,14 @@ test("unread badges center the white count inside the red pill", async () => {
   assert.match(css, /\.unread-badge\s*\{[\s\S]*display: inline-flex;[\s\S]*align-items: center;[\s\S]*justify-content: center;[\s\S]*height: 18px;[\s\S]*line-height: 18px;/);
 });
 
-test("bottom tab preview removes text labels and uses the template icon display size", async () => {
+test("bottom tab preview removes text labels and centers icons in the downloaded tab content area", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const bottomTabsStart = html.indexOf('class="bottom-tabs"');
   const homeEnd = html.indexOf("</article>", bottomTabsStart);
   const bottomTabsMarkup = html.slice(bottomTabsStart, homeEnd);
+  const tabIconBlock = css.match(/\.tab-icon\s*\{[^}]*\}/)?.[0] ?? "";
 
   assert.match(bottomTabsMarkup, /aria-label="친구"/);
   assert.match(bottomTabsMarkup, /aria-label="대화"/);
@@ -370,8 +371,10 @@ test("bottom tab preview removes text labels and uses the template icon display 
     assert.doesNotMatch(bottomTabsMarkup, new RegExp(`>${label}<\\/span>`));
   }
   assert.match(bottomTabsMarkup, /class="tab-friends is-selected"/);
+  assert.match(css, /\.bottom-tabs\s*\{[\s\S]*--preview-tab-content-height: 49px;[\s\S]*align-items: flex-start;/);
+  assert.match(css, /\.bottom-tabs button\s*\{[\s\S]*height: var\(--preview-tab-content-height\);/);
   assert.match(css, /\.tab-icon\s*\{[\s\S]*width: 38px;[\s\S]*height: 38px;/);
-  assert.match(css, /\.tab-icon\s*\{[\s\S]*transform: translateY\(-6px\);/);
+  assert.doesNotMatch(tabIconBlock, /transform:/);
   assert.match(app, /PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY/);
   assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.tabFriendIcon, ["--preview-tab-friends-icon"]);
   assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.tabFriendIconSelected, ["--preview-tab-friends-icon-selected"]);
