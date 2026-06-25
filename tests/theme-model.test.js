@@ -35,9 +35,19 @@ test("default theme name uses the requested Korean wording", () => {
   assert.equal(defaultThemeState.appName, "나의 테마");
 });
 
-test("default tab background color is opaque so cleared tab images do not reveal the main background", () => {
-  assert.equal(defaultThemeState.colors.tabBackground, "#FFFFDEDE");
-  assert.doesNotMatch(defaultThemeState.colors.tabBackground, /^#00/i);
+test("default tab background color is white in preview and downloaded themes", () => {
+  assert.equal(defaultThemeState.colors.tabBackground, "#FFFFFF");
+
+  const iosCss = `TabBarStyle-Main
+{
+    background-color: #00FFFFFF;
+}`;
+  const androidXml = `<resources>
+    <color name="theme_maintab_cell_color">#00FFFFFF</color>
+</resources>`;
+
+  assert.match(patchIosThemeCss(iosCss, defaultThemeState), /TabBarStyle-Main[\s\S]*background-color: #FFFFFF;/);
+  assert.match(patchAndroidColorsXml(androidXml, defaultThemeState), /name="theme_maintab_cell_color">#FFFFFF</);
 });
 
 test("theme versions normalize to numeric triplets and validate strictly", () => {

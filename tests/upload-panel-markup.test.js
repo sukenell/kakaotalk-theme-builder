@@ -7,6 +7,7 @@ import {
   PREVIEW_DEFAULT_IMAGE_PATHS,
   PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY,
 } from "../src/preview-assets.js";
+import { PREVIEW_PAGES } from "../src/preview-pages.js";
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -787,6 +788,39 @@ test("preview segment controls use the same pressed color data as downloadable t
     assert.match(segmentCss, /color: var\(--preview-selected-text, #b06b6b\);/);
     assert.doesNotMatch(segmentCss, /--preview-header|--preview-main-bg/);
   }
+});
+
+test("preview color variables use the same color keys as downloadable themes", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const themeModel = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
+  const previewColorBindings = new Map(
+    [...app.matchAll(/setPreviewColorVariable\("([^"]+)", colors\.([A-Za-z0-9]+)\);/g)].map((match) => [
+      match[2],
+      match[1],
+    ]),
+  );
+  const previewColorKeys = [...new Set(PREVIEW_PAGES.flatMap((page) => page.colorKeys))];
+
+  for (const key of previewColorKeys) {
+    assert.ok(previewColorBindings.has(key), `${key} has a preview CSS variable`);
+    assert.match(
+      themeModel,
+      new RegExp(`\\["[^"]+", "[^"]+", "${key}"\\]`),
+      `${key} has an iOS download color binding`,
+    );
+    assert.match(
+      themeModel,
+      new RegExp(`:\\s*"${key}"`),
+      `${key} has an Android download color binding`,
+    );
+  }
+
+  assert.equal(previewColorBindings.get("tabBackground"), "--preview-tab-bg");
+  assert.equal(previewColorBindings.get("unreadCount"), "--preview-unread-count");
+  assert.match(css, /\.unread-badge\s*\{[\s\S]*background: var\(--preview-unread-count, #ff7f7f\);/);
+  assert.match(themeModel, /\["MessageCellStyle-Send", "-ios-unread-text-color", "unreadCount"\]/);
+  assert.match(themeModel, /theme_chatroom_unread_count_color:\s*"unreadCount"/);
 });
 
 test("reading log ad background image is replaceable and stays preview-only", async () => {

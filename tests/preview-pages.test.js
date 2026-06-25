@@ -50,7 +50,9 @@ test("getPreviewColorKeys returns only colors used by the active preview page", 
     "titlePressed",
   ]);
   assert.equal(getPreviewColorKeys("chat-list").includes("tabBackground"), true);
+  assert.equal(getPreviewColorKeys("chat-list").includes("unreadCount"), true);
   assert.equal(getPreviewColorKeys("open-chat").includes("tabBackground"), true);
+  assert.equal(getPreviewColorKeys("open-chat").includes("unreadCount"), true);
   assert.equal(getPreviewColorKeys("shopping").includes("tabBackground"), true);
   assert.equal(getPreviewColorKeys("more").includes("tabBackground"), true);
 });

@@ -1176,6 +1176,7 @@ function updatePreview() {
   setPreviewColorVariable("--preview-send-button", colors.sendButton);
   setPreviewColorVariable("--preview-send-button-text", colors.sendButtonText);
   setPreviewColorVariable("--preview-send-fill", colors.sendButton);
+  setPreviewColorVariable("--preview-unread-count", colors.unreadCount);
   setPreviewColorVariable("--preview-passcode-bg", colors.passcodeBackground);
   setPreviewColorVariable("--preview-passcode-text", colors.passcodeText);
   setPreviewColorVariable("--preview-passcode-keypad-bg", colors.passcodeKeypadBackground);

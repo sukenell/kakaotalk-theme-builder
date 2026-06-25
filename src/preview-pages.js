@@ -13,6 +13,8 @@ const mainTabColorKeys = [
   "titlePressed",
 ];
 
+const openChatColorKeys = [...mainTabColorKeys, "unreadCount"];
+
 const mainTabImageKeys = [
   "mainBackground",
   "tabBackground",
@@ -51,7 +53,7 @@ export const PREVIEW_PAGES = [
     id: "chat-list",
     label: "대화 목록",
     iconUrl: pageIcon("chats.svg"),
-    colorKeys: ["mainBackground", "tabBackground", "headerText", "titleText", "paragraphText", "sectionTitle"],
+    colorKeys: ["mainBackground", "tabBackground", "headerText", "titleText", "paragraphText", "sectionTitle", "unreadCount"],
     imageKeys: [
       "mainBackground",
       "tabBackground",
@@ -66,7 +68,7 @@ export const PREVIEW_PAGES = [
     id: "open-chat",
     label: "지금",
     iconUrl: pageIcon("now.svg"),
-    colorKeys: mainTabColorKeys,
+    colorKeys: openChatColorKeys,
     imageKeys: mainTabImageKeys,
   },
   {
