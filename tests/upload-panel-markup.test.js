@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
-import { PREVIEW_CSS_IMAGE_VARIABLES, PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY } from "../src/preview-assets.js";
+import {
+  PREVIEW_CSS_IMAGE_VARIABLES,
+  PREVIEW_DEFAULT_IMAGE_PATHS,
+  PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY,
+} from "../src/preview-assets.js";
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -330,10 +334,41 @@ test("bottom tab preview removes text labels and uses the template icon display 
   assert.match(app, /PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY/);
   assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.tabFriendIcon, ["--preview-tab-friends-icon"]);
   assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.tabFriendIconSelected, ["--preview-tab-friends-icon-selected"]);
+  assert.equal(PREVIEW_CSS_IMAGE_VARIABLES["--preview-tab-friends-icon"], `url("./${PREVIEW_DEFAULT_IMAGE_PATHS.tabFriendIcon}")`);
+  assert.equal(
+    PREVIEW_CSS_IMAGE_VARIABLES["--preview-tab-chat-icon-selected"],
+    `url("./${PREVIEW_DEFAULT_IMAGE_PATHS.tabChatIconSelected}")`,
+  );
   assert.notDeepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.tabFriendIcon, [
     "--preview-tab-friends-icon",
     "--preview-tab-friends-icon-selected",
   ]);
+});
+
+test("tab icon upload thumbnails show the bundled default icons before upload", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+
+  assert.match(app, /element\.classList\.toggle\("is-tab-icon-thumb", tabIconUploadKeys\.has\(key\)\);/);
+  assert.match(app, /const previewImage = getPreviewDefaultCssUrl\(key\);/);
+  assert.match(app, /element\.style\.backgroundImage = previewImage;/);
+  assert.match(css, /\.upload-thumb\.is-tab-icon-thumb\s*\{/);
+  assert.match(css, /\.upload-thumb\.is-tab-icon-thumb\s*\{[\s\S]*background-size: 38px 38px;/);
+
+  for (const key of [
+    "tabFriendIcon",
+    "tabFriendIconSelected",
+    "tabChatIcon",
+    "tabChatIconSelected",
+    "tabOpenChatIcon",
+    "tabOpenChatIconSelected",
+    "tabShoppingIcon",
+    "tabShoppingIconSelected",
+    "tabMoreIcon",
+    "tabMoreIconSelected",
+  ]) {
+    assert.match(PREVIEW_DEFAULT_IMAGE_PATHS[key], /assets\/template-images\/ios\/Images\/maintabIco.+@3x\.png/);
+  }
 });
 
 test("preview includes a chat list screen before the chat room", async () => {

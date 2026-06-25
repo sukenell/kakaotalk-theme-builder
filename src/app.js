@@ -658,6 +658,7 @@ function setPreviewDevice(device) {
 function applyUploadThumb(element, key) {
   element.style.backgroundColor = "";
   element.style.backgroundImage = "";
+  element.classList.toggle("is-tab-icon-thumb", tabIconUploadKeys.has(key));
 
   if (isClearedImageUpload(key)) {
     const colorKey = backgroundImageColorKeys[key];

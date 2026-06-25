@@ -318,6 +318,11 @@ h2 {
   background: #f2f2ee center / cover no-repeat;
 }
 
+.upload-thumb.is-tab-icon-thumb {
+  background-color: #f7f7f5;
+  background-size: 38px 38px;
+}
+
 .upload-label {
   display: grid;
   gap: 3px;
