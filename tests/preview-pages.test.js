@@ -104,13 +104,19 @@ test("getPreviewImageKeys returns only images used by the active preview page", 
   ]);
 });
 
-test("PREVIEW_PAGES uses Flaticon image assets for page icons", () => {
+test("PREVIEW_PAGES uses bundled internal image assets for page icons", () => {
   for (const page of PREVIEW_PAGES) {
-    assert.match(getPreviewIconUrl(page.id), /^https:\/\/cdn-icons-png\.flaticon\.com\/512\//);
+    assert.match(getPreviewIconUrl(page.id), /^\.\/assets\//);
   }
 
-  assert.equal(getPreviewIconUrl("splash"), "https://cdn-icons-png.flaticon.com/512/2499/2499339.png");
-  assert.equal(getPreviewIconUrl("theme-list"), "https://cdn-icons-png.flaticon.com/512/5112/5112614.png");
+  assert.equal(getPreviewIconUrl("home"), "./assets/template-images/ios/Images/maintabIcoFriends@3x.png");
+  assert.equal(getPreviewIconUrl("chat-list"), "./assets/template-images/ios/Images/maintabIcoChats@3x.png");
+  assert.equal(getPreviewIconUrl("open-chat"), "./assets/template-images/ios/Images/maintabIcoNow@3x.png");
+  assert.equal(getPreviewIconUrl("shopping"), "./assets/template-images/ios/Images/maintabIcoShopping@3x.png");
+  assert.equal(getPreviewIconUrl("more"), "./assets/template-images/ios/Images/maintabIcoMore@3x.png");
+  assert.equal(getPreviewIconUrl("chat"), "./assets/preview/header-icons/headerCompose.png");
+  assert.equal(getPreviewIconUrl("splash"), "./assets/template-images/ios/Images/commonIcoTheme.png");
+  assert.equal(getPreviewIconUrl("theme-list"), "./assets/template-images/ios/Images/commonIcoTheme.png");
   assert.equal(PREVIEW_PAGES.find((page) => page.id === "open-chat")?.label, "지금");
 });
 

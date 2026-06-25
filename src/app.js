@@ -74,6 +74,7 @@ const bubbleUploadKeys = new Set(CHAT_BUBBLE_IMAGE_KEYS);
 const tabIconUploadKeys = new Set(TAB_ICON_IMAGE_KEYS);
 const tintableUploadKeys = new Set(VISIBLE_TAB_ICON_IMAGE_KEYS);
 const clearableBackgroundImageKeys = new Set(["mainBackground", "chatBackground", "tabBackground", "passcodeBackgroundImage"]);
+const defaultClearedImageUploadKeys = new Set(["mainBackground", "chatBackground", "tabBackground", "passcodeBackgroundImage"]);
 const defaultUploadTintColor = "#000000";
 const backgroundImageColorKeys = {
   mainBackground: "mainBackground",
@@ -202,7 +203,7 @@ const androidNinePatchMarkers = {
 };
 
 const state = cloneDefaultThemeState();
-const uploads = {};
+const uploads = Object.fromEntries([...defaultClearedImageUploadKeys].map((key) => [key, { cleared: true }]));
 const previews = {};
 const uploadTints = {};
 const uploadRenderVersions = {};

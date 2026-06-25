@@ -192,6 +192,15 @@ test("background image uploads expose a delete action that falls back to the sel
   assert.match(app, /documentRoot\.style\.setProperty\(variableName, "none"\);/);
 });
 
+test("default background uploads start cleared except for the loading screen", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /const defaultClearedImageUploadKeys = new Set\(\[[\s\S]*"mainBackground"[\s\S]*"chatBackground"[\s\S]*"tabBackground"[\s\S]*"passcodeBackgroundImage"/);
+  assert.doesNotMatch(app, /const defaultClearedImageUploadKeys = new Set\(\[[\s\S]*"splashImage"/);
+  assert.match(app, /const uploads = Object\.fromEntries\(\[\.\.\.defaultClearedImageUploadKeys\]\.map\(\(key\) => \[key, \{ cleared: true \}\]\)\);/);
+  assert.match(app, /if \(isClearedImageUpload\(key\)\) \{[\s\S]*element\.style\.backgroundColor = toPreviewCssColor\(colors\[colorKey\]\);[\s\S]*element\.style\.backgroundImage = "none";/);
+});
+
 test("color controls show hex values on the picker and expose reset buttons", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
@@ -336,6 +345,12 @@ test("chat list headers use local default action icons tinted by the active head
   assert.doesNotMatch(css, /\.settings-action::before/);
   assert.doesNotMatch(css, /\.chat-compose-icon::before/);
   assert.doesNotMatch(css, /\.chat-compose-icon::after/);
+});
+
+test("unread badges center the white count inside the red pill", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+
+  assert.match(css, /\.unread-badge\s*\{[\s\S]*display: inline-flex;[\s\S]*align-items: center;[\s\S]*justify-content: center;[\s\S]*height: 18px;[\s\S]*line-height: 18px;/);
 });
 
 test("bottom tab preview removes text labels and uses the template icon display size", async () => {

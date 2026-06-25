@@ -20,11 +20,14 @@ const mainTabImageKeys = [
   "profileImage",
 ];
 
+const iosImage = (name) => `./assets/template-images/ios/Images/${name}`;
+const headerIcon = (name) => `./assets/preview/header-icons/${name}`;
+
 export const PREVIEW_PAGES = [
   {
     id: "home",
     label: "메인",
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/25/25694.png",
+    iconUrl: iosImage("maintabIcoFriends@3x.png"),
     colorKeys: [
       "mainBackground",
       "tabBackground",
@@ -48,7 +51,7 @@ export const PREVIEW_PAGES = [
   {
     id: "chat-list",
     label: "대화 목록",
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/2076/2076218.png",
+    iconUrl: iosImage("maintabIcoChats@3x.png"),
     colorKeys: ["mainBackground", "tabBackground", "headerText", "titleText", "paragraphText", "sectionTitle"],
     imageKeys: [
       "mainBackground",
@@ -63,28 +66,28 @@ export const PREVIEW_PAGES = [
   {
     id: "open-chat",
     label: "지금",
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/2076/2076218.png",
+    iconUrl: iosImage("maintabIcoNow@3x.png"),
     colorKeys: mainTabColorKeys,
     imageKeys: mainTabImageKeys,
   },
   {
     id: "shopping",
     label: "쇼핑",
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/1170/1170678.png",
+    iconUrl: iosImage("maintabIcoShopping@3x.png"),
     colorKeys: mainTabColorKeys,
     imageKeys: mainTabImageKeys,
   },
   {
     id: "more",
     label: "더보기",
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/1828/1828859.png",
+    iconUrl: iosImage("maintabIcoMore@3x.png"),
     colorKeys: mainTabColorKeys,
     imageKeys: mainTabImageKeys,
   },
   {
     id: "chat",
     label: "채팅방",
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/2076/2076218.png",
+    iconUrl: headerIcon("headerCompose.png"),
     colorKeys: [
       "mainBackground",
       "chatBackground",
@@ -103,21 +106,21 @@ export const PREVIEW_PAGES = [
   {
     id: "passcode",
     label: "잠금화면",
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/483/483408.png",
+    iconUrl: iosImage("passcodeImgCode01@3x.png"),
     colorKeys: ["passcodeBackground", "passcodeText", "passcodeKeypadBackground"],
     imageKeys: ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"],
   },
   {
     id: "splash",
     label: "로딩화면",
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/2499/2499339.png",
+    iconUrl: iosImage("commonIcoTheme.png"),
     colorKeys: [],
     imageKeys: ["splashImage"],
   },
   {
     id: "theme-list",
     label: "테마 목록",
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/5112/5112614.png",
+    iconUrl: iosImage("commonIcoTheme.png"),
     colorKeys: ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle"],
     imageKeys: ["themeIcon", ...ADDITIONAL_IMAGE_KEYS.filter((key) => key.startsWith("themeIcon"))],
   },
