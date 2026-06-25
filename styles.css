@@ -193,6 +193,7 @@ h2 {
 }
 
 .color-row {
+  position: relative;
   grid-template-columns: 1fr;
   align-items: stretch;
   gap: 7px;
@@ -201,6 +202,7 @@ h2 {
 }
 
 .color-inputs {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -220,10 +222,11 @@ h2 {
   padding: 0 10px;
   background: #ffffff;
   cursor: pointer;
-  overflow: hidden;
+  text-align: left;
 }
 
-.color-picker-control:focus-within {
+.color-picker-control:focus-visible,
+.color-picker-control[aria-expanded="true"] {
   border-color: #9dbbb5;
   outline: 0;
   box-shadow: 0 0 0 3px rgba(79, 143, 132, 0.18);
@@ -246,15 +249,54 @@ h2 {
   text-transform: uppercase;
 }
 
-.color-picker-input {
+.color-picker-popover {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  padding: 0;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(30, 33, 38, 0.14);
+}
+
+.color-picker-popover[hidden] {
+  display: none;
+}
+
+.color-hex-input {
+  min-width: 0;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: #fbfbfa;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.color-hex-input:focus {
+  border-color: #9dbbb5;
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(79, 143, 132, 0.18);
+}
+
+.color-native-input {
+  width: 38px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 2px;
+  background: #ffffff;
   cursor: pointer;
-  opacity: 0;
 }
 
 .color-reset-button {
@@ -702,31 +744,32 @@ h2 {
 }
 
 .friend-action-icon,
-.chat-compose-icon {
+.chat-compose-icon,
+.shopping-action-icon,
+.scan-action-icon {
   display: block;
   width: 20px;
   height: 20px;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
-  filter: grayscale(1) brightness(0.34);
+  background-color: currentColor;
+  mask: var(--header-action-mask) center / contain no-repeat;
+  -webkit-mask: var(--header-action-mask) center / contain no-repeat;
   opacity: 0.9;
 }
 
 .search-action {
-  background-image: url("https://cdn-icons-png.flaticon.com/512/622/622669.png");
+  --header-action-mask: url("./assets/preview/header-icons/headerSearch.png");
 }
 
 .add-action {
-  background-image: url("https://cdn-icons-png.flaticon.com/512/748/748137.png");
+  --header-action-mask: url("./assets/preview/header-icons/headerAdd.png");
 }
 
 .music-action {
-  background-image: url("https://cdn-icons-png.flaticon.com/512/727/727245.png");
+  --header-action-mask: url("./assets/preview/header-icons/headerMusic.png");
 }
 
 .settings-action {
-  background-image: url("https://cdn-icons-png.flaticon.com/512/484/484613.png");
+  --header-action-mask: url("./assets/preview/header-icons/headerSettings.png");
 }
 
 .phone-header button {
@@ -809,25 +852,15 @@ h2 {
 }
 
 .chat-compose-icon {
-  background-image: url("https://cdn-icons-png.flaticon.com/512/1159/1159633.png");
+  --header-action-mask: url("./assets/preview/header-icons/headerCompose.png");
 }
 
 .shopping-action-icon {
-  display: block;
-  width: 20px;
-  height: 20px;
-  background: url("https://cdn-icons-png.flaticon.com/512/1170/1170678.png") center / contain no-repeat;
-  filter: grayscale(1) brightness(0.34);
-  opacity: 0.9;
+  --header-action-mask: url("./assets/template-images/ios/Images/maintabIcoShopping@3x.png");
 }
 
 .scan-action-icon {
-  display: block;
-  width: 20px;
-  height: 20px;
-  background: url("https://cdn-icons-png.flaticon.com/512/3126/3126489.png") center / contain no-repeat;
-  filter: grayscale(1) brightness(0.34);
-  opacity: 0.9;
+  --header-action-mask: url("./assets/preview/header-icons/headerScan.png");
 }
 
 .chat-screen {
@@ -1022,12 +1055,6 @@ h2 {
 
 .shopping-preview .bottom-tabs button.is-selected {
   color: var(--preview-header, #664242);
-}
-
-.shopping-preview .friend-action-icon,
-.shopping-preview .shopping-action-icon {
-  filter: grayscale(1) brightness(0.34);
-  opacity: 0.9;
 }
 
 .shopping-screen {
@@ -2305,6 +2332,7 @@ h2 {
   width: 38px;
   height: 38px;
   background: center / contain no-repeat;
+  transform: translateY(-6px);
 }
 
 .tab-friends .tab-icon {

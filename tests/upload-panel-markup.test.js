@@ -197,23 +197,32 @@ test("color controls show hex values on the picker and expose reset buttons", as
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 
   assert.match(app, /\["tabBackground", "탭 배경"\]/);
-  assert.match(app, /const picker = document\.createElement\("label"\);/);
+  assert.match(app, /const picker = document\.createElement\("button"\);/);
+  assert.match(app, /picker\.type = "button";/);
   assert.match(app, /picker\.className = "color-picker-control";/);
   assert.match(app, /const valueText = document\.createElement\("span"\);/);
   assert.match(app, /valueText\.className = "color-picker-value";/);
   assert.match(app, /valueText\.textContent = normalizedValue;/);
+  assert.match(app, /const colorPopover = document\.createElement\("div"\);/);
+  assert.match(app, /colorPopover\.className = "color-picker-popover";/);
+  assert.match(app, /colorPopover\.hidden = true;/);
+  assert.match(app, /const hexInput = document\.createElement\("input"\);/);
+  assert.match(app, /hexInput\.type = "text";/);
+  assert.match(app, /hexInput\.className = "color-hex-input";/);
+  assert.match(app, /hexInput\.focus\(\);/);
+  assert.match(app, /hexInput\.select\(\);/);
   assert.match(app, /normalizeHexColorInput/);
   assert.match(app, /function toPreviewCssColor/);
   assert.match(app, /setPreviewColorVariable\("--preview-tab-bg", colors\.tabBackground\);/);
   assert.match(app, /element\.style\.backgroundColor = toPreviewCssColor\(colors\[colorKey\]\);/);
   assert.match(app, /resetButton\.textContent = "초기화";/);
   assert.match(app, /defaultThemeState\.colors\[key\]/);
-  assert.doesNotMatch(app, /hexInput\.type = "text";/);
   assert.match(css, /\.color-inputs\s*\{/);
   assert.match(css, /\.color-picker-control\s*\{/);
   assert.match(css, /\.color-picker-value\s*\{/);
+  assert.match(css, /\.color-picker-popover\s*\{/);
+  assert.match(css, /\.color-hex-input\s*\{/);
   assert.match(css, /\.color-reset-button\s*\{/);
-  assert.doesNotMatch(css, /\.color-hex-input/);
 });
 
 test("tab icon uploads expose optional PNG tinting before theme export", async () => {
@@ -284,26 +293,42 @@ test("tab icon upload labels stay compact and only expose previewed bottom tabs"
   assert.doesNotMatch(app, /\$\{target\.label\}\(\$\{width\}px x \$\{height\}px\)/);
 });
 
-test("friends and chat list headers use Flaticon image icons", async () => {
+test("chat list headers use local default action icons tinted by the active header color", async () => {
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 
-  for (const [className, url] of [
-    ["search-action", "https://cdn-icons-png.flaticon.com/512/622/622669.png"],
-    ["add-action", "https://cdn-icons-png.flaticon.com/512/748/748137.png"],
-    ["music-action", "https://cdn-icons-png.flaticon.com/512/727/727245.png"],
-    ["settings-action", "https://cdn-icons-png.flaticon.com/512/484/484613.png"],
-    ["chat-compose-icon", "https://cdn-icons-png.flaticon.com/512/1159/1159633.png"],
+  for (const path of [
+    "../assets/preview/header-icons/headerSearch.png",
+    "../assets/preview/header-icons/headerAdd.png",
+    "../assets/preview/header-icons/headerMusic.png",
+    "../assets/preview/header-icons/headerCompose.png",
+    "../assets/preview/header-icons/headerSettings.png",
+    "../assets/preview/header-icons/headerScan.png",
   ]) {
-    assert.match(css, new RegExp(`\\.${className}\\s*\\{[\\s\\S]*background-image: url\\("${url.replaceAll("/", "\\/")}"\\);`));
+    assert.ok((await stat(new URL(path, import.meta.url))).isFile());
+  }
+
+  for (const [className, url] of [
+    ["search-action", "./assets/preview/header-icons/headerSearch.png"],
+    ["chat-compose-icon", "./assets/preview/header-icons/headerCompose.png"],
+    ["settings-action", "./assets/preview/header-icons/headerSettings.png"],
+    ["shopping-action-icon", "./assets/template-images/ios/Images/maintabIcoShopping@3x.png"],
+    ["scan-action-icon", "./assets/preview/header-icons/headerScan.png"],
+  ]) {
+    assert.match(css, new RegExp(`\\.${className}\\s*\\{[\\s\\S]*--header-action-mask: url\\("${url.replaceAll("/", "\\/")}"\\);`));
   }
 
   assert.match(css, /\.friend-header-actions button\s*\{[\s\S]*width: 28px;[\s\S]*height: 28px;/);
-  assert.match(css, /\.friend-action-icon,\s*\.chat-compose-icon\s*\{[\s\S]*width: 20px;[\s\S]*height: 20px;/);
+  assert.match(
+    css,
+    /\.friend-action-icon,\s*\.chat-compose-icon,\s*\.shopping-action-icon,\s*\.scan-action-icon\s*\{[\s\S]*width: 20px;[\s\S]*height: 20px;[\s\S]*background-color: currentColor;[\s\S]*mask: var\(--header-action-mask\) center \/ contain no-repeat;/,
+  );
+  assert.match(css, /\.phone-header\s*\{[\s\S]*color: var\(--preview-header, #664242\);/);
   assert.match(css, /\.chat-list-header > strong\s*\{[^}]*font-size: 18px;/);
   assert.match(css, /\.main-header \.friend-header-actions\s*\{[\s\S]*grid-template-columns: repeat\(4, 28px\);[\s\S]*gap: 12px;/);
   assert.match(css, /\.chat-list-actions\s*\{[\s\S]*grid-template-columns: repeat\(3, 28px\);[\s\S]*gap: 12px;/);
   assert.match(css, /\.phone-header \.chat-list-actions\s*\{[\s\S]*grid-template-columns: repeat\(3, 28px\);[\s\S]*gap: 12px;/);
   assert.match(css, /\.chat-list-actions button\s*\{[\s\S]*width: 28px;[\s\S]*height: 28px;/);
+  assert.doesNotMatch(css, /cdn-icons-png\.flaticon\.com/);
   assert.doesNotMatch(css, /\.search-action::before/);
   assert.doesNotMatch(css, /\.search-action::after/);
   assert.doesNotMatch(css, /\.add-action::before/);
@@ -331,6 +356,7 @@ test("bottom tab preview removes text labels and uses the template icon display 
   }
   assert.match(bottomTabsMarkup, /class="tab-friends is-selected"/);
   assert.match(css, /\.tab-icon\s*\{[\s\S]*width: 38px;[\s\S]*height: 38px;/);
+  assert.match(css, /\.tab-icon\s*\{[\s\S]*transform: translateY\(-6px\);/);
   assert.match(app, /PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY/);
   assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.tabFriendIcon, ["--preview-tab-friends-icon"]);
   assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.tabFriendIconSelected, ["--preview-tab-friends-icon-selected"]);

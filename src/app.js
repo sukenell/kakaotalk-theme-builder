@@ -381,19 +381,21 @@ function renderColorControls() {
       row.className = "color-row";
 
       const text = document.createElement("label");
-      text.htmlFor = `color-${key}`;
+      text.htmlFor = `color-hex-${key}`;
       text.textContent = label;
 
       const input = document.createElement("input");
       input.id = `color-${key}`;
       input.type = "color";
-      input.className = "color-picker-input";
+      input.className = "color-native-input";
       input.ariaLabel = `${label} 색상 선택`;
       input.value = normalizeColorPickerValue(colors[key]);
 
-      const picker = document.createElement("label");
+      const picker = document.createElement("button");
+      picker.type = "button";
       picker.className = "color-picker-control";
-      picker.htmlFor = input.id;
+      picker.setAttribute("aria-expanded", "false");
+      picker.setAttribute("aria-controls", `color-popover-${key}`);
 
       const swatch = document.createElement("span");
       swatch.className = "color-picker-swatch";
@@ -406,6 +408,21 @@ function renderColorControls() {
       resetButton.className = "color-reset-button";
       resetButton.textContent = "초기화";
 
+      const colorPopover = document.createElement("div");
+      colorPopover.id = `color-popover-${key}`;
+      colorPopover.className = "color-picker-popover";
+      colorPopover.hidden = true;
+
+      const hexInput = document.createElement("input");
+      hexInput.id = `color-hex-${key}`;
+      hexInput.type = "text";
+      hexInput.className = "color-hex-input";
+      hexInput.inputMode = "text";
+      hexInput.spellcheck = false;
+      hexInput.autocapitalize = "characters";
+      hexInput.ariaLabel = `${label} HEX 컬러 코드`;
+      hexInput.placeholder = "#RRGGBB";
+
       const syncResetState = (value) => {
         resetButton.disabled = normalizeHexColorInput(value) === normalizeHexColorInput(defaultThemeState.colors[key]);
       };
@@ -413,6 +430,7 @@ function renderColorControls() {
       const syncPickerState = (value) => {
         const normalizedValue = normalizeHexColorInput(value) || normalizeHexColorInput(defaultThemeState.colors[key]);
         valueText.textContent = normalizedValue;
+        hexInput.value = normalizedValue;
         input.value = normalizeColorPickerValue(normalizedValue);
         picker.style.setProperty("--color-picker-swatch", toPreviewCssColor(normalizedValue));
         syncResetState(normalizedValue);
@@ -421,14 +439,64 @@ function renderColorControls() {
       const applyColorValue = (value) => {
         const normalizedValue = normalizeHexColorInput(value);
         if (!normalizedValue) {
-          return;
+          return false;
         }
 
         setActiveColor(state, key, normalizedValue);
         syncPickerState(normalizedValue);
         updatePreview();
+        return true;
       };
 
+      const closeColorPopover = () => {
+        colorPopover.hidden = true;
+        picker.setAttribute("aria-expanded", "false");
+      };
+
+      picker.addEventListener("click", () => {
+        const shouldOpen = colorPopover.hidden;
+        colorControlRoot.querySelectorAll(".color-picker-popover").forEach((popover) => {
+          if (popover !== colorPopover) {
+            popover.hidden = true;
+          }
+        });
+        colorControlRoot.querySelectorAll(".color-picker-control").forEach((control) => {
+          if (control !== picker) {
+            control.setAttribute("aria-expanded", "false");
+          }
+        });
+
+        colorPopover.hidden = !shouldOpen;
+        picker.setAttribute("aria-expanded", String(shouldOpen));
+        if (shouldOpen) {
+          requestAnimationFrame(() => {
+            hexInput.focus();
+            hexInput.select();
+          });
+        }
+      });
+      row.addEventListener("focusout", (event) => {
+        if (!row.contains(event.relatedTarget)) {
+          closeColorPopover();
+        }
+      });
+      hexInput.addEventListener("input", () => {
+        applyColorValue(hexInput.value);
+      });
+      hexInput.addEventListener("change", () => {
+        const colors = getActiveColors(state);
+        syncPickerState(colors[key]);
+      });
+      hexInput.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeColorPopover();
+          picker.focus();
+        }
+        if (event.key === "Enter" && applyColorValue(hexInput.value)) {
+          closeColorPopover();
+          picker.focus();
+        }
+      });
       input.addEventListener("input", () => {
         applyColorValue(input.value);
       });
@@ -437,11 +505,12 @@ function renderColorControls() {
       });
 
       syncPickerState(colors[key]);
-      picker.append(swatch, valueText, input);
+      picker.append(swatch, valueText);
+      colorPopover.append(hexInput, input);
 
       const inputs = document.createElement("div");
       inputs.className = "color-inputs";
-      inputs.append(picker, resetButton);
+      inputs.append(picker, resetButton, colorPopover);
 
       row.append(text, inputs);
       return row;
