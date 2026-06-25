@@ -595,9 +595,14 @@ h2 {
   color: var(--muted);
 }
 
+.preview-tabs button:is(:hover, :focus-visible) {
+  background: #f1f2f3;
+  color: var(--ink);
+}
+
 .preview-tabs button.is-active {
-  background: var(--ink);
-  color: #ffffff;
+  background: #eef0f2;
+  color: var(--ink);
 }
 
 .page-icon {
@@ -610,7 +615,7 @@ h2 {
 
 .preview-tabs button.is-active .page-icon {
   opacity: 1;
-  filter: invert(1) grayscale(1);
+  filter: grayscale(1);
 }
 
 .phone-preview {
@@ -1082,7 +1087,7 @@ h2 {
   padding: 0 18px;
   border: 1px solid var(--preview-body-border, #26664242);
   border-radius: 999px;
-  background: transparent;
+  background: var(--preview-tab-bg, transparent);
   color: var(--preview-title, #664242);
   font-size: 16px;
   font-weight: 900;

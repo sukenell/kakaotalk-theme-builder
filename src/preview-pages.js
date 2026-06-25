@@ -22,6 +22,7 @@ const mainTabImageKeys = [
 
 const iosImage = (name) => `./assets/template-images/ios/Images/${name}`;
 const headerIcon = (name) => `./assets/preview/header-icons/${name}`;
+const pageIcon = (name) => `./assets/preview/page-icons/${name}`;
 
 export const PREVIEW_PAGES = [
   {
@@ -106,21 +107,21 @@ export const PREVIEW_PAGES = [
   {
     id: "passcode",
     label: "잠금화면",
-    iconUrl: iosImage("passcodeImgCode01@3x.png"),
+    iconUrl: pageIcon("lock.svg"),
     colorKeys: ["passcodeBackground", "passcodeText", "passcodeKeypadBackground"],
     imageKeys: ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"],
   },
   {
     id: "splash",
     label: "로딩화면",
-    iconUrl: iosImage("commonIcoTheme.png"),
+    iconUrl: pageIcon("loading.svg"),
     colorKeys: [],
     imageKeys: ["splashImage"],
   },
   {
     id: "theme-list",
     label: "테마 목록",
-    iconUrl: iosImage("commonIcoTheme.png"),
+    iconUrl: pageIcon("brush.svg"),
     colorKeys: ["mainBackground", "headerText", "titleText", "paragraphText", "sectionTitle"],
     imageKeys: ["themeIcon", ...ADDITIONAL_IMAGE_KEYS.filter((key) => key.startsWith("themeIcon"))],
   },

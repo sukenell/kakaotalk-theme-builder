@@ -115,8 +115,9 @@ test("PREVIEW_PAGES uses bundled internal image assets for page icons", () => {
   assert.equal(getPreviewIconUrl("shopping"), "./assets/template-images/ios/Images/maintabIcoShopping@3x.png");
   assert.equal(getPreviewIconUrl("more"), "./assets/template-images/ios/Images/maintabIcoMore@3x.png");
   assert.equal(getPreviewIconUrl("chat"), "./assets/preview/header-icons/headerCompose.png");
-  assert.equal(getPreviewIconUrl("splash"), "./assets/template-images/ios/Images/commonIcoTheme.png");
-  assert.equal(getPreviewIconUrl("theme-list"), "./assets/template-images/ios/Images/commonIcoTheme.png");
+  assert.equal(getPreviewIconUrl("passcode"), "./assets/preview/page-icons/lock.svg");
+  assert.equal(getPreviewIconUrl("splash"), "./assets/preview/page-icons/loading.svg");
+  assert.equal(getPreviewIconUrl("theme-list"), "./assets/preview/page-icons/brush.svg");
   assert.equal(PREVIEW_PAGES.find((page) => page.id === "open-chat")?.label, "지금");
 });
 

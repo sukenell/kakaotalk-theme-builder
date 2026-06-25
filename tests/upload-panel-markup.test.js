@@ -85,6 +85,8 @@ test("preview has device switches, five bottom tabs, and unofficial footer notic
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const activePreviewTabCss = css.match(/\.preview-tabs button\.is-active\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const activePreviewTabIconCss = css.match(/\.preview-tabs button\.is-active \.page-icon\s*\{[\s\S]*?\}/)?.[0] ?? "";
 
   assert.match(html, /data-preview-device="phone"/);
   assert.match(html, /data-preview-device="tablet"/);
@@ -95,6 +97,11 @@ test("preview has device switches, five bottom tabs, and unofficial footer notic
   assert.match(css, /\.arrow-icon\s*\{[\s\S]*mask: url\("data:image\/svg\+xml,/);
   assert.doesNotMatch(css, /\.preview-arrow::before/);
   assert.doesNotMatch(css, /\.preview-arrow::after/);
+  assert.match(css, /\.preview-tabs button:is\(:hover, :focus-visible\)\s*\{[\s\S]*background: #f1f2f3;/);
+  assert.match(activePreviewTabCss, /background: #eef0f2;/);
+  assert.match(activePreviewTabCss, /color: var\(--ink\);/);
+  assert.doesNotMatch(activePreviewTabCss, /background:\s*(var\(--ink\)|#000|black)/);
+  assert.doesNotMatch(activePreviewTabIconCss, /invert/);
 
   for (const className of ["tab-friends", "tab-chat", "tab-openchat", "tab-shopping", "tab-more"]) {
     assert.match(html, new RegExp(`class=\"[^\"]*${className}`));
@@ -748,10 +755,12 @@ test("preview segment controls use the same pressed color data as downloadable t
 
   for (const segmentCss of [friendSegmentCss, shoppingTabCss, moreSegmentCss]) {
     assert.match(segmentCss, /border: 1px solid var\(--preview-body-border, #26664242\);/);
-    assert.match(segmentCss, /background: transparent;/);
     assert.match(segmentCss, /color: var\(--preview-title, #664242\);/);
     assert.doesNotMatch(segmentCss, /--preview-header|color-mix/);
   }
+  assert.match(friendSegmentCss, /background: transparent;/);
+  assert.match(moreSegmentCss, /background: transparent;/);
+  assert.match(shoppingTabCss, /background: var\(--preview-tab-bg, transparent\);/);
 
   for (const segmentCss of [friendSegmentActiveCss, shoppingTabActiveCss, moreSegmentActiveCss]) {
     assert.match(segmentCss, /background: var\(--preview-selected-bg, #ffb3b3\);/);
