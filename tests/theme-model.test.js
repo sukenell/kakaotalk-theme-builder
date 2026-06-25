@@ -35,6 +35,11 @@ test("default theme name uses the requested Korean wording", () => {
   assert.equal(defaultThemeState.appName, "나의 테마");
 });
 
+test("default tab background color is opaque so cleared tab images do not reveal the main background", () => {
+  assert.equal(defaultThemeState.colors.tabBackground, "#FFFFDEDE");
+  assert.doesNotMatch(defaultThemeState.colors.tabBackground, /^#00/i);
+});
+
 test("theme versions normalize to numeric triplets and validate strictly", () => {
   assert.equal(normalizeThemeVersion("v1.2.3-beta"), "1.2.3");
   assert.equal(normalizeThemeVersion("1..2...3.4"), "1.2.3");

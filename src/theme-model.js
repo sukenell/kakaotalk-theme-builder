@@ -95,7 +95,7 @@ const ANDROID_COLOR_BINDINGS = {
 
 const defaultColors = {
   mainBackground: "#FFDEDE",
-  tabBackground: "#00FFFFFF",
+  tabBackground: "#FFFFDEDE",
   chatBackground: "#FFDEDE",
   headerText: "#664242",
   titleText: "#664242",

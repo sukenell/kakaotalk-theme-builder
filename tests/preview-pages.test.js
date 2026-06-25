@@ -109,12 +109,12 @@ test("PREVIEW_PAGES uses bundled internal image assets for page icons", () => {
     assert.match(getPreviewIconUrl(page.id), /^\.\/assets\//);
   }
 
-  assert.equal(getPreviewIconUrl("home"), "./assets/template-images/ios/Images/maintabIcoFriends@3x.png");
-  assert.equal(getPreviewIconUrl("chat-list"), "./assets/template-images/ios/Images/maintabIcoChats@3x.png");
-  assert.equal(getPreviewIconUrl("open-chat"), "./assets/template-images/ios/Images/maintabIcoNow@3x.png");
-  assert.equal(getPreviewIconUrl("shopping"), "./assets/template-images/ios/Images/maintabIcoShopping@3x.png");
-  assert.equal(getPreviewIconUrl("more"), "./assets/template-images/ios/Images/maintabIcoMore@3x.png");
-  assert.equal(getPreviewIconUrl("chat"), "./assets/preview/header-icons/headerCompose.png");
+  assert.equal(getPreviewIconUrl("home"), "./assets/preview/page-icons/friends.svg");
+  assert.equal(getPreviewIconUrl("chat-list"), "./assets/preview/page-icons/chats.svg");
+  assert.equal(getPreviewIconUrl("open-chat"), "./assets/preview/page-icons/now.svg");
+  assert.equal(getPreviewIconUrl("shopping"), "./assets/preview/page-icons/shopping.svg");
+  assert.equal(getPreviewIconUrl("more"), "./assets/preview/page-icons/more.svg");
+  assert.equal(getPreviewIconUrl("chat"), "./assets/preview/page-icons/chat.svg");
   assert.equal(getPreviewIconUrl("passcode"), "./assets/preview/page-icons/lock.svg");
   assert.equal(getPreviewIconUrl("splash"), "./assets/preview/page-icons/loading.svg");
   assert.equal(getPreviewIconUrl("theme-list"), "./assets/preview/page-icons/brush.svg");

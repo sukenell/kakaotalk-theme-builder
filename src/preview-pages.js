@@ -20,15 +20,13 @@ const mainTabImageKeys = [
   "profileImage",
 ];
 
-const iosImage = (name) => `./assets/template-images/ios/Images/${name}`;
-const headerIcon = (name) => `./assets/preview/header-icons/${name}`;
 const pageIcon = (name) => `./assets/preview/page-icons/${name}`;
 
 export const PREVIEW_PAGES = [
   {
     id: "home",
     label: "메인",
-    iconUrl: iosImage("maintabIcoFriends@3x.png"),
+    iconUrl: pageIcon("friends.svg"),
     colorKeys: [
       "mainBackground",
       "tabBackground",
@@ -52,7 +50,7 @@ export const PREVIEW_PAGES = [
   {
     id: "chat-list",
     label: "대화 목록",
-    iconUrl: iosImage("maintabIcoChats@3x.png"),
+    iconUrl: pageIcon("chats.svg"),
     colorKeys: ["mainBackground", "tabBackground", "headerText", "titleText", "paragraphText", "sectionTitle"],
     imageKeys: [
       "mainBackground",
@@ -67,28 +65,28 @@ export const PREVIEW_PAGES = [
   {
     id: "open-chat",
     label: "지금",
-    iconUrl: iosImage("maintabIcoNow@3x.png"),
+    iconUrl: pageIcon("now.svg"),
     colorKeys: mainTabColorKeys,
     imageKeys: mainTabImageKeys,
   },
   {
     id: "shopping",
     label: "쇼핑",
-    iconUrl: iosImage("maintabIcoShopping@3x.png"),
+    iconUrl: pageIcon("shopping.svg"),
     colorKeys: mainTabColorKeys,
     imageKeys: mainTabImageKeys,
   },
   {
     id: "more",
     label: "더보기",
-    iconUrl: iosImage("maintabIcoMore@3x.png"),
+    iconUrl: pageIcon("more.svg"),
     colorKeys: mainTabColorKeys,
     imageKeys: mainTabImageKeys,
   },
   {
     id: "chat",
     label: "채팅방",
-    iconUrl: headerIcon("headerCompose.png"),
+    iconUrl: pageIcon("chat.svg"),
     colorKeys: [
       "mainBackground",
       "chatBackground",

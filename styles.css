@@ -597,25 +597,21 @@ h2 {
 
 .preview-tabs button:is(:hover, :focus-visible) {
   background: #f1f2f3;
-  color: var(--ink);
+  color: var(--muted);
 }
 
 .preview-tabs button.is-active {
   background: #eef0f2;
-  color: var(--ink);
+  color: var(--muted);
 }
 
 .page-icon {
+  display: block;
   width: 24px;
   height: 24px;
-  object-fit: contain;
-  opacity: 0.72;
-  filter: grayscale(1);
-}
-
-.preview-tabs button.is-active .page-icon {
-  opacity: 1;
-  filter: grayscale(1);
+  background-color: currentColor;
+  mask: var(--page-icon-mask) center / contain no-repeat;
+  -webkit-mask: var(--page-icon-mask) center / contain no-repeat;
 }
 
 .phone-preview {
@@ -733,7 +729,7 @@ h2 {
 
 .friend-header-actions {
   display: grid;
-  grid-template-columns: repeat(4, 28px);
+  grid-template-columns: repeat(3, 28px);
   align-items: center;
   gap: 12px;
 }
@@ -765,12 +761,8 @@ h2 {
   --header-action-mask: url("./assets/preview/header-icons/headerSearch.png");
 }
 
-.add-action {
-  --header-action-mask: url("./assets/preview/header-icons/headerAdd.png");
-}
-
-.music-action {
-  --header-action-mask: url("./assets/preview/header-icons/headerMusic.png");
+.friend-tab-action {
+  --header-action-mask: url("./assets/template-images/ios/Images/maintabIcoFriends@3x.png");
 }
 
 .settings-action {
@@ -807,7 +799,7 @@ h2 {
 
 .main-header .friend-header-actions {
   display: grid;
-  grid-template-columns: repeat(4, 28px);
+  grid-template-columns: repeat(3, 28px);
   justify-items: center;
   align-items: center;
   gap: 12px;

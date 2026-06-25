@@ -683,12 +683,9 @@ function renderPreviewTabs() {
       button.dataset.previewIndex = String(index);
       button.ariaLabel = page.label;
       button.title = page.label;
-      const icon = document.createElement("img");
+      const icon = document.createElement("span");
       icon.className = "page-icon";
-      icon.src = page.iconUrl;
-      icon.alt = "";
-      icon.width = 24;
-      icon.height = 24;
+      icon.style.setProperty("--page-icon-mask", `url("${page.iconUrl}")`);
       button.append(icon);
       button.addEventListener("click", () => setPreviewIndex(index));
       return button;

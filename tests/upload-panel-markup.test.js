@@ -87,6 +87,7 @@ test("preview has device switches, five bottom tabs, and unofficial footer notic
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const activePreviewTabCss = css.match(/\.preview-tabs button\.is-active\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const activePreviewTabIconCss = css.match(/\.preview-tabs button\.is-active \.page-icon\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const pageIconCss = css.match(/\.page-icon\s*\{[\s\S]*?\}/)?.[0] ?? "";
 
   assert.match(html, /data-preview-device="phone"/);
   assert.match(html, /data-preview-device="tablet"/);
@@ -98,10 +99,19 @@ test("preview has device switches, five bottom tabs, and unofficial footer notic
   assert.doesNotMatch(css, /\.preview-arrow::before/);
   assert.doesNotMatch(css, /\.preview-arrow::after/);
   assert.match(css, /\.preview-tabs button:is\(:hover, :focus-visible\)\s*\{[\s\S]*background: #f1f2f3;/);
+  assert.match(css, /\.preview-tabs button:is\(:hover, :focus-visible\)\s*\{[\s\S]*color: var\(--muted\);/);
   assert.match(activePreviewTabCss, /background: #eef0f2;/);
-  assert.match(activePreviewTabCss, /color: var\(--ink\);/);
+  assert.match(activePreviewTabCss, /color: var\(--muted\);/);
   assert.doesNotMatch(activePreviewTabCss, /background:\s*(var\(--ink\)|#000|black)/);
   assert.doesNotMatch(activePreviewTabIconCss, /invert/);
+  assert.match(app, /const icon = document\.createElement\("span"\);/);
+  assert.match(app, /icon\.style\.setProperty\("--page-icon-mask", `url\("\$\{page\.iconUrl\}"\)`\);/);
+  assert.doesNotMatch(app, /document\.createElement\("img"\)/);
+  assert.match(pageIconCss, /display: block;/);
+  assert.match(pageIconCss, /width: 24px;[\s\S]*height: 24px;/);
+  assert.match(pageIconCss, /background-color: currentColor;/);
+  assert.match(pageIconCss, /mask: var\(--page-icon-mask\) center \/ contain no-repeat;/);
+  assert.doesNotMatch(pageIconCss, /object-fit|filter/);
 
   for (const className of ["tab-friends", "tab-chat", "tab-openchat", "tab-shopping", "tab-more"]) {
     assert.match(html, new RegExp(`class=\"[^\"]*${className}`));
@@ -310,21 +320,26 @@ test("tab icon upload labels stay compact and only expose previewed bottom tabs"
 });
 
 test("chat list headers use local default action icons tinted by the active header color", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const homeStart = html.indexOf('class="preview-slide home-preview"');
+  const chatListStart = html.indexOf('class="preview-slide chat-list-preview"');
+  const homeMarkup = html.slice(homeStart, chatListStart);
+  const homeActions = homeMarkup.match(/<div class="friend-header-actions">[\s\S]*?<\/div>/)?.[0] ?? "";
 
   for (const path of [
     "../assets/preview/header-icons/headerSearch.png",
-    "../assets/preview/header-icons/headerAdd.png",
-    "../assets/preview/header-icons/headerMusic.png",
     "../assets/preview/header-icons/headerCompose.png",
     "../assets/preview/header-icons/headerSettings.png",
     "../assets/preview/header-icons/headerScan.png",
+    "../assets/template-images/ios/Images/maintabIcoFriends@3x.png",
   ]) {
     assert.ok((await stat(new URL(path, import.meta.url))).isFile());
   }
 
   for (const [className, url] of [
     ["search-action", "./assets/preview/header-icons/headerSearch.png"],
+    ["friend-tab-action", "./assets/template-images/ios/Images/maintabIcoFriends@3x.png"],
     ["chat-compose-icon", "./assets/preview/header-icons/headerCompose.png"],
     ["settings-action", "./assets/preview/header-icons/headerSettings.png"],
     ["shopping-action-icon", "./assets/template-images/ios/Images/maintabIcoShopping@3x.png"],
@@ -333,6 +348,12 @@ test("chat list headers use local default action icons tinted by the active head
     assert.match(css, new RegExp(`\\.${className}\\s*\\{[\\s\\S]*--header-action-mask: url\\("${url.replaceAll("/", "\\/")}"\\);`));
   }
 
+  assert.equal((homeActions.match(/<button /g) ?? []).length, 3);
+  assert.match(homeActions, /aria-label="검색"/);
+  assert.match(homeActions, /aria-label="친구"/);
+  assert.match(homeActions, /class="friend-action-icon friend-tab-action"/);
+  assert.match(homeActions, /aria-label="설정"/);
+  assert.doesNotMatch(homeActions, /aria-label="친구 추가"|aria-label="음악"|add-action|music-action/);
   assert.match(css, /\.friend-header-actions button\s*\{[\s\S]*width: 28px;[\s\S]*height: 28px;/);
   assert.match(
     css,
@@ -340,15 +361,14 @@ test("chat list headers use local default action icons tinted by the active head
   );
   assert.match(css, /\.phone-header\s*\{[\s\S]*color: var\(--preview-header, #664242\);/);
   assert.match(css, /\.chat-list-header > strong\s*\{[^}]*font-size: 18px;/);
-  assert.match(css, /\.main-header \.friend-header-actions\s*\{[\s\S]*grid-template-columns: repeat\(4, 28px\);[\s\S]*gap: 12px;/);
+  assert.match(css, /\.main-header \.friend-header-actions\s*\{[\s\S]*grid-template-columns: repeat\(3, 28px\);[\s\S]*gap: 12px;/);
   assert.match(css, /\.chat-list-actions\s*\{[\s\S]*grid-template-columns: repeat\(3, 28px\);[\s\S]*gap: 12px;/);
   assert.match(css, /\.phone-header \.chat-list-actions\s*\{[\s\S]*grid-template-columns: repeat\(3, 28px\);[\s\S]*gap: 12px;/);
   assert.match(css, /\.chat-list-actions button\s*\{[\s\S]*width: 28px;[\s\S]*height: 28px;/);
   assert.doesNotMatch(css, /cdn-icons-png\.flaticon\.com/);
+  assert.doesNotMatch(css, /\.add-action\s*\{|\.music-action\s*\{/);
   assert.doesNotMatch(css, /\.search-action::before/);
   assert.doesNotMatch(css, /\.search-action::after/);
-  assert.doesNotMatch(css, /\.add-action::before/);
-  assert.doesNotMatch(css, /\.music-action::before/);
   assert.doesNotMatch(css, /\.settings-action::before/);
   assert.doesNotMatch(css, /\.chat-compose-icon::before/);
   assert.doesNotMatch(css, /\.chat-compose-icon::after/);
