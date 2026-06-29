@@ -201,13 +201,16 @@ test("chat preview includes default profile and extra basic/additional bubble sa
 
   assert.match(chatMarkup, /class="message-group receive"[\s\S]*<span class="sender">가야<\/span>[\s\S]*<p class="bubble receive-bubble">ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ<\/p>/);
   assert.match(chatMarkup, /class="message-group receive"[\s\S]*<div class="avatar default-profile"><\/div>[\s\S]*<span class="sender">가야<\/span>[\s\S]*<p class="bubble receive-bubble additional-bubble">아 웃겨 근데 어떻게 우연히 그럴수 있지\?ㅠㅠㅠ<\/p>[\s\S]*<p class="bubble receive-bubble additional-bubble">/);
-  assert.match(chatMarkup, /class="message-group send"[\s\S]*<p class="bubble send-bubble">진심 너무 웃기지ㅠ\?\?<\/p>[\s\S]*<p class="bubble send-bubble additional-bubble">나도 그래서 보면서 이게 실환가 했잖어ㅠ<\/p>/);
+  assert.match(chatMarkup, /class="message-group send"[\s\S]*<p class="bubble send-bubble short">진심 너무 웃기지ㅠ\?\?<\/p>[\s\S]*<p class="bubble send-bubble additional-bubble">나도 그래서 보면서 이게 실환가 했잖어ㅠ<\/p>/);
+  assert.match(chatMarkup, /<p class="bubble send-bubble short">ㅁㅈ 정말 탕후루 했구나<\/p>[\s\S]*<p class="bubble send-bubble additional-bubble">ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ<\/p>/);
   assert.doesNotMatch(chatMarkup, /<span class="sender">친구<\/span>|<span class="sender">슈슈님<\/span>|오늘 테마 분위기 좋다\./);
   assert.match(chatMarkup, /<time class="message-time" data-preview-time>00:00<\/time>/);
   assert.match(css, /\.message-group\.receive\s*\{[\s\S]*align-items: start;/);
   assert.match(css, /\.message-stack\s*\{[\s\S]*align-items: flex-start;/);
   assert.match(css, /\.sender\s*\{[^}]*margin: 3px 0 4px 2px;/);
   assert.match(css, /\.message-group\.send \.message-stack\s*\{[\s\S]*align-items: flex-end;/);
+  assert.match(css, /\.bubble\.short\s*\{[\s\S]*width: max-content;[\s\S]*max-width: min\(238px, 100%\);/);
+  assert.doesNotMatch(css, /\.bubble\.short\s*\{[\s\S]*max-width: 88px;/);
   assert.match(app, /formatKoreanTime/);
   assert.match(app, /previewTimeElements\.forEach/);
 });

@@ -2262,7 +2262,8 @@ h2 {
 }
 
 .bubble.short {
-  max-width: 88px;
+  width: max-content;
+  max-width: min(238px, 100%);
 }
 
 .splash-screen {
