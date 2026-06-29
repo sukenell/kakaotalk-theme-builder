@@ -50,6 +50,27 @@ test("default tab background color is white in preview and downloaded themes", (
   assert.match(patchAndroidColorsXml(androidXml, defaultThemeState), /name="theme_maintab_cell_color">#FFFFFF</);
 });
 
+test("default passcode background matches the main background in preview and downloaded themes", () => {
+  assert.equal(defaultThemeState.colors.mainBackground, "#FFDEDE");
+  assert.equal(defaultThemeState.colors.passcodeBackground, defaultThemeState.colors.mainBackground);
+
+  const iosCss = `MainViewStyle-Primary
+{
+    background-color: #FFDEDE;
+}
+BackgroundStyle-Passcode
+{
+    background-color: #FCC5C5;
+}`;
+  const androidXml = `<resources>
+    <color name="theme_background_color">#FFDEDE</color>
+    <color name="theme_passcode_background_color">#FCC5C5</color>
+</resources>`;
+
+  assert.match(patchIosThemeCss(iosCss, defaultThemeState), /BackgroundStyle-Passcode[\s\S]*background-color: #FFDEDE;/);
+  assert.match(patchAndroidColorsXml(androidXml, defaultThemeState), /name="theme_passcode_background_color">#FFDEDE</);
+});
+
 test("theme versions normalize to numeric triplets and validate strictly", () => {
   assert.equal(normalizeThemeVersion("v1.2.3-beta"), "1.2.3");
   assert.equal(normalizeThemeVersion("1..2...3.4"), "1.2.3");

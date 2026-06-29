@@ -904,7 +904,7 @@ h2 {
 
 .tab-section-title {
   margin: 0 0 10px;
-  color: var(--preview-section, #ff7f7f);
+  color: var(--preview-section-title, #f66c6c);
   font-size: 12px;
   font-weight: 900;
 }
@@ -951,7 +951,7 @@ h2 {
 .more-menu-icon.warm {
   background:
     radial-gradient(circle at 35% 70%, rgba(255, 255, 255, 0.95), transparent 32%),
-    color-mix(in srgb, var(--preview-section, #ff7f7f) 46%, #ffffff);
+    color-mix(in srgb, var(--preview-section-title, #f66c6c) 46%, #ffffff);
 }
 
 .shop-thumb.cool,
@@ -1034,8 +1034,8 @@ h2 {
 .shopping-preview .phone-status,
 .shopping-preview .phone-header {
   background:
-    var(--preview-main-image, none) top center / cover no-repeat,
-    var(--preview-main-bg, #ffdddd);
+    var(--preview-tab-image, none) center / cover no-repeat,
+    var(--preview-tab-bg, #ffffff);
   color: var(--preview-header, #664242);
 }
 
@@ -1229,7 +1229,7 @@ h2 {
 }
 
 .shopping-pick-title strong {
-  color: var(--preview-header, #664242);
+  color: var(--preview-section-title, #f66c6c);
   font-size: 19px;
   font-weight: 900;
   line-height: 1;
@@ -1242,7 +1242,7 @@ h2 {
   height: 20px;
   border: 2px solid currentColor;
   border-radius: 50%;
-  color: var(--preview-header, #664242);
+  color: var(--preview-section-title, #f66c6c);
   font-size: 13px;
   font-weight: 900;
   line-height: 1;
@@ -1620,7 +1620,7 @@ h2 {
 }
 
 .more-section-heading {
-  color: var(--preview-header, #664242);
+  color: var(--preview-section-title, #f66c6c);
   font-size: 18px;
   font-weight: 900;
 }
@@ -1727,7 +1727,7 @@ h2 {
 }
 
 .friends-section-label {
-  color: color-mix(in srgb, var(--preview-paragraph, #805959) 78%, transparent);
+  color: var(--preview-section-title, #f66c6c);
   font-size: 11px;
   font-weight: 900;
   line-height: 1.2;
@@ -2582,7 +2582,7 @@ h2 {
 
 .theme-list-screen .section-title {
   margin: 18px 0 10px;
-  color: color-mix(in srgb, var(--preview-header, #664242) 72%, transparent);
+  color: var(--preview-section-title, #f66c6c);
   font-size: 13px;
   font-weight: 800;
 }

@@ -246,7 +246,20 @@ test("color controls show hex values on the picker and expose reset buttons", as
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 
-  assert.match(app, /\["tabBackground", "탭 배경"\]/);
+  for (const [key, label] of [
+    ["mainBackground", "배경 색"],
+    ["tabBackground", "하단 탭 배경 색"],
+    ["headerText", "메인 글자 색"],
+    ["titleText", "메뉴 글자 색"],
+    ["paragraphText", "서브 글자색"],
+    ["bodyPressed", "선택 메뉴 배경 색"],
+    ["titlePressed", "선택 메뉴 글자 색"],
+    ["unreadCount", "레드닷 알림 색"],
+    ["sendText", "나의 글자 색"],
+    ["receiveText", "상대 글자 색"],
+  ]) {
+    assert.match(app, new RegExp(`\\["${key}", "${label}"\\]`));
+  }
   assert.match(app, /const picker = document\.createElement\("button"\);/);
   assert.match(app, /picker\.type = "button";/);
   assert.match(app, /picker\.className = "color-picker-control";/);
@@ -811,6 +824,37 @@ test("preview segment controls use the same pressed color data as downloadable t
     assert.match(segmentCss, /color: var\(--preview-selected-text, #b06b6b\);/);
     assert.doesNotMatch(segmentCss, /--preview-header|--preview-main-bg/);
   }
+});
+
+test("shopping preview top status and header use the tab background layer", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const shoppingTopCss = css.match(
+    /\.shopping-preview \.phone-status,\s*\.shopping-preview \.phone-header\s*\{[\s\S]*?\}/,
+  )?.[0] ?? "";
+
+  assert.match(shoppingTopCss, /--preview-tab-image/);
+  assert.match(shoppingTopCss, /--preview-tab-bg/);
+  assert.doesNotMatch(shoppingTopCss, /--preview-main-bg/);
+});
+
+test("section title color is visible on preview section headings", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const friendsSectionLabelCss = css.match(/\.friends-section-label\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const shoppingPickTitleCss = css.match(/\.shopping-pick-title strong\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const shoppingPickInfoCss = css.match(/\.shopping-pick-title span\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const moreSectionHeadingCss = css.match(/\.more-section-heading\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const themeListSectionTitleCss = css.match(/\.theme-list-screen \.section-title\s*\{[\s\S]*?\}/)?.[0] ?? "";
+
+  for (const sectionCss of [
+    friendsSectionLabelCss,
+    shoppingPickTitleCss,
+    shoppingPickInfoCss,
+    moreSectionHeadingCss,
+    themeListSectionTitleCss,
+  ]) {
+    assert.match(sectionCss, /--preview-section-title/);
+  }
+  assert.doesNotMatch(css, /--preview-section(?!-title)/);
 });
 
 test("preview color variables use the same color keys as downloadable themes", async () => {

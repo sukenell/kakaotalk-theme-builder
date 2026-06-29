@@ -116,7 +116,7 @@ const defaultColors = {
   sendButton: "#FF7F7F",
   sendButtonPressed: "#F27979",
   sendButtonText: "#FFFFFF",
-  passcodeBackground: "#FCC5C5",
+  passcodeBackground: "#FFDEDE",
   passcodeText: "#664242",
   passcodeKeypadBackground: "#FFF2F2",
   passcodeKeypadPressed: "#CCB8B8",
