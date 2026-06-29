@@ -47,6 +47,11 @@ const IOS_BUBBLE_EDGE_INSET_BINDINGS = [
   ["MessageCellStyle-Receive", "-ios-group-title-edgeinsets"],
 ];
 
+const IOS_MAIN_BACKGROUND_IMAGE_BINDINGS = [
+  ["MainViewStyle-Primary", "-ios-background-image"],
+  ["MainViewStyle-Secondary", "-ios-background-image"],
+];
+
 const ANDROID_COLOR_BINDINGS = {
   theme_header_color: "headerText",
   theme_section_title_color: "sectionTitle",
@@ -65,11 +70,12 @@ const ANDROID_COLOR_BINDINGS = {
   theme_chatroom_background_color: "chatBackground",
   theme_passcode_background_color: "passcodeBackground",
   theme_header_cell_color: "mainBackground",
+  theme_body_cell_color: "mainBackground",
   theme_body_cell_pressed_color: "bodyPressed",
   theme_body_cell_border_color: "bodyBorder",
   theme_body_secondary_cell_color: "mainBackground",
-  theme_tab_lightbannerbadge_background_color: "headerText",
-  theme_tab_bannerbadge_background_color: "headerText",
+  theme_tab_lightbannerbadge_background_color: "unreadCount",
+  theme_tab_bannerbadge_background_color: "unreadCount",
   theme_direct_share_color: "headerText",
   theme_direct_share_button_color: "inputMenu",
   theme_direct_share_background_color: "directShareBackground",
@@ -92,6 +98,12 @@ const ANDROID_COLOR_BINDINGS = {
   theme_chatroom_input_bar_send_icon_color: "sendButtonText",
   theme_chatroom_input_bar_send_button_color: "sendButton",
 };
+
+const ANDROID_MAIN_BACKGROUND_CELL_RESOURCES = [
+  "theme_header_cell_color",
+  "theme_body_cell_color",
+  "theme_body_secondary_cell_color",
+];
 
 const defaultColors = {
   mainBackground: "#FFDEDE",
@@ -572,6 +584,12 @@ const cssString = (value) => `'${String(value ?? "").replaceAll("'", "")}'`;
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+function toTransparentAndroidColor(value) {
+  const color = String(value ?? "").trim().toUpperCase();
+  const hex = color.match(/^#(?:[0-9A-F]{2})?([0-9A-F]{6})$/);
+  return hex ? `#00${hex[1]}` : color;
+}
+
 export function getActiveColors(state) {
   return state?.colors ?? defaultThemeState.colors;
 }
@@ -668,6 +686,10 @@ export function patchIosThemeCss(css, state) {
     nextCss = replaceInCssBlock(nextCss, blockName, property, colorFor(state, colorKey));
   }
 
+  for (const [blockName, property] of IOS_MAIN_BACKGROUND_IMAGE_BINDINGS) {
+    nextCss = replaceInCssBlock(nextCss, blockName, property, cssString("mainBgImage.png"));
+  }
+
   for (const [blockName, property] of IOS_BUBBLE_EDGE_INSET_BINDINGS) {
     nextCss = replaceInCssBlock(nextCss, blockName, property, IOS_BUBBLE_EQUAL_EDGE_INSETS);
   }
@@ -689,13 +711,20 @@ function replaceXmlResource(xml, tagName, resourceName, value) {
   );
 }
 
-export function patchAndroidColorsXml(xml, state) {
+export function patchAndroidColorsXml(xml, state, { transparentMainBackgroundCells = false } = {}) {
   let nextXml = xml;
 
   for (const [resourceName, colorKey] of Object.entries(ANDROID_COLOR_BINDINGS)) {
     const value = colorFor(state, colorKey);
     if (value) {
       nextXml = replaceXmlResource(nextXml, "color", resourceName, value);
+    }
+  }
+
+  if (transparentMainBackgroundCells) {
+    const transparentMainBackground = toTransparentAndroidColor(colorFor(state, "mainBackground"));
+    for (const resourceName of ANDROID_MAIN_BACKGROUND_CELL_RESOURCES) {
+      nextXml = replaceXmlResource(nextXml, "color", resourceName, transparentMainBackground);
     }
   }
 

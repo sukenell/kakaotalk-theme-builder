@@ -196,6 +196,41 @@ test("buildAndroidEntries patches XML and skips raw uploads for 9-patch resource
   assert.deepEqual(bubbleEntry.data, new Uint8Array([1, 1, 1]));
 });
 
+test("buildAndroidEntries applies main background color and image across main tab surfaces", () => {
+  const phoneBackgroundTarget = "src/main/theme/drawable-xxhdpi/theme_background_image.png";
+  const tabletBackgroundTarget = "src/main/theme/drawable-sw600dp/theme_background_image.png";
+  const uploadBytes = new Uint8Array([9, 8, 7]);
+  const result = buildAndroidEntries(
+    [
+      {
+        name: "src/main/theme/values/colors.xml",
+        data: `<resources>
+          <color name="theme_background_color">#FFDEDE</color>
+          <color name="theme_header_cell_color">#FFDEDE</color>
+          <color name="theme_body_cell_color">#00FFDEDE</color>
+          <color name="theme_body_secondary_cell_color">#FFDEDE</color>
+        </resources>`,
+      },
+      { name: phoneBackgroundTarget, data: new Uint8Array([1, 1, 1]) },
+      { name: tabletBackgroundTarget, data: new Uint8Array([2, 2, 2]) },
+    ],
+    {
+      state: { colors: { mainBackground: "#123456" } },
+      uploads: { mainBackground: uploadBytes },
+    },
+  );
+  const colorsXml = new TextDecoder().decode(
+    result.find((entry) => entry.name === "src/main/theme/values/colors.xml").data,
+  );
+
+  assert.match(colorsXml, /name="theme_background_color">#123456</);
+  assert.match(colorsXml, /name="theme_header_cell_color">#00123456</);
+  assert.match(colorsXml, /name="theme_body_cell_color">#00123456</);
+  assert.match(colorsXml, /name="theme_body_secondary_cell_color">#00123456</);
+  assert.deepEqual(result.find((entry) => entry.name === phoneBackgroundTarget).data, uploadBytes);
+  assert.deepEqual(result.find((entry) => entry.name === tabletBackgroundTarget).data, uploadBytes);
+});
+
 test("buildAndroidEntries applies generated 9-patch variants for bubble uploads", () => {
   const bubbleTarget = "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png";
   const entries = [

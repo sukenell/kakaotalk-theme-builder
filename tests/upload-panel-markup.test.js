@@ -817,7 +817,7 @@ test("preview segment controls use the same pressed color data as downloadable t
   }
   assert.match(friendSegmentCss, /background: transparent;/);
   assert.match(moreSegmentCss, /background: transparent;/);
-  assert.match(shoppingTabCss, /background: var\(--preview-tab-bg, transparent\);/);
+  assert.match(shoppingTabCss, /background: transparent;/);
 
   for (const segmentCss of [friendSegmentActiveCss, shoppingTabActiveCss, moreSegmentActiveCss]) {
     assert.match(segmentCss, /background: var\(--preview-selected-bg, #ffb3b3\);/);
@@ -888,6 +888,8 @@ test("preview color variables use the same color keys as downloadable themes", a
   assert.match(css, /\.unread-badge\s*\{[\s\S]*background: var\(--preview-unread-count, #ff7f7f\);/);
   assert.match(themeModel, /\["MessageCellStyle-Send", "-ios-unread-text-color", "unreadCount"\]/);
   assert.match(themeModel, /theme_chatroom_unread_count_color:\s*"unreadCount"/);
+  assert.match(themeModel, /theme_tab_lightbannerbadge_background_color:\s*"unreadCount"/);
+  assert.match(themeModel, /theme_tab_bannerbadge_background_color:\s*"unreadCount"/);
 });
 
 test("reading log ad background image is replaceable and stays preview-only", async () => {

@@ -1079,7 +1079,7 @@ h2 {
   padding: 0 18px;
   border: 1px solid var(--preview-body-border, #26664242);
   border-radius: 999px;
-  background: var(--preview-tab-bg, transparent);
+  background: transparent;
   color: var(--preview-title, #664242);
   font-size: 16px;
   font-weight: 900;

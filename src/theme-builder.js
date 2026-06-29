@@ -175,7 +175,11 @@ export function buildAndroidEntries(templateEntries, { state, uploads = {} }) {
     if (entry.name === "src/main/theme/values/colors.xml") {
       return {
         name: entry.name,
-        data: encoder.encode(patchAndroidColorsXml(asText(entry.data), state)),
+        data: encoder.encode(
+          patchAndroidColorsXml(asText(entry.data), state, {
+            transparentMainBackgroundCells: hasUpload(uploads, "mainBackground"),
+          }),
+        ),
       };
     }
 
