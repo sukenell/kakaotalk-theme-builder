@@ -53,6 +53,14 @@ const colorControls = [
   ["notificationBackground", "알림 배경"],
 ];
 
+const hiddenUploadKeys = new Set([
+  "addFriendButton",
+  "addFriendButtonPressed",
+  "profileFullImage",
+]);
+
+const visibleAdditionalImageKeys = ADDITIONAL_IMAGE_KEYS.filter((key) => !hiddenUploadKeys.has(key));
+
 const uploadKeys = [
   "mainBackground",
   "chatBackground",
@@ -60,7 +68,7 @@ const uploadKeys = [
   ...VISIBLE_TAB_ICON_IMAGE_KEYS,
   "profileImage",
   "themeIcon",
-  ...ADDITIONAL_IMAGE_KEYS,
+  ...visibleAdditionalImageKeys,
   "splashImage",
   ...CHAT_BUBBLE_IMAGE_KEYS,
   "passcodeBackgroundImage",

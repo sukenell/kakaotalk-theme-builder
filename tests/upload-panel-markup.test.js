@@ -1215,12 +1215,15 @@ test("tab icon uploads use a 3x source and generate 2x plus 3x outputs", async (
   assert.match(model, /displaySize: \[114, 114\]/);
 });
 
-test("upload panel includes additional Android structure inputs", async () => {
+test("upload panel hides unsupported additional Android structure inputs", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const previewPages = await readFile(new URL("../src/preview-pages.js", import.meta.url), "utf8");
   const model = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
 
-  assert.match(app, /\.\.\.ADDITIONAL_IMAGE_KEYS/);
+  assert.match(app, /const hiddenUploadKeys = new Set\(\[[\s\S]*"addFriendButton"[\s\S]*"addFriendButtonPressed"[\s\S]*"profileFullImage"[\s\S]*\]\);/);
+  assert.match(app, /const visibleAdditionalImageKeys = ADDITIONAL_IMAGE_KEYS\.filter\(\(key\) => !hiddenUploadKeys\.has\(key\)\);/);
+  assert.match(app, /\.\.\.visibleAdditionalImageKeys/);
+  assert.doesNotMatch(app, /const uploadKeys = \[[\s\S]*\.\.\.ADDITIONAL_IMAGE_KEYS/);
   assert.match(previewPages, /\.\.\.ADDITIONAL_IMAGE_KEYS\.filter\(\(key\) => key\.startsWith\("themeIcon"\)\)/);
   assert.match(model, /label: "친구 추가 버튼 - 기본"/);
   assert.match(model, /label: "기본 프로필 전체 이미지"/);
