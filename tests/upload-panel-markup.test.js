@@ -168,6 +168,24 @@ test("chat preview has a date chip and no bottom tabs", async () => {
   assert.doesNotMatch(chatMarkup, /<span>3<\/span>/);
 });
 
+test("preview status bars are rendered by one shared widget", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const phoneStatusCount = (html.match(/class="phone-status"/g) ?? []).length;
+  const statusPlaceholders = html.match(/<div class="phone-status" data-phone-status><\/div>/g) ?? [];
+  const phoneStatusCss = css.match(/\.phone-status\s*\{[\s\S]*?\}/)?.[0] ?? "";
+
+  assert.equal(statusPlaceholders.length, phoneStatusCount);
+  assert.ok(statusPlaceholders.length >= 8);
+  assert.doesNotMatch(html, /<div class="phone-status">\s*<span>/);
+  assert.match(app, /const phoneStatusWidget = \{[\s\S]*time: "9:41"[\s\S]*network: "LTE"[\s\S]*battery: "100%"[\s\S]*\};/);
+  assert.match(app, /function createPhoneStatusWidget\(\)/);
+  assert.match(app, /document\.querySelectorAll\("\[data-phone-status\]"\)/);
+  assert.doesNotMatch(css, /\.shopping-preview \.phone-status/);
+  assert.doesNotMatch(phoneStatusCss, /background:/);
+});
+
 test("chat input bar reserves the bottom safe area like tab bars", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
@@ -829,15 +847,16 @@ test("preview segment controls use the same pressed color data as downloadable t
   }
 });
 
-test("shopping preview top status and header use the main background layer", async () => {
+test("shopping preview keeps the status bar common and applies the main background below it", async () => {
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
-  const shoppingTopCss = css.match(
-    /\.shopping-preview \.phone-status,\s*\.shopping-preview \.phone-header\s*\{[\s\S]*?\}/,
-  )?.[0] ?? "";
+  const shoppingPreviewCss = css.match(/\.shopping-preview\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const shoppingHeaderCss = css.match(/\.shopping-preview \.phone-header\s*\{[\s\S]*?\}/)?.[0] ?? "";
 
-  assert.match(shoppingTopCss, /--preview-main-image/);
-  assert.match(shoppingTopCss, /--preview-main-bg/);
-  assert.doesNotMatch(shoppingTopCss, /--preview-tab-bg/);
+  assert.doesNotMatch(css, /\.shopping-preview \.phone-status/);
+  assert.doesNotMatch(shoppingPreviewCss, /--preview-main-bg|--preview-main-image/);
+  assert.match(shoppingHeaderCss, /--preview-main-image/);
+  assert.match(shoppingHeaderCss, /--preview-main-bg/);
+  assert.doesNotMatch(shoppingHeaderCss, /--preview-tab-bg/);
 });
 
 test("section title color is visible on preview section headings", async () => {

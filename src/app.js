@@ -115,6 +115,12 @@ const previewBubbleSources = {
   "--preview-receive-additional-image": ["receiveBubbleTailless"],
 };
 
+const phoneStatusWidget = {
+  time: "9:41",
+  network: "LTE",
+  battery: "100%",
+};
+
 const friendProfileImages = [
   "./assets/preview/profile-images/profileImage_01.png",
   "./assets/preview/profile-images/profileImage_02.png",
@@ -246,9 +252,26 @@ applyFriendProfileImages();
 applyShoppingPreviewImages();
 applyGroupAvatarImages();
 enableHorizontalDragScroll(".shopping-pick-carousel");
+renderPhoneStatusWidgets();
 
 function setStatus(message) {
   statusText.textContent = message;
+}
+
+function createPhoneStatusWidget() {
+  const time = document.createElement("span");
+  time.textContent = phoneStatusWidget.time;
+
+  const system = document.createElement("span");
+  system.textContent = `${phoneStatusWidget.network} ${phoneStatusWidget.battery}`;
+
+  return [time, system];
+}
+
+function renderPhoneStatusWidgets() {
+  document.querySelectorAll("[data-phone-status]").forEach((status) => {
+    status.replaceChildren(...createPhoneStatusWidget());
+  });
 }
 
 function applyFriendProfileImages() {

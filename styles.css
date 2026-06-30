@@ -1025,13 +1025,6 @@ h2 {
   font-weight: 800;
 }
 
-.shopping-preview {
-  background:
-    var(--preview-main-image, none) top center / cover no-repeat,
-    var(--preview-main-bg, #ffdddd);
-}
-
-.shopping-preview .phone-status,
 .shopping-preview .phone-header {
   background:
     var(--preview-main-image, none) top center / cover no-repeat,
