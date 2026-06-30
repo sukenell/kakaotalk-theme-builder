@@ -22,6 +22,7 @@ const IOS_COLOR_BINDINGS = [
   ["InputBarStyle-Chat", "-ios-send-highlighted-background-color", "sendButtonPressed"],
   ["InputBarStyle-Chat", "-ios-button-normal-foreground-color", "inputMenu"],
   ["InputBarStyle-Chat", "-ios-button-text-color", "inputBarText"],
+  ["InputBarStyle-Chat", "-ios-button-normal-background-color", "headerText"],
   ["MessageCellStyle-Send", "-ios-text-color", "sendText"],
   ["MessageCellStyle-Send", "-ios-selected-text-color", "sendText"],
   ["MessageCellStyle-Send", "-ios-unread-text-color", "unreadCount"],
@@ -45,6 +46,10 @@ const IOS_BUBBLE_EDGE_INSET_BINDINGS = [
   ["MessageCellStyle-Send", "-ios-group-title-edgeinsets"],
   ["MessageCellStyle-Receive", "-ios-title-edgeinsets"],
   ["MessageCellStyle-Receive", "-ios-group-title-edgeinsets"],
+];
+
+const IOS_FIXED_DECLARATIONS = [
+  ["InputBarStyle-Chat", "-ios-button-normal-background-alpha", "1.0"],
 ];
 
 const IOS_MAIN_BACKGROUND_IMAGE_BINDINGS = [
@@ -94,7 +99,7 @@ const ANDROID_COLOR_BINDINGS = {
   theme_chatroom_input_bar_color: "inputBarText",
   theme_chatroom_input_bar_background_color: "inputBarBackground",
   theme_chatroom_input_bar_menu_icon_color: "inputMenu",
-  theme_chatroom_input_bar_menu_button_color: "inputMenuButton",
+  theme_chatroom_input_bar_menu_button_color: "headerText",
   theme_chatroom_input_bar_send_icon_color: "sendButtonText",
   theme_chatroom_input_bar_send_button_color: "sendButton",
 };
@@ -692,6 +697,10 @@ export function patchIosThemeCss(css, state) {
 
   for (const [blockName, property] of IOS_BUBBLE_EDGE_INSET_BINDINGS) {
     nextCss = replaceInCssBlock(nextCss, blockName, property, IOS_BUBBLE_EQUAL_EDGE_INSETS);
+  }
+
+  for (const [blockName, property, value] of IOS_FIXED_DECLARATIONS) {
+    nextCss = replaceInCssBlock(nextCss, blockName, property, value);
   }
 
   return nextCss;

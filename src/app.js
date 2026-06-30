@@ -1181,6 +1181,7 @@ function updatePreview() {
   setPreviewColorVariable("--preview-input-bg", colors.inputBarBackground);
   setPreviewColorVariable("--preview-input-text", colors.inputBarText);
   setPreviewColorVariable("--preview-input-menu", colors.inputMenu);
+  setPreviewColorVariable("--preview-input-menu-button", colors.headerText);
   setPreviewColorVariable("--preview-send-button", colors.sendButton);
   setPreviewColorVariable("--preview-send-button-text", colors.sendButtonText);
   setPreviewColorVariable("--preview-send-fill", colors.sendButton);

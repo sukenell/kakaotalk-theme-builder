@@ -829,15 +829,15 @@ test("preview segment controls use the same pressed color data as downloadable t
   }
 });
 
-test("shopping preview top status and header use the tab background layer", async () => {
+test("shopping preview top status and header use the main background layer", async () => {
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   const shoppingTopCss = css.match(
     /\.shopping-preview \.phone-status,\s*\.shopping-preview \.phone-header\s*\{[\s\S]*?\}/,
   )?.[0] ?? "";
 
-  assert.match(shoppingTopCss, /--preview-tab-image/);
-  assert.match(shoppingTopCss, /--preview-tab-bg/);
-  assert.doesNotMatch(shoppingTopCss, /--preview-main-bg/);
+  assert.match(shoppingTopCss, /--preview-main-image/);
+  assert.match(shoppingTopCss, /--preview-main-bg/);
+  assert.doesNotMatch(shoppingTopCss, /--preview-tab-bg/);
 });
 
 test("section title color is visible on preview section headings", async () => {
@@ -888,8 +888,13 @@ test("preview color variables use the same color keys as downloadable themes", a
 
   assert.equal(previewColorBindings.get("tabBackground"), "--preview-tab-bg");
   assert.equal(previewColorBindings.get("unreadCount"), "--preview-unread-count");
+  assert.equal(previewColorBindings.get("headerText"), "--preview-input-menu-button");
+  assert.match(app, /setPreviewColorVariable\("--preview-input-menu-button", colors\.headerText\);/);
+  assert.match(css, /\.input-bar-content > button:first-child\s*\{[\s\S]*background: var\(--preview-input-menu-button, #664242\);/);
   assert.match(css, /\.unread-badge\s*\{[\s\S]*background: var\(--preview-unread-count, #ff7f7f\);/);
   assert.match(themeModel, /\["MessageCellStyle-Send", "-ios-unread-text-color", "unreadCount"\]/);
+  assert.match(themeModel, /\["InputBarStyle-Chat", "-ios-button-normal-background-color", "headerText"\]/);
+  assert.match(themeModel, /theme_chatroom_input_bar_menu_button_color:\s*"headerText"/);
   assert.match(themeModel, /theme_chatroom_unread_count_color:\s*"unreadCount"/);
   assert.match(themeModel, /theme_tab_lightbannerbadge_background_color:\s*"unreadCount"/);
   assert.match(themeModel, /theme_tab_bannerbadge_background_color:\s*"unreadCount"/);

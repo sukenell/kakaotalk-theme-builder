@@ -1034,8 +1034,8 @@ h2 {
 .shopping-preview .phone-status,
 .shopping-preview .phone-header {
   background:
-    var(--preview-tab-image, none) center / cover no-repeat,
-    var(--preview-tab-bg, #ffffff);
+    var(--preview-main-image, none) top center / cover no-repeat,
+    var(--preview-main-bg, #ffdddd);
   color: var(--preview-header, #664242);
 }
 
@@ -2297,7 +2297,7 @@ h2 {
 
 .input-bar-content > button:first-child {
   width: 34px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--preview-input-menu-button, #664242);
   color: var(--preview-input-menu, #e86464);
   font-size: 20px;
 }
