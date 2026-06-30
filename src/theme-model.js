@@ -476,7 +476,7 @@ export const IMAGE_TARGETS = {
     android: androidMipmapTargets("ic_launcher_round.png"),
   },
   splashImage: {
-    label: "로딩 화면",
+    label: "로딩 배경",
     displaySize: [1440, 2560],
     android: [
       "src/main/theme/drawable-xxhdpi/theme_splash_image.png",

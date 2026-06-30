@@ -82,13 +82,26 @@ const previewImageVariables = PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY;
 const bubbleUploadKeys = new Set(CHAT_BUBBLE_IMAGE_KEYS);
 const tabIconUploadKeys = new Set(TAB_ICON_IMAGE_KEYS);
 const tintableUploadKeys = new Set(VISIBLE_TAB_ICON_IMAGE_KEYS);
-const clearableBackgroundImageKeys = new Set(["mainBackground", "chatBackground", "tabBackground", "passcodeBackgroundImage"]);
-const defaultClearedImageUploadKeys = new Set(["mainBackground", "chatBackground", "tabBackground", "passcodeBackgroundImage"]);
+const clearableBackgroundImageKeys = new Set([
+  "mainBackground",
+  "chatBackground",
+  "tabBackground",
+  "splashImage",
+  "passcodeBackgroundImage",
+]);
+const defaultClearedImageUploadKeys = new Set([
+  "mainBackground",
+  "chatBackground",
+  "tabBackground",
+  "splashImage",
+  "passcodeBackgroundImage",
+]);
 const defaultUploadTintColor = "#000000";
 const backgroundImageColorKeys = {
   mainBackground: "mainBackground",
   chatBackground: "chatBackground",
   tabBackground: "tabBackground",
+  splashImage: "mainBackground",
   passcodeBackgroundImage: "passcodeBackground",
 };
 const tabIconUploadLabels = {
@@ -1008,7 +1021,7 @@ async function createUploadRecord(
   source,
   sourceBytes,
   sourceType = "",
-  { sourceKind = "upload", splashBackgroundColor = "" } = {},
+  { sourceKind = "upload" } = {},
 ) {
   const tintColor = tintableUploadKeys.has(key) ? normalizeTintColor(uploadTints[key]) : "";
   if (!shouldGenerateUploadVariants(key) && !tintColor) {
@@ -1017,9 +1030,7 @@ async function createUploadRecord(
 
   const image = await loadImage(source);
   try {
-    const variants = shouldGenerateUploadVariants(key)
-      ? await createUploadImageVariants(key, image, { tintColor, splashBackgroundColor })
-      : undefined;
+    const variants = shouldGenerateUploadVariants(key) ? await createUploadImageVariants(key, image, { tintColor }) : undefined;
     const data = tintColor
       ? await renderImageToPngBytes(image, image.width, image.height, { tintColor })
       : sourceBytes;
@@ -1042,22 +1053,13 @@ function shouldGenerateUploadVariants(key) {
     bubbleUploadKeys.has(key) ||
     tabIconUploadKeys.has(key) ||
     target?.ios?.some((name) => iosImageSizes[name]) ||
-    target?.android?.some((name) => androidSplashImageSizes[name]) ||
     target?.android?.some((name) => androidNinePatchImageSizes[name])
   );
 }
 
-async function createUploadImageVariants(key, image, { tintColor = "", splashBackgroundColor = "" } = {}) {
+async function createUploadImageVariants(key, image, { tintColor = "" } = {}) {
   const target = IMAGE_TARGETS[key];
   const variants = {};
-
-  for (const name of target.android || []) {
-    const size = androidSplashImageSizes[name];
-    if (!size) {
-      continue;
-    }
-    variants[name] = await renderSplashImageToPngBytes(image, size[0], size[1], { backgroundColor: splashBackgroundColor });
-  }
 
   for (const name of target.ios || []) {
     const size = iosImageSizes[name];
@@ -1147,7 +1149,7 @@ async function renderImageToPngBytes(image, width, height, { tintColor = "" } = 
   return canvasToPngBytes(canvas);
 }
 
-async function renderSplashImageToPngBytes(image, width, height, { backgroundColor = "" } = {}) {
+async function renderSplashImageToPngBytes(iconImage, width, height, { backgroundColor = "", backgroundImage } = {}) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -1156,7 +1158,12 @@ async function renderSplashImageToPngBytes(image, width, height, { backgroundCol
 
   context.fillStyle = backgroundColor || defaultThemeState.colors.mainBackground;
   context.fillRect(0, 0, width, height);
-  drawImageContainRect(context, image, (width - iconSize) / 2, (height - iconSize) / 2, iconSize, iconSize);
+
+  if (backgroundImage) {
+    drawImageCoverRect(context, backgroundImage, 0, 0, width, height);
+  }
+
+  drawImageContainRect(context, iconImage, (width - iconSize) / 2, (height - iconSize) / 2, iconSize, iconSize);
 
   return canvasToPngBytes(canvas);
 }
@@ -1515,17 +1522,63 @@ async function getThemeIconUploadSource() {
   return defaultSource ? { ...defaultSource, sourceKind: "default" } : undefined;
 }
 
-async function createGeneratedSplashUpload() {
-  const source = await getThemeIconUploadSource();
-  if (!source?.data) {
+function getSplashBackgroundUploadSource() {
+  const upload = uploads.splashImage;
+  if (!upload || upload.cleared) {
     return undefined;
   }
 
-  const sourceBlob = new Blob([source.data], { type: source.type || "image/png" });
-  return createUploadRecord("splashImage", sourceBlob, source.data, source.type, {
-    sourceKind: source.sourceKind,
-    splashBackgroundColor: toPreviewCssColor(getActiveColors(state).mainBackground),
-  });
+  const data = getUploadSourceData(upload) ?? getUploadData(upload);
+  if (!data) {
+    return undefined;
+  }
+
+  return {
+    data,
+    type: getUploadSourceType(upload) || "image/png",
+  };
+}
+
+async function createGeneratedSplashUpload() {
+  const iconSource = await getThemeIconUploadSource();
+  if (!iconSource?.data) {
+    return undefined;
+  }
+
+  const backgroundSource = getSplashBackgroundUploadSource();
+  const iconBlob = new Blob([iconSource.data], { type: iconSource.type || "image/png" });
+  const backgroundBlob = backgroundSource
+    ? new Blob([backgroundSource.data], { type: backgroundSource.type || "image/png" })
+    : undefined;
+  const iconImage = await loadImage(iconBlob);
+  const backgroundImage = backgroundBlob ? await loadImage(backgroundBlob) : undefined;
+
+  try {
+    const variants = {};
+    const backgroundColor = toPreviewCssColor(getActiveColors(state).mainBackground);
+
+    for (const [name, size] of Object.entries(androidSplashImageSizes)) {
+      variants[name] = await renderSplashImageToPngBytes(iconImage, size[0], size[1], {
+        backgroundColor,
+        backgroundImage,
+      });
+    }
+
+    const defaultSplashName = "src/main/theme/drawable-xxhdpi/theme_splash_image.png";
+
+    return {
+      data: variants[defaultSplashName] ?? Object.values(variants)[0],
+      sourceType: "image/png",
+      sourceKind: "generated",
+      variants,
+    };
+  } finally {
+    releaseLoadedImage(iconImage);
+
+    if (backgroundImage) {
+      releaseLoadedImage(backgroundImage);
+    }
+  }
 }
 
 async function downloadAndroidSource() {

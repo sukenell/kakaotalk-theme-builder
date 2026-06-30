@@ -2267,7 +2267,9 @@ h2 {
   display: grid;
   place-items: center;
   height: 100%;
-  background: var(--preview-main-bg, #ffdddd);
+  background:
+    var(--preview-splash-image, none) center / cover no-repeat,
+    var(--preview-main-bg, #ffdddd);
 }
 
 .splash-icon {

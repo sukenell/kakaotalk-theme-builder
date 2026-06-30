@@ -27,7 +27,7 @@ export const PREVIEW_DEFAULT_IMAGE_PATHS = {
   profileImage: iosImage("profileImg01@3x.png"),
   addFriendButton: iosImage("findBtnAddFriend@3x.png"),
   themeIcon: iosImage("commonIcoTheme.png"),
-  splashImage: androidDrawableXxhdpi("theme_splash_image.png"),
+  splashImage: "",
   sendBubbleNormal: iosImage("chatroomBubbleSend01@3x.png"),
   sendBubbleSelected: iosImage("chatroomBubbleSend01Selected@3x.png"),
   sendBubbleTailless: iosImage("chatroomBubbleSend02@3x.png"),
@@ -70,6 +70,7 @@ export const PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY = {
   tabMoreIconSelected: ["--preview-tab-more-icon-selected"],
   profileImage: ["--preview-profile-image"],
   themeIcon: ["--preview-theme-icon"],
+  splashImage: ["--preview-splash-image"],
   passcodeBackgroundImage: ["--preview-passcode-image"],
 };
 
@@ -90,6 +91,7 @@ export const PREVIEW_CSS_IMAGE_VARIABLES = {
   "--preview-profile-image": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.profileImage),
   "--preview-default-profile-image": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.profileImage),
   "--preview-theme-icon": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.themeIcon),
+  "--preview-splash-image": "none",
   "--preview-passcode-image": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.passcodeBackgroundImage),
   "--preview-send-image": cssImageSet(PREVIEW_DEFAULT_IMAGE_PATHS.sendBubbleNormal),
   "--preview-receive-image": cssImageSet(PREVIEW_DEFAULT_IMAGE_PATHS.receiveBubbleNormal),

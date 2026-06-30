@@ -246,20 +246,22 @@ test("upload panel no longer shows bubble generation or Android 9-patch helper c
 test("background image uploads expose a delete action that falls back to the selected color", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
-  assert.match(app, /const clearableBackgroundImageKeys = new Set\(\[[\s\S]*"mainBackground"[\s\S]*"chatBackground"[\s\S]*"tabBackground"[\s\S]*"passcodeBackgroundImage"/);
+  assert.match(app, /const clearableBackgroundImageKeys = new Set\(\[[\s\S]*"mainBackground"[\s\S]*"chatBackground"[\s\S]*"tabBackground"[\s\S]*"splashImage"[\s\S]*"passcodeBackgroundImage"/);
   assert.match(app, /tabBackground: "tabBackground"/);
+  assert.match(app, /splashImage: "mainBackground"/);
   assert.match(app, /clearButton\.dataset\.uploadClear = key;/);
   assert.match(app, /clearButton\.textContent = "삭제";/);
   assert.match(app, /uploads\[key\] = \{ cleared: true \};/);
   assert.match(app, /documentRoot\.style\.setProperty\(variableName, "none"\);/);
 });
 
-test("default background uploads start cleared except for the loading screen", async () => {
+test("default background uploads start cleared including the loading background", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
-  const defaultClearedImageUploadKeys = app.match(/const defaultClearedImageUploadKeys = new Set\(\[[^\n]*\]\);/)?.[0] ?? "";
+  const defaultClearedImageUploadKeys =
+    app.match(/const defaultClearedImageUploadKeys = new Set\(\[[\s\S]*?\]\);/)?.[0] ?? "";
 
-  assert.match(app, /const defaultClearedImageUploadKeys = new Set\(\[[\s\S]*"mainBackground"[\s\S]*"chatBackground"[\s\S]*"tabBackground"[\s\S]*"passcodeBackgroundImage"/);
-  assert.doesNotMatch(defaultClearedImageUploadKeys, /"splashImage"/);
+  assert.match(app, /const defaultClearedImageUploadKeys = new Set\(\[[\s\S]*"mainBackground"[\s\S]*"chatBackground"[\s\S]*"tabBackground"[\s\S]*"splashImage"[\s\S]*"passcodeBackgroundImage"/);
+  assert.match(defaultClearedImageUploadKeys, /"splashImage"/);
   assert.match(app, /const uploads = Object\.fromEntries\(\[\.\.\.defaultClearedImageUploadKeys\]\.map\(\(key\) => \[key, \{ cleared: true \}\]\)\);/);
   assert.match(app, /if \(isClearedImageUpload\(key\)\) \{[\s\S]*element\.style\.backgroundColor = toPreviewCssColor\(colors\[colorKey\]\);[\s\S]*element\.style\.backgroundImage = "none";/);
 });
@@ -1136,7 +1138,7 @@ test("theme list uses one-line rows for basic, official, and user themes", async
   assert.doesNotMatch(tabletThemeListCss, /grid-template-columns/);
 });
 
-test("preview includes an Android loading screen generated from the theme icon", async () => {
+test("preview includes an Android loading screen layered from color, optional background, and theme icon", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
@@ -1146,19 +1148,24 @@ test("preview includes an Android loading screen generated from the theme icon",
   assert.match(html, /class="splash-screen"[\s\S]*class="splash-icon"/);
   assert.doesNotMatch(html, /class="splash-apply-button"/);
   assert.doesNotMatch(html, />적용하기<\/div>/);
-  assert.match(css, /\.splash-screen\s*\{[\s\S]*background: var\(--preview-main-bg, #ffdddd\);/);
+  assert.match(
+    css,
+    /\.splash-screen\s*\{[\s\S]*background:\s*var\(--preview-splash-image, none\) center \/ cover no-repeat,\s*var\(--preview-main-bg, #ffdddd\);/,
+  );
   assert.match(css, /\.splash-icon\s*\{[\s\S]*background: var\(--preview-theme-icon, none\) center \/ contain no-repeat;/);
-  assert.equal(PREVIEW_CSS_IMAGE_VARIABLES["--preview-splash-image"], undefined);
+  assert.equal(PREVIEW_CSS_IMAGE_VARIABLES["--preview-splash-image"], "none");
   assert.equal(PREVIEW_CSS_IMAGE_VARIABLES["--preview-theme-icon"], 'url("./assets/template-images/ios/Images/commonIcoTheme.png")');
   assert.doesNotMatch(css, /\.splash-apply-button/);
   assert.match(app, /applyPreviewDefaultImages/);
   assert.match(app, /const androidSplashImageSizes = \{/);
+  assert.match(app, /function getSplashBackgroundUploadSource\(\)/);
   assert.match(app, /function createGeneratedSplashUpload\(\)/);
   assert.match(app, /function renderSplashImageToPngBytes/);
+  assert.match(app, /backgroundImage/);
   assert.match(app, /const androidUploads = generatedSplashUpload \? \{ \.\.\.uploads, splashImage: generatedSplashUpload \} : uploads;/);
-  assert.equal(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.splashImage, undefined);
+  assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.splashImage, ["--preview-splash-image"]);
   assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.themeIcon, ["--preview-theme-icon"]);
-  assert.match(model, /label: "로딩 화면"/);
+  assert.match(model, /label: "로딩 배경"/);
   assert.match(model, /"src\/main\/theme\/drawable-xxhdpi\/theme_splash_image\.png"/);
 });
 
@@ -1253,7 +1260,7 @@ test("tab icon uploads use a 3x source and generate 2x plus 3x outputs", async (
   assert.match(app, /"Images\/maintabIcoCall@2x\.png": \[76, 76\]/);
   assert.match(app, /"Images\/maintabIcoPiccoma@3x\.png": \[114, 114\]/);
   assert.match(app, /createUploadRecord\(key, file, bytes, file\.type\)/);
-  assert.match(app, /createUploadImageVariants\(key, image, \{ tintColor, splashBackgroundColor \}\)/);
+  assert.match(app, /createUploadImageVariants\(key, image, \{ tintColor \}\)/);
   assert.match(model, /previewIos: ios3x/);
   assert.match(model, /displaySize: \[114, 114\]/);
 });

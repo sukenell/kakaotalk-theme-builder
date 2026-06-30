@@ -116,7 +116,7 @@ export const PREVIEW_PAGES = [
     label: "로딩화면",
     iconUrl: pageIcon("loading.svg"),
     colorKeys: ["mainBackground"],
-    imageKeys: ["themeIcon"],
+    imageKeys: ["splashImage", "themeIcon"],
   },
   {
     id: "theme-list",
