@@ -1653,6 +1653,10 @@ h2 {
   overflow: hidden;
 }
 
+.friends-promo-card[hidden] {
+  display: none;
+}
+
 .friends-promo-card strong,
 .friends-promo-card span {
   display: block;
@@ -2260,10 +2264,16 @@ h2 {
 }
 
 .splash-screen {
+  display: grid;
+  place-items: center;
   height: 100%;
-  background:
-    var(--preview-splash-image, none) center / cover no-repeat,
-    #ffffff;
+  background: var(--preview-main-bg, #ffdddd);
+}
+
+.splash-icon {
+  width: 74px;
+  aspect-ratio: 1;
+  background: var(--preview-theme-icon, none) center / contain no-repeat;
 }
 
 .input-bar {
@@ -2290,7 +2300,7 @@ h2 {
 
 .input-bar-content > button:first-child {
   width: 34px;
-  background: var(--preview-input-menu-button, #664242);
+  background: var(--preview-input-menu-button, #0a000000);
   color: var(--preview-input-menu, #e86464);
   font-size: 20px;
 }

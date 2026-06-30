@@ -1,4 +1,5 @@
 import { buildAndroidEntries, buildIosEntries, getSkippedAndroidUploads } from "./theme-builder.js";
+import { SHOW_FRIEND_AD_CAPTION } from "./env-config.js";
 import { applyPasscodeAction } from "./passcode-preview.js";
 import { getNextPreviewIndex, getPreviewColorKeys, getPreviewImageKeys, PREVIEW_PAGES } from "./preview-pages.js";
 import {
@@ -209,6 +210,15 @@ const androidNinePatchImageSizes = {
   "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_02_image.9.png": [124, 114],
 };
 
+const androidSplashImageSizes = {
+  "src/main/theme/drawable-xxhdpi/theme_splash_image.png": [1440, 2560],
+  "src/main/theme/drawable-xhdpi/theme_splash_image.png": [720, 1280],
+  "src/main/theme/drawable-sw600dp/theme_splash_image.png": [1440, 2560],
+  "src/main/theme/drawable-land-xxhdpi/theme_splash_image.png": [2560, 1440],
+  "src/main/theme/drawable-land-xhdpi/theme_splash_image.png": [1280, 720],
+  "src/main/theme/drawable-sw600dp-land/theme_splash_image.png": [2560, 1440],
+};
+
 const androidNinePatchMarkers = {
   stretchX: [41, 81],
   stretchY: [38, 75],
@@ -253,6 +263,7 @@ applyShoppingPreviewImages();
 applyGroupAvatarImages();
 enableHorizontalDragScroll(".shopping-pick-carousel");
 renderPhoneStatusWidgets();
+applyFriendAdCaptionVisibility();
 
 function setStatus(message) {
   statusText.textContent = message;
@@ -271,6 +282,14 @@ function createPhoneStatusWidget() {
 function renderPhoneStatusWidgets() {
   document.querySelectorAll("[data-phone-status]").forEach((status) => {
     status.replaceChildren(...createPhoneStatusWidget());
+  });
+}
+
+function applyFriendAdCaptionVisibility() {
+  const isVisible = Number(SHOW_FRIEND_AD_CAPTION) === 1;
+
+  document.querySelectorAll("[data-friend-ad-caption]").forEach((caption) => {
+    caption.hidden = !isVisible;
   });
 }
 
@@ -984,7 +1003,13 @@ function getDefaultUploadSourceType(path) {
   return "image/png";
 }
 
-async function createUploadRecord(key, source, sourceBytes, sourceType = "", { sourceKind = "upload" } = {}) {
+async function createUploadRecord(
+  key,
+  source,
+  sourceBytes,
+  sourceType = "",
+  { sourceKind = "upload", splashBackgroundColor = "" } = {},
+) {
   const tintColor = tintableUploadKeys.has(key) ? normalizeTintColor(uploadTints[key]) : "";
   if (!shouldGenerateUploadVariants(key) && !tintColor) {
     return sourceBytes;
@@ -992,7 +1017,9 @@ async function createUploadRecord(key, source, sourceBytes, sourceType = "", { s
 
   const image = await loadImage(source);
   try {
-    const variants = shouldGenerateUploadVariants(key) ? await createUploadImageVariants(key, image, tintColor) : undefined;
+    const variants = shouldGenerateUploadVariants(key)
+      ? await createUploadImageVariants(key, image, { tintColor, splashBackgroundColor })
+      : undefined;
     const data = tintColor
       ? await renderImageToPngBytes(image, image.width, image.height, { tintColor })
       : sourceBytes;
@@ -1015,13 +1042,22 @@ function shouldGenerateUploadVariants(key) {
     bubbleUploadKeys.has(key) ||
     tabIconUploadKeys.has(key) ||
     target?.ios?.some((name) => iosImageSizes[name]) ||
+    target?.android?.some((name) => androidSplashImageSizes[name]) ||
     target?.android?.some((name) => androidNinePatchImageSizes[name])
   );
 }
 
-async function createUploadImageVariants(key, image, tintColor = "") {
+async function createUploadImageVariants(key, image, { tintColor = "", splashBackgroundColor = "" } = {}) {
   const target = IMAGE_TARGETS[key];
   const variants = {};
+
+  for (const name of target.android || []) {
+    const size = androidSplashImageSizes[name];
+    if (!size) {
+      continue;
+    }
+    variants[name] = await renderSplashImageToPngBytes(image, size[0], size[1], { backgroundColor: splashBackgroundColor });
+  }
 
   for (const name of target.ios || []) {
     const size = iosImageSizes[name];
@@ -1086,6 +1122,20 @@ function drawImageCover(context, image, width, height) {
   drawImageCoverRect(context, image, 0, 0, width, height);
 }
 
+function drawImageContainRect(context, image, targetX, targetY, width, height) {
+  const sourceWidth = image.width;
+  const sourceHeight = image.height;
+  const scale = Math.min(width / sourceWidth, height / sourceHeight);
+  const drawWidth = sourceWidth * scale;
+  const drawHeight = sourceHeight * scale;
+  const drawX = targetX + (width - drawWidth) / 2;
+  const drawY = targetY + (height - drawHeight) / 2;
+
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+}
+
 async function renderImageToPngBytes(image, width, height, { tintColor = "" } = {}) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -1093,6 +1143,20 @@ async function renderImageToPngBytes(image, width, height, { tintColor = "" } = 
   const context = canvas.getContext("2d");
   drawImageCover(context, image, width, height);
   applyCanvasTint(context, tintColor, width, height);
+
+  return canvasToPngBytes(canvas);
+}
+
+async function renderSplashImageToPngBytes(image, width, height, { backgroundColor = "" } = {}) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  const iconSize = Math.round(Math.min(width, height) * 0.16);
+
+  context.fillStyle = backgroundColor || defaultThemeState.colors.mainBackground;
+  context.fillRect(0, 0, width, height);
+  drawImageContainRect(context, image, (width - iconSize) / 2, (height - iconSize) / 2, iconSize, iconSize);
 
   return canvasToPngBytes(canvas);
 }
@@ -1204,7 +1268,7 @@ function updatePreview() {
   setPreviewColorVariable("--preview-input-bg", colors.inputBarBackground);
   setPreviewColorVariable("--preview-input-text", colors.inputBarText);
   setPreviewColorVariable("--preview-input-menu", colors.inputMenu);
-  setPreviewColorVariable("--preview-input-menu-button", colors.headerText);
+  setPreviewColorVariable("--preview-input-menu-button", colors.inputMenuButton);
   setPreviewColorVariable("--preview-send-button", colors.sendButton);
   setPreviewColorVariable("--preview-send-button-text", colors.sendButtonText);
   setPreviewColorVariable("--preview-send-fill", colors.sendButton);
@@ -1433,6 +1497,37 @@ async function downloadIosTheme() {
   }
 }
 
+async function getThemeIconUploadSource() {
+  const upload = uploads.themeIcon;
+  if (upload && !upload.cleared) {
+    const data = getUploadSourceData(upload) ?? getUploadData(upload);
+
+    if (data) {
+      return {
+        data,
+        type: getUploadSourceType(upload) || "image/png",
+        sourceKind: getUploadSourceKind(upload) || "upload",
+      };
+    }
+  }
+
+  const defaultSource = await getDefaultUploadSource("themeIcon");
+  return defaultSource ? { ...defaultSource, sourceKind: "default" } : undefined;
+}
+
+async function createGeneratedSplashUpload() {
+  const source = await getThemeIconUploadSource();
+  if (!source?.data) {
+    return undefined;
+  }
+
+  const sourceBlob = new Blob([source.data], { type: source.type || "image/png" });
+  return createUploadRecord("splashImage", sourceBlob, source.data, source.type, {
+    sourceKind: source.sourceKind,
+    splashBackgroundColor: toPreviewCssColor(getActiveColors(state).mainBackground),
+  });
+}
+
 async function downloadAndroidSource() {
   if (!canDownloadTheme()) {
     return;
@@ -1443,7 +1538,9 @@ async function downloadAndroidSource() {
 
   try {
     const entries = await getTemplateEntries("android");
-    const patchedEntries = buildAndroidEntries(entries, { state, uploads });
+    const generatedSplashUpload = await createGeneratedSplashUpload();
+    const androidUploads = generatedSplashUpload ? { ...uploads, splashImage: generatedSplashUpload } : uploads;
+    const patchedEntries = buildAndroidEntries(entries, { state, uploads: androidUploads });
     const zip = createStoredZip(patchedEntries);
     downloadBytes(zip, `${sanitizeFileName(state.appName)}-android-source.zip`, "application/zip");
 

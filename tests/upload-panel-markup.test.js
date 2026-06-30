@@ -256,9 +256,10 @@ test("background image uploads expose a delete action that falls back to the sel
 
 test("default background uploads start cleared except for the loading screen", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const defaultClearedImageUploadKeys = app.match(/const defaultClearedImageUploadKeys = new Set\(\[[^\n]*\]\);/)?.[0] ?? "";
 
   assert.match(app, /const defaultClearedImageUploadKeys = new Set\(\[[\s\S]*"mainBackground"[\s\S]*"chatBackground"[\s\S]*"tabBackground"[\s\S]*"passcodeBackgroundImage"/);
-  assert.doesNotMatch(app, /const defaultClearedImageUploadKeys = new Set\(\[[\s\S]*"splashImage"/);
+  assert.doesNotMatch(defaultClearedImageUploadKeys, /"splashImage"/);
   assert.match(app, /const uploads = Object\.fromEntries\(\[\.\.\.defaultClearedImageUploadKeys\]\.map\(\(key\) => \[key, \{ cleared: true \}\]\)\);/);
   assert.match(app, /if \(isClearedImageUpload\(key\)\) \{[\s\S]*element\.style\.backgroundColor = toPreviewCssColor\(colors\[colorKey\]\);[\s\S]*element\.style\.backgroundImage = "none";/);
 });
@@ -732,6 +733,19 @@ test("preview ad copy stays out of downloadable theme source templates", async (
   }
 });
 
+test("friend promo caption visibility is controlled by runtime env config", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+
+  assert.match(html, /<div class="friends-promo-card" data-friend-ad-caption>/);
+  assert.match(app, /import \{ SHOW_FRIEND_AD_CAPTION \} from "\.\/env-config\.js";/);
+  assert.match(app, /function applyFriendAdCaptionVisibility\(\)/);
+  assert.match(app, /caption\.hidden = !isVisible;/);
+  assert.match(app, /applyFriendAdCaptionVisibility\(\);/);
+  assert.equal(packageJson.scripts.env, "node scripts/env-config.mjs");
+});
+
 test("open chat list keeps added group rooms before stock room", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const openChatStart = html.indexOf('class="preview-slide open-chat-preview"');
@@ -907,13 +921,14 @@ test("preview color variables use the same color keys as downloadable themes", a
 
   assert.equal(previewColorBindings.get("tabBackground"), "--preview-tab-bg");
   assert.equal(previewColorBindings.get("unreadCount"), "--preview-unread-count");
-  assert.equal(previewColorBindings.get("headerText"), "--preview-input-menu-button");
-  assert.match(app, /setPreviewColorVariable\("--preview-input-menu-button", colors\.headerText\);/);
-  assert.match(css, /\.input-bar-content > button:first-child\s*\{[\s\S]*background: var\(--preview-input-menu-button, #664242\);/);
+  assert.equal(previewColorBindings.get("inputMenuButton"), "--preview-input-menu-button");
+  assert.match(app, /setPreviewColorVariable\("--preview-input-menu-button", colors\.inputMenuButton\);/);
+  assert.match(css, /\.input-bar-content > button:first-child\s*\{[\s\S]*background: var\(--preview-input-menu-button, #0a000000\);/);
   assert.match(css, /\.unread-badge\s*\{[\s\S]*background: var\(--preview-unread-count, #ff7f7f\);/);
   assert.match(themeModel, /\["MessageCellStyle-Send", "-ios-unread-text-color", "unreadCount"\]/);
-  assert.match(themeModel, /\["InputBarStyle-Chat", "-ios-button-normal-background-color", "headerText"\]/);
-  assert.match(themeModel, /theme_chatroom_input_bar_menu_button_color:\s*"headerText"/);
+  assert.match(themeModel, /\["InputBarStyle-Chat", "-ios-button-normal-background-color", "#000000"\]/);
+  assert.match(themeModel, /\["InputBarStyle-Chat", "-ios-button-normal-background-alpha", "0\.04"\]/);
+  assert.match(themeModel, /theme_chatroom_input_bar_menu_button_color:\s*"inputMenuButton"/);
   assert.match(themeModel, /theme_chatroom_unread_count_color:\s*"unreadCount"/);
   assert.match(themeModel, /theme_tab_lightbannerbadge_background_color:\s*"unreadCount"/);
   assert.match(themeModel, /theme_tab_bannerbadge_background_color:\s*"unreadCount"/);
@@ -1121,24 +1136,28 @@ test("theme list uses one-line rows for basic, official, and user themes", async
   assert.doesNotMatch(tabletThemeListCss, /grid-template-columns/);
 });
 
-test("preview includes an Android loading screen from the source splash layout", async () => {
+test("preview includes an Android loading screen generated from the theme icon", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const model = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
 
   assert.match(html, /class="preview-slide splash-preview" aria-label="로딩화면 프리뷰"/);
+  assert.match(html, /class="splash-screen"[\s\S]*class="splash-icon"/);
   assert.doesNotMatch(html, /class="splash-apply-button"/);
   assert.doesNotMatch(html, />적용하기<\/div>/);
-  assert.match(css, /--preview-splash-image, none/);
-  assert.equal(
-    PREVIEW_CSS_IMAGE_VARIABLES["--preview-splash-image"],
-    'url("./assets/template-images/android-source/src/main/theme/drawable-xxhdpi/theme_splash_image.png")',
-  );
-  assert.match(css, /\.splash-screen\s*\{[\s\S]*background:[\s\S]*center \/ cover no-repeat/);
+  assert.match(css, /\.splash-screen\s*\{[\s\S]*background: var\(--preview-main-bg, #ffdddd\);/);
+  assert.match(css, /\.splash-icon\s*\{[\s\S]*background: var\(--preview-theme-icon, none\) center \/ contain no-repeat;/);
+  assert.equal(PREVIEW_CSS_IMAGE_VARIABLES["--preview-splash-image"], undefined);
+  assert.equal(PREVIEW_CSS_IMAGE_VARIABLES["--preview-theme-icon"], 'url("./assets/template-images/ios/Images/commonIcoTheme.png")');
   assert.doesNotMatch(css, /\.splash-apply-button/);
   assert.match(app, /applyPreviewDefaultImages/);
-  assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.splashImage, ["--preview-splash-image"]);
+  assert.match(app, /const androidSplashImageSizes = \{/);
+  assert.match(app, /function createGeneratedSplashUpload\(\)/);
+  assert.match(app, /function renderSplashImageToPngBytes/);
+  assert.match(app, /const androidUploads = generatedSplashUpload \? \{ \.\.\.uploads, splashImage: generatedSplashUpload \} : uploads;/);
+  assert.equal(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.splashImage, undefined);
+  assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.themeIcon, ["--preview-theme-icon"]);
   assert.match(model, /label: "로딩 화면"/);
   assert.match(model, /"src\/main\/theme\/drawable-xxhdpi\/theme_splash_image\.png"/);
 });
@@ -1234,7 +1253,7 @@ test("tab icon uploads use a 3x source and generate 2x plus 3x outputs", async (
   assert.match(app, /"Images\/maintabIcoCall@2x\.png": \[76, 76\]/);
   assert.match(app, /"Images\/maintabIcoPiccoma@3x\.png": \[114, 114\]/);
   assert.match(app, /createUploadRecord\(key, file, bytes, file\.type\)/);
-  assert.match(app, /createUploadImageVariants\(key, image, tintColor\)/);
+  assert.match(app, /createUploadImageVariants\(key, image, \{ tintColor, splashBackgroundColor \}\)/);
   assert.match(model, /previewIos: ios3x/);
   assert.match(model, /displaySize: \[114, 114\]/);
 });

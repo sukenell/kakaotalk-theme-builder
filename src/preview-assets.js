@@ -70,7 +70,6 @@ export const PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY = {
   tabMoreIconSelected: ["--preview-tab-more-icon-selected"],
   profileImage: ["--preview-profile-image"],
   themeIcon: ["--preview-theme-icon"],
-  splashImage: ["--preview-splash-image"],
   passcodeBackgroundImage: ["--preview-passcode-image"],
 };
 
@@ -91,7 +90,6 @@ export const PREVIEW_CSS_IMAGE_VARIABLES = {
   "--preview-profile-image": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.profileImage),
   "--preview-default-profile-image": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.profileImage),
   "--preview-theme-icon": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.themeIcon),
-  "--preview-splash-image": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.splashImage),
   "--preview-passcode-image": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.passcodeBackgroundImage),
   "--preview-send-image": cssImageSet(PREVIEW_DEFAULT_IMAGE_PATHS.sendBubbleNormal),
   "--preview-receive-image": cssImageSet(PREVIEW_DEFAULT_IMAGE_PATHS.receiveBubbleNormal),

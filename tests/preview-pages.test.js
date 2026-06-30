@@ -99,7 +99,8 @@ test("getPreviewImageKeys returns only images used by the active preview page", 
   }
   assert.deepEqual(getPreviewImageKeys("chat"), ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS]);
   assert.deepEqual(getPreviewImageKeys("passcode"), ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"]);
-  assert.deepEqual(getPreviewImageKeys("splash"), ["splashImage"]);
+  assert.deepEqual(getPreviewColorKeys("splash"), ["mainBackground"]);
+  assert.deepEqual(getPreviewImageKeys("splash"), ["themeIcon"]);
   assert.deepEqual(getPreviewImageKeys("theme-list"), [
     "themeIcon",
     ...ADDITIONAL_IMAGE_KEYS.filter((key) => key.startsWith("themeIcon")),

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "env": "node scripts/env-config.mjs",
     "test": "node --test",
     "serve": "node scripts/serve.mjs",
     "templates": "node scripts/build-template-manifest.mjs"

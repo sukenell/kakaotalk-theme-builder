@@ -3,9 +3,13 @@ import { stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
 
+import { writeRuntimeEnvConfig } from "./env-config.mjs";
+
 const root = process.cwd();
 const port = Number(process.env.PORT || 4173);
 const host = "127.0.0.1";
+
+await writeRuntimeEnvConfig({ rootDirectory: root });
 
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
