@@ -89,6 +89,7 @@ const clearableBackgroundImageKeys = new Set([
   "splashImage",
   "passcodeBackgroundImage",
 ]);
+const clearableImageKeys = new Set([...clearableBackgroundImageKeys, "themeIcon"]);
 const defaultClearedImageUploadKeys = new Set([
   "mainBackground",
   "chatBackground",
@@ -623,7 +624,7 @@ function renderUploadControls() {
         actions.append(createUploadTintControl(key, target));
       }
       actions.append(button);
-      if (clearableBackgroundImageKeys.has(key)) {
+      if (clearableImageKeys.has(key)) {
         const clearButton = document.createElement("button");
         clearButton.className = "clear-upload-button";
         clearButton.type = "button";
@@ -792,8 +793,10 @@ function applyUploadThumb(element, key) {
 
   if (isClearedImageUpload(key)) {
     const colorKey = backgroundImageColorKeys[key];
-    const colors = getActiveColors(state);
-    element.style.backgroundColor = toPreviewCssColor(colors[colorKey]);
+    if (colorKey) {
+      const colors = getActiveColors(state);
+      element.style.backgroundColor = toPreviewCssColor(colors[colorKey]);
+    }
     element.style.backgroundImage = "none";
     return;
   }
@@ -899,7 +902,7 @@ function clearGeneratedTintUpload(key) {
 }
 
 function handleClearUpload(key) {
-  if (!clearableBackgroundImageKeys.has(key)) {
+  if (!clearableImageKeys.has(key)) {
     return;
   }
 
@@ -1163,7 +1166,9 @@ async function renderSplashImageToPngBytes(iconImage, width, height, { backgroun
     drawImageCoverRect(context, backgroundImage, 0, 0, width, height);
   }
 
-  drawImageContainRect(context, iconImage, (width - iconSize) / 2, (height - iconSize) / 2, iconSize, iconSize);
+  if (iconImage) {
+    drawImageContainRect(context, iconImage, (width - iconSize) / 2, (height - iconSize) / 2, iconSize, iconSize);
+  }
 
   return canvasToPngBytes(canvas);
 }
@@ -1506,6 +1511,10 @@ async function downloadIosTheme() {
 
 async function getThemeIconUploadSource() {
   const upload = uploads.themeIcon;
+  if (upload?.cleared) {
+    return undefined;
+  }
+
   if (upload && !upload.cleared) {
     const data = getUploadSourceData(upload) ?? getUploadData(upload);
 
@@ -1541,16 +1550,12 @@ function getSplashBackgroundUploadSource() {
 
 async function createGeneratedSplashUpload() {
   const iconSource = await getThemeIconUploadSource();
-  if (!iconSource?.data) {
-    return undefined;
-  }
-
   const backgroundSource = getSplashBackgroundUploadSource();
-  const iconBlob = new Blob([iconSource.data], { type: iconSource.type || "image/png" });
+  const iconBlob = iconSource?.data ? new Blob([iconSource.data], { type: iconSource.type || "image/png" }) : undefined;
   const backgroundBlob = backgroundSource
     ? new Blob([backgroundSource.data], { type: backgroundSource.type || "image/png" })
     : undefined;
-  const iconImage = await loadImage(iconBlob);
+  const iconImage = iconBlob ? await loadImage(iconBlob) : undefined;
   const backgroundImage = backgroundBlob ? await loadImage(backgroundBlob) : undefined;
 
   try {
@@ -1573,7 +1578,9 @@ async function createGeneratedSplashUpload() {
       variants,
     };
   } finally {
-    releaseLoadedImage(iconImage);
+    if (iconImage) {
+      releaseLoadedImage(iconImage);
+    }
 
     if (backgroundImage) {
       releaseLoadedImage(backgroundImage);

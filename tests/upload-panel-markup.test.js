@@ -1145,13 +1145,18 @@ test("preview includes an Android loading screen layered from color, optional ba
   const model = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
 
   assert.match(html, /class="preview-slide splash-preview" aria-label="로딩화면 프리뷰"/);
-  assert.match(html, /class="splash-screen"[\s\S]*class="splash-icon"/);
+  assert.match(
+    html,
+    /class="preview-slide splash-preview"[\s\S]*class="phone-status" data-phone-status[\s\S]*class="splash-screen"[\s\S]*class="splash-icon"/,
+  );
   assert.doesNotMatch(html, /class="splash-apply-button"/);
   assert.doesNotMatch(html, />적용하기<\/div>/);
   assert.match(
     css,
-    /\.splash-screen\s*\{[\s\S]*background:\s*var\(--preview-splash-image, none\) center \/ cover no-repeat,\s*var\(--preview-main-bg, #ffdddd\);/,
+    /\.splash-preview\s*\{[\s\S]*display: grid;[\s\S]*grid-template-rows: 30px 1fr;[\s\S]*background:\s*var\(--preview-splash-image, none\) center \/ cover no-repeat,\s*var\(--preview-main-bg, #ffdddd\);/,
   );
+  const splashScreenBlock = css.match(/\.splash-screen\s*\{(?<block>[^}]*)\}/)?.groups?.block ?? "";
+  assert.doesNotMatch(splashScreenBlock, /background:/);
   assert.match(css, /\.splash-icon\s*\{[\s\S]*background: var\(--preview-theme-icon, none\) center \/ contain no-repeat;/);
   assert.equal(PREVIEW_CSS_IMAGE_VARIABLES["--preview-splash-image"], "none");
   assert.equal(PREVIEW_CSS_IMAGE_VARIABLES["--preview-theme-icon"], 'url("./assets/template-images/ios/Images/commonIcoTheme.png")');
@@ -1161,6 +1166,8 @@ test("preview includes an Android loading screen layered from color, optional ba
   assert.match(app, /function getSplashBackgroundUploadSource\(\)/);
   assert.match(app, /function createGeneratedSplashUpload\(\)/);
   assert.match(app, /function renderSplashImageToPngBytes/);
+  assert.match(app, /const iconImage = iconBlob \? await loadImage\(iconBlob\) : undefined;/);
+  assert.match(app, /if \(iconImage\) \{/);
   assert.match(app, /backgroundImage/);
   assert.match(app, /const androidUploads = generatedSplashUpload \? \{ \.\.\.uploads, splashImage: generatedSplashUpload \} : uploads;/);
   assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.splashImage, ["--preview-splash-image"]);
@@ -1278,6 +1285,20 @@ test("upload panel hides unsupported additional Android structure inputs", async
   assert.match(model, /label: "친구 추가 버튼 - 기본"/);
   assert.match(model, /label: "기본 프로필 전체 이미지"/);
   assert.match(model, /label: "Android 런처 전경"/);
+});
+
+test("loading screen theme icon can be cleared without restoring the default icon", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /const clearableImageKeys = new Set\(\[\.\.\.clearableBackgroundImageKeys, "themeIcon"\]\);/);
+  assert.match(app, /if \(upload\?\.cleared\) \{[\s\S]*return undefined;[\s\S]*\}/);
+  assert.match(
+    app,
+    /if \(isClearedImageUpload\(key\)\) \{[\s\S]*const colorKey = backgroundImageColorKeys\[key\];[\s\S]*if \(colorKey\) \{/,
+  );
+  assert.match(app, /const iconBlob = iconSource\?\.data/);
+  assert.match(app, /const iconImage = iconBlob \? await loadImage\(iconBlob\) : undefined;/);
+  assert.match(app, /if \(iconImage\) \{[\s\S]*releaseLoadedImage\(iconImage\);[\s\S]*\}/);
 });
 
 test("chat upload panel exposes 3x bubble uploads and generates 2x automatically", async () => {

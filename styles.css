@@ -2263,13 +2263,20 @@ h2 {
   max-width: min(238px, 100%);
 }
 
-.splash-screen {
+.splash-preview {
   display: grid;
-  place-items: center;
+  grid-template-rows: 30px 1fr;
   height: 100%;
   background:
     var(--preview-splash-image, none) center / cover no-repeat,
     var(--preview-main-bg, #ffdddd);
+}
+
+.splash-screen {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  height: 100%;
 }
 
 .splash-icon {
