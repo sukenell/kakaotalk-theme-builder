@@ -284,6 +284,8 @@ test("color controls show hex values on the picker and expose reset buttons", as
   ]) {
     assert.match(app, new RegExp(`\\["${key}", "${label}"\\]`));
   }
+  assert.doesNotMatch(app, /\["chatBackground", "채팅방 배경"\]/);
+  assert.doesNotMatch(app, /\["passcodeBackground", "암호 화면 배경"\]/);
   assert.match(app, /const picker = document\.createElement\("button"\);/);
   assert.match(app, /picker\.type = "button";/);
   assert.match(app, /picker\.className = "color-picker-control";/);
@@ -924,12 +926,19 @@ test("preview color variables use the same color keys as downloadable themes", a
   assert.equal(previewColorBindings.get("tabBackground"), "--preview-tab-bg");
   assert.equal(previewColorBindings.get("unreadCount"), "--preview-unread-count");
   assert.equal(previewColorBindings.get("inputMenuButton"), "--preview-input-menu-button");
+  assert.match(app, /setPreviewColorVariable\("--preview-main-bg", colors\.mainBackground\);/);
+  assert.match(app, /setPreviewColorVariable\("--preview-chat-bg", colors\.mainBackground\);/);
+  assert.match(app, /setPreviewColorVariable\("--preview-passcode-bg", colors\.mainBackground\);/);
   assert.match(app, /setPreviewColorVariable\("--preview-input-menu-button", colors\.inputMenuButton\);/);
   assert.match(css, /\.input-bar-content > button:first-child\s*\{[\s\S]*background: var\(--preview-input-menu-button, #0a000000\);/);
   assert.match(css, /\.unread-badge\s*\{[\s\S]*background: var\(--preview-unread-count, #ff7f7f\);/);
   assert.match(themeModel, /\["MessageCellStyle-Send", "-ios-unread-text-color", "unreadCount"\]/);
+  assert.match(themeModel, /\["BackgroundStyle-ChatRoom", "background-color", "mainBackground"\]/);
+  assert.match(themeModel, /\["BackgroundStyle-Passcode", "background-color", "mainBackground"\]/);
   assert.match(themeModel, /\["InputBarStyle-Chat", "-ios-button-normal-background-color", "#000000"\]/);
   assert.match(themeModel, /\["InputBarStyle-Chat", "-ios-button-normal-background-alpha", "0\.04"\]/);
+  assert.match(themeModel, /theme_chatroom_background_color:\s*"mainBackground"/);
+  assert.match(themeModel, /theme_passcode_background_color:\s*"mainBackground"/);
   assert.match(themeModel, /theme_chatroom_input_bar_menu_button_color:\s*"inputMenuButton"/);
   assert.match(themeModel, /theme_chatroom_unread_count_color:\s*"unreadCount"/);
   assert.match(themeModel, /theme_tab_lightbannerbadge_background_color:\s*"mainBackground"/);

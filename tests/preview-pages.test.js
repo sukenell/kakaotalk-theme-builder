@@ -23,7 +23,6 @@ test("PREVIEW_PAGES exposes multiple KakaoTalk template screens", () => {
 test("getPreviewColorKeys returns only colors used by the active preview page", () => {
   assert.deepEqual(getPreviewColorKeys("chat"), [
     "mainBackground",
-    "chatBackground",
     "headerText",
     "descriptionText",
     "sendText",
@@ -35,7 +34,7 @@ test("getPreviewColorKeys returns only colors used by the active preview page", 
     "sendButtonText",
   ]);
   assert.deepEqual(getPreviewColorKeys("passcode"), [
-    "passcodeBackground",
+    "mainBackground",
     "passcodeText",
     "passcodeKeypadBackground",
   ]);

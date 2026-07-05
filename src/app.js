@@ -32,7 +32,6 @@ import { getDefaultGroupAvatarItemIndexes } from "./group-avatar-profiles.js";
 const colorControls = [
   ["mainBackground", "배경 색"],
   ["tabBackground", "하단 탭 배경 색"],
-  ["chatBackground", "채팅방 배경"],
   ["headerText", "메인 글자 색"],
   ["titleText", "메뉴 글자 색"],
   ["descriptionText", "설명 텍스트"],
@@ -48,7 +47,6 @@ const colorControls = [
   ["inputMenu", "입력창 메뉴"],
   ["sendButton", "전송 버튼"],
   ["sendButtonText", "전송 텍스트"],
-  ["passcodeBackground", "암호 화면 배경"],
   ["passcodeText", "암호 텍스트"],
   ["passcodeKeypadBackground", "암호 키패드 배경"],
   ["notificationBackground", "알림 배경"],
@@ -100,10 +98,10 @@ const defaultClearedImageUploadKeys = new Set([
 const defaultUploadTintColor = "#000000";
 const backgroundImageColorKeys = {
   mainBackground: "mainBackground",
-  chatBackground: "chatBackground",
+  chatBackground: "mainBackground",
   tabBackground: "tabBackground",
   splashImage: "mainBackground",
-  passcodeBackgroundImage: "passcodeBackground",
+  passcodeBackgroundImage: "mainBackground",
 };
 const tabIconUploadLabels = {
   tabFriendIcon: "친구1",
@@ -1270,7 +1268,7 @@ function updatePreview() {
 
   setPreviewColorVariable("--preview-main-bg", colors.mainBackground);
   setPreviewColorVariable("--preview-tab-bg", colors.tabBackground);
-  setPreviewColorVariable("--preview-chat-bg", colors.chatBackground);
+  setPreviewColorVariable("--preview-chat-bg", colors.mainBackground);
   setPreviewColorVariable("--preview-header", colors.headerText);
   setPreviewColorVariable("--preview-title", colors.titleText);
   setPreviewColorVariable("--preview-description", colors.descriptionText);
@@ -1285,7 +1283,7 @@ function updatePreview() {
   setPreviewColorVariable("--preview-send-button-text", colors.sendButtonText);
   setPreviewColorVariable("--preview-send-fill", colors.sendButton);
   setPreviewColorVariable("--preview-unread-count", colors.unreadCount);
-  setPreviewColorVariable("--preview-passcode-bg", colors.passcodeBackground);
+  setPreviewColorVariable("--preview-passcode-bg", colors.mainBackground);
   setPreviewColorVariable("--preview-passcode-text", colors.passcodeText);
   setPreviewColorVariable("--preview-passcode-keypad-bg", colors.passcodeKeypadBackground);
   setPreviewColorVariable("--preview-section-title", colors.sectionTitle);

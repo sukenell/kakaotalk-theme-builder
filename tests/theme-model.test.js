@@ -71,6 +71,56 @@ BackgroundStyle-Passcode
   assert.match(patchAndroidColorsXml(androidXml, defaultThemeState), /name="theme_passcode_background_color">#FFDEDE</);
 });
 
+test("single background color drives downloaded main, chat, and passcode backgrounds", () => {
+  const state = {
+    colors: {
+      mainBackground: "#123456",
+      chatBackground: "#654321",
+      passcodeBackground: "#ABCDEF",
+    },
+  };
+  const iosCss = `MainViewStyle-Primary
+{
+    background-color: #FFDEDE;
+}
+MainViewStyle-Secondary
+{
+    background-color: #FFDEDE;
+}
+BackgroundStyle-ChatRoom
+{
+    background-color: #FFDEDE;
+}
+BackgroundStyle-Passcode
+{
+    background-color: #FFDEDE;
+}`;
+  const androidXml = `<resources>
+    <color name="theme_background_color">#FFDEDE</color>
+    <color name="theme_header_cell_color">#FFDEDE</color>
+    <color name="theme_body_cell_color">#FFDEDE</color>
+    <color name="theme_body_secondary_cell_color">#FFDEDE</color>
+    <color name="theme_chatroom_background_color">#FFDEDE</color>
+    <color name="theme_passcode_background_color">#FFDEDE</color>
+</resources>`;
+
+  const patchedCss = patchIosThemeCss(iosCss, state);
+  const patchedXml = patchAndroidColorsXml(androidXml, state);
+
+  assert.match(patchedCss, /MainViewStyle-Primary[\s\S]*background-color: #123456;/);
+  assert.match(patchedCss, /MainViewStyle-Secondary[\s\S]*background-color: #123456;/);
+  assert.match(patchedCss, /BackgroundStyle-ChatRoom[\s\S]*background-color: #123456;/);
+  assert.match(patchedCss, /BackgroundStyle-Passcode[\s\S]*background-color: #123456;/);
+  assert.doesNotMatch(patchedCss, /#654321|#ABCDEF/);
+  assert.match(patchedXml, /name="theme_background_color">#123456</);
+  assert.match(patchedXml, /name="theme_header_cell_color">#123456</);
+  assert.match(patchedXml, /name="theme_body_cell_color">#123456</);
+  assert.match(patchedXml, /name="theme_body_secondary_cell_color">#123456</);
+  assert.match(patchedXml, /name="theme_chatroom_background_color">#123456</);
+  assert.match(patchedXml, /name="theme_passcode_background_color">#123456</);
+  assert.doesNotMatch(patchedXml, /#654321|#ABCDEF/);
+});
+
 test("theme versions normalize to numeric triplets and validate strictly", () => {
   assert.equal(normalizeThemeVersion("v1.2.3-beta"), "1.2.3");
   assert.equal(normalizeThemeVersion("1..2...3.4"), "1.2.3");
@@ -436,9 +486,9 @@ ManifestStyle
   };
 
   const patchedCss = patchIosThemeCss(css, state);
-  assert.match(patchedCss, /BackgroundStyle-ChatRoom[\s\S]*background-color: #FFFFFF;/);
+  assert.match(patchedCss, /BackgroundStyle-ChatRoom[\s\S]*background-color: #FFDEDE;/);
   assert.doesNotMatch(patchedCss, /-kakaotalk-theme-style/);
-  assert.match(patchAndroidColorsXml(xml, state), /name="theme_chatroom_background_color">#FFFFFF</);
+  assert.match(patchAndroidColorsXml(xml, state), /name="theme_chatroom_background_color">#FFDEDE</);
 });
 
 test("patchIosThemeCss updates manifest and core preview colors", () => {
@@ -534,7 +584,7 @@ BottomBannerStyle-Light
   assert.match(patched, /MainViewStyle-Secondary[\s\S]*-ios-background-image: 'mainBgImage\.png';/);
   assert.match(patched, /BottomBannerStyle\s*\{[\s\S]*background-color: #101418;/);
   assert.match(patched, /BottomBannerStyle-Light\s*\{[\s\S]*background-color: #101418;/);
-  assert.match(patched, /BackgroundStyle-ChatRoom[\s\S]*background-color: #202830;/);
+  assert.match(patched, /BackgroundStyle-ChatRoom[\s\S]*background-color: #101418;/);
   assert.match(patched, /InputBarStyle-Chat[\s\S]*-ios-button-normal-background-color: #000000;/);
   assert.match(patched, /InputBarStyle-Chat[\s\S]*-ios-button-normal-background-alpha: 0\.04;/);
   assert.match(patched, /MessageCellStyle-Send[\s\S]*-ios-unread-text-color: #FFE066;/);
@@ -602,7 +652,7 @@ test("patchAndroidColorsXml updates named color resources", () => {
   assert.match(patched, /name="theme_maintab_cell_color">#D2EFE9</);
   assert.match(patched, /name="theme_tab_lightbannerbadge_background_color">#FAFAF7</);
   assert.match(patched, /name="theme_tab_bannerbadge_background_color">#FAFAF7</);
-  assert.match(patched, /name="theme_chatroom_background_color">#DDE9EA</);
+  assert.match(patched, /name="theme_chatroom_background_color">#FAFAF7</);
   assert.match(patched, /name="theme_chatroom_unread_count_color">#F95D5D</);
   assert.match(patched, /name="theme_chatroom_input_bar_menu_button_color">#0A000000</);
 });

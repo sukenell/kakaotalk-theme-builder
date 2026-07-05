@@ -174,7 +174,7 @@ test("buildAndroidEntries patches XML and skips raw uploads for 9-patch resource
     state: {
       appName: "Mint Talk",
       themeIdSegment: "mint",
-      colors: { chatBackground: "#DDEEFF" },
+      colors: { mainBackground: "#DDEEFF" },
     },
     uploads: {
       sendBubbleNormal: new Uint8Array([9, 8, 7]),

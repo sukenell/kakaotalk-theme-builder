@@ -91,7 +91,6 @@ export const PREVIEW_PAGES = [
     iconUrl: pageIcon("chat.svg"),
     colorKeys: [
       "mainBackground",
-      "chatBackground",
       "headerText",
       "descriptionText",
       "sendText",
@@ -108,7 +107,7 @@ export const PREVIEW_PAGES = [
     id: "passcode",
     label: "잠금화면",
     iconUrl: pageIcon("lock.svg"),
-    colorKeys: ["passcodeBackground", "passcodeText", "passcodeKeypadBackground"],
+    colorKeys: ["mainBackground", "passcodeText", "passcodeKeypadBackground"],
     imageKeys: ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"],
   },
   {
