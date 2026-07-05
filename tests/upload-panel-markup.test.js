@@ -932,8 +932,8 @@ test("preview color variables use the same color keys as downloadable themes", a
   assert.match(themeModel, /\["InputBarStyle-Chat", "-ios-button-normal-background-alpha", "0\.04"\]/);
   assert.match(themeModel, /theme_chatroom_input_bar_menu_button_color:\s*"inputMenuButton"/);
   assert.match(themeModel, /theme_chatroom_unread_count_color:\s*"unreadCount"/);
-  assert.match(themeModel, /theme_tab_lightbannerbadge_background_color:\s*"unreadCount"/);
-  assert.match(themeModel, /theme_tab_bannerbadge_background_color:\s*"unreadCount"/);
+  assert.match(themeModel, /theme_tab_lightbannerbadge_background_color:\s*"mainBackground"/);
+  assert.match(themeModel, /theme_tab_bannerbadge_background_color:\s*"mainBackground"/);
 });
 
 test("reading log ad background image is replaceable and stays preview-only", async () => {

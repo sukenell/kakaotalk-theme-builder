@@ -492,6 +492,14 @@ MessageCellStyle-Receive
     -ios-title-edgeinsets: 10px 17px 7px 11px;
     -ios-group-title-edgeinsets: 10px 17px 7px 11px;
 }
+BottomBannerStyle
+{
+    background-color: #664142;
+}
+BottomBannerStyle-Light
+{
+    background-color: #664242;
+}
 `;
 
   const patched = patchIosThemeCss(css, {
@@ -524,6 +532,8 @@ MessageCellStyle-Receive
   assert.match(patched, /MainViewStyle-Primary[\s\S]*background-color: #101418;/);
   assert.match(patched, /MainViewStyle-Secondary[\s\S]*background-color: #101418;/);
   assert.match(patched, /MainViewStyle-Secondary[\s\S]*-ios-background-image: 'mainBgImage\.png';/);
+  assert.match(patched, /BottomBannerStyle\s*\{[\s\S]*background-color: #101418;/);
+  assert.match(patched, /BottomBannerStyle-Light\s*\{[\s\S]*background-color: #101418;/);
   assert.match(patched, /BackgroundStyle-ChatRoom[\s\S]*background-color: #202830;/);
   assert.match(patched, /InputBarStyle-Chat[\s\S]*-ios-button-normal-background-color: #000000;/);
   assert.match(patched, /InputBarStyle-Chat[\s\S]*-ios-button-normal-background-alpha: 0\.04;/);
@@ -590,8 +600,8 @@ test("patchAndroidColorsXml updates named color resources", () => {
   assert.match(patched, /name="theme_body_cell_color">#FAFAF7</);
   assert.match(patched, /name="theme_body_secondary_cell_color">#FAFAF7</);
   assert.match(patched, /name="theme_maintab_cell_color">#D2EFE9</);
-  assert.match(patched, /name="theme_tab_lightbannerbadge_background_color">#F95D5D</);
-  assert.match(patched, /name="theme_tab_bannerbadge_background_color">#F95D5D</);
+  assert.match(patched, /name="theme_tab_lightbannerbadge_background_color">#FAFAF7</);
+  assert.match(patched, /name="theme_tab_bannerbadge_background_color">#FAFAF7</);
   assert.match(patched, /name="theme_chatroom_background_color">#DDE9EA</);
   assert.match(patched, /name="theme_chatroom_unread_count_color">#F95D5D</);
   assert.match(patched, /name="theme_chatroom_input_bar_menu_button_color">#0A000000</);
