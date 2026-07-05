@@ -286,6 +286,7 @@ test("color controls show hex values on the picker and expose reset buttons", as
   }
   assert.doesNotMatch(app, /\["chatBackground", "채팅방 배경"\]/);
   assert.doesNotMatch(app, /\["passcodeBackground", "암호 화면 배경"\]/);
+  assert.doesNotMatch(app, /\["notificationBackground", "알림 배경"\]/);
   assert.match(app, /const picker = document\.createElement\("button"\);/);
   assert.match(app, /picker\.type = "button";/);
   assert.match(app, /picker\.className = "color-picker-control";/);
@@ -935,10 +936,13 @@ test("preview color variables use the same color keys as downloadable themes", a
   assert.match(themeModel, /\["MessageCellStyle-Send", "-ios-unread-text-color", "unreadCount"\]/);
   assert.match(themeModel, /\["BackgroundStyle-ChatRoom", "background-color", "mainBackground"\]/);
   assert.match(themeModel, /\["BackgroundStyle-Passcode", "background-color", "mainBackground"\]/);
+  assert.match(themeModel, /\["BackgroundStyle-MessageNotificationBar", "background-color", "mainBackground"\]/);
   assert.match(themeModel, /\["InputBarStyle-Chat", "-ios-button-normal-background-color", "#000000"\]/);
   assert.match(themeModel, /\["InputBarStyle-Chat", "-ios-button-normal-background-alpha", "0\.04"\]/);
   assert.match(themeModel, /theme_chatroom_background_color:\s*"mainBackground"/);
   assert.match(themeModel, /theme_passcode_background_color:\s*"mainBackground"/);
+  assert.match(themeModel, /theme_notification_background_color:\s*"mainBackground"/);
+  assert.match(themeModel, /theme_notification_background_pressed_color:\s*"mainBackground"/);
   assert.match(themeModel, /theme_chatroom_input_bar_menu_button_color:\s*"inputMenuButton"/);
   assert.match(themeModel, /theme_chatroom_unread_count_color:\s*"unreadCount"/);
   assert.match(themeModel, /theme_tab_lightbannerbadge_background_color:\s*"mainBackground"/);

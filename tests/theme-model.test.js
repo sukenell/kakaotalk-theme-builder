@@ -121,6 +121,38 @@ BackgroundStyle-Passcode
   assert.doesNotMatch(patchedXml, /#654321|#ABCDEF/);
 });
 
+test("main background color drives downloaded top notification backgrounds", () => {
+  const state = {
+    colors: {
+      mainBackground: "#123456",
+      notificationBackground: "#654321",
+      bodyPressed: "#ABCDEF",
+    },
+  };
+  const iosCss = `BackgroundStyle-MessageNotificationBar
+{
+    background-color: #FCC5C5;
+}`;
+  const androidXml = `<resources>
+    <color name="theme_notification_background_color">#FCC5C5</color>
+    <color name="theme_notification_background_pressed_color">#FFB3B3</color>
+</resources>`;
+
+  const patchedCss = patchIosThemeCss(iosCss, state);
+  const patchedXml = patchAndroidColorsXml(androidXml, state);
+  const notificationCss = patchedCss.match(/BackgroundStyle-MessageNotificationBar\s*\{[\s\S]*?\}/)?.[0] ?? "";
+  const notificationXml = [
+    patchedXml.match(/<color name="theme_notification_background_color">#[0-9A-F]+<\/color>/)?.[0] ?? "",
+    patchedXml.match(/<color name="theme_notification_background_pressed_color">#[0-9A-F]+<\/color>/)?.[0] ?? "",
+  ].join("\n");
+
+  assert.match(patchedCss, /BackgroundStyle-MessageNotificationBar[\s\S]*background-color: #123456;/);
+  assert.match(patchedXml, /name="theme_notification_background_color">#123456</);
+  assert.match(patchedXml, /name="theme_notification_background_pressed_color">#123456</);
+  assert.doesNotMatch(notificationCss, /#654321|#ABCDEF/);
+  assert.doesNotMatch(notificationXml, /#654321|#ABCDEF/);
+});
+
 test("theme versions normalize to numeric triplets and validate strictly", () => {
   assert.equal(normalizeThemeVersion("v1.2.3-beta"), "1.2.3");
   assert.equal(normalizeThemeVersion("1..2...3.4"), "1.2.3");

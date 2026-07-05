@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import zlib from "node:zlib";
 
 import { buildAndroidEntries, buildIosEntries, getSkippedAndroidUploads } from "../src/theme-builder.js";
 
@@ -8,6 +9,62 @@ const transparentPngBytes = new Uint8Array([
   0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 156, 99, 248, 15, 4, 0, 9, 251, 3,
   253, 160, 172, 220, 170, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
 ]);
+
+function readUInt32(data, offset) {
+  return data.readUInt32BE(offset);
+}
+
+function readRgbaPngBytes(data) {
+  const buffer = Buffer.from(data);
+  assert.equal(buffer.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+
+  let offset = 8;
+  let width = 0;
+  let height = 0;
+  let colorType = 0;
+  const idatChunks = [];
+
+  while (offset < buffer.length) {
+    const length = readUInt32(buffer, offset);
+    const type = buffer.subarray(offset + 4, offset + 8).toString("ascii");
+    const chunk = buffer.subarray(offset + 8, offset + 8 + length);
+
+    if (type === "IHDR") {
+      width = readUInt32(chunk, 0);
+      height = readUInt32(chunk, 4);
+      assert.equal(chunk[8], 8);
+      colorType = chunk[9];
+      assert.equal(chunk[12], 0);
+    } else if (type === "IDAT") {
+      idatChunks.push(chunk);
+    } else if (type === "IEND") {
+      break;
+    }
+
+    offset += length + 12;
+  }
+
+  assert.equal(colorType, 6);
+  const raw = zlib.inflateSync(Buffer.concat(idatChunks));
+  const stride = width * 4;
+  const pixels = Buffer.alloc(stride * height);
+  let sourceOffset = 0;
+
+  for (let y = 0; y < height; y += 1) {
+    const filter = raw[sourceOffset];
+    sourceOffset += 1;
+    assert.equal(filter, 0);
+    raw.copy(pixels, y * stride, sourceOffset, sourceOffset + stride);
+    sourceOffset += stride;
+  }
+
+  return { width, height, pixels };
+}
+
+function rgbaAt(image, x, y) {
+  const offset = (y * image.width + x) * 4;
+  return Array.from(image.pixels.subarray(offset, offset + 4));
+}
 
 test("buildIosEntries patches CSS and replaces mapped uploaded images", () => {
   const entries = [
@@ -271,18 +328,46 @@ test("buildAndroidEntries applies generated 9-patch variants for bubble uploads"
   );
 });
 
-test("cleared Android 9-patch uploads keep their template image", () => {
-  const tabTarget = "src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png";
+test("cleared Android tab background uploads export a solid 9-patch from the tab color", () => {
+  const phoneTabTarget = "src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png";
+  const tabletTabTarget = "src/main/theme/drawable-sw600dp/theme_maintab_cell_image.9.png";
   const templateNinePatch = new Uint8Array([2, 2, 2]);
-  const result = buildAndroidEntries([{ name: tabTarget, data: templateNinePatch }], {
+  const result = buildAndroidEntries(
+    [
+      { name: phoneTabTarget, data: templateNinePatch },
+      { name: tabletTabTarget, data: templateNinePatch },
+    ],
+    {
+      state: { colors: { tabBackground: "#ABCDEF" } },
+      uploads: {
+        tabBackground: { cleared: true },
+      },
+    },
+  );
+
+  for (const target of [phoneTabTarget, tabletTabTarget]) {
+    const image = readRgbaPngBytes(result.find((entry) => entry.name === target).data);
+
+    assert.deepEqual(rgbaAt(image, 1, 1), [0xab, 0xcd, 0xef, 0xff]);
+    assert.deepEqual(rgbaAt(image, 1, 0), [0, 0, 0, 0xff]);
+    assert.deepEqual(rgbaAt(image, 0, 1), [0, 0, 0, 0xff]);
+    assert.notDeepEqual(result.find((entry) => entry.name === target).data, templateNinePatch);
+  }
+  assert.deepEqual(getSkippedAndroidUploads({ tabBackground: { cleared: true } }), []);
+});
+
+test("cleared Android tab background uploads use opaque white by default", () => {
+  const tabTarget = "src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png";
+  const result = buildAndroidEntries([{ name: tabTarget, data: new Uint8Array([2, 2, 2]) }], {
     state: {},
     uploads: {
       tabBackground: { cleared: true },
     },
   });
 
-  assert.deepEqual(result.find((entry) => entry.name === tabTarget).data, templateNinePatch);
-  assert.deepEqual(getSkippedAndroidUploads({ tabBackground: { cleared: true } }), []);
+  const image = readRgbaPngBytes(result.find((entry) => entry.name === tabTarget).data);
+
+  assert.deepEqual(rgbaAt(image, 1, 1), [0xff, 0xff, 0xff, 0xff]);
 });
 
 test("buildAndroidEntries appends extended tab images and selectors when both states are uploaded", () => {

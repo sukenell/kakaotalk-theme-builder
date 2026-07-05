@@ -1,11 +1,13 @@
 import {
   IMAGE_TARGETS,
+  defaultThemeState,
   patchAndroidBuildGradle,
   patchAndroidColorsXml,
   patchAndroidManifestXml,
   patchAndroidStringsXml,
   patchIosThemeCss,
 } from "./theme-model.js";
+import { crc32 } from "./zip-utils.js";
 
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
@@ -14,6 +16,140 @@ const transparentPngBytes = new Uint8Array([
   0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 156, 99, 248, 15, 4, 0, 9, 251, 3,
   253, 160, 172, 220, 170, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
 ]);
+const pngSignature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+
+function concatBytes(parts) {
+  const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
+  const output = new Uint8Array(totalLength);
+  let offset = 0;
+
+  for (const part of parts) {
+    output.set(part, offset);
+    offset += part.length;
+  }
+
+  return output;
+}
+
+function writeUint32BE(output, offset, value) {
+  output[offset] = (value >>> 24) & 0xff;
+  output[offset + 1] = (value >>> 16) & 0xff;
+  output[offset + 2] = (value >>> 8) & 0xff;
+  output[offset + 3] = value & 0xff;
+}
+
+function adler32(bytes) {
+  let a = 1;
+  let b = 0;
+
+  for (const byte of bytes) {
+    a = (a + byte) % 65521;
+    b = (b + a) % 65521;
+  }
+
+  return ((b << 16) | a) >>> 0;
+}
+
+function createStoredZlibStream(bytes) {
+  const parts = [new Uint8Array([0x78, 0x01])];
+  let offset = 0;
+
+  do {
+    const remaining = bytes.length - offset;
+    const length = Math.min(remaining, 65535);
+    const isFinalBlock = offset + length >= bytes.length;
+    const blockHeader = new Uint8Array(5);
+    const inverseLength = (~length) & 0xffff;
+
+    blockHeader[0] = isFinalBlock ? 1 : 0;
+    blockHeader[1] = length & 0xff;
+    blockHeader[2] = (length >>> 8) & 0xff;
+    blockHeader[3] = inverseLength & 0xff;
+    blockHeader[4] = (inverseLength >>> 8) & 0xff;
+    parts.push(blockHeader, bytes.subarray(offset, offset + length));
+    offset += length;
+  } while (offset < bytes.length);
+
+  const checksum = new Uint8Array(4);
+  writeUint32BE(checksum, 0, adler32(bytes));
+  parts.push(checksum);
+
+  return concatBytes(parts);
+}
+
+function pngChunk(type, data) {
+  const typeBytes = encoder.encode(type);
+  const output = new Uint8Array(12 + data.length);
+  writeUint32BE(output, 0, data.length);
+  output.set(typeBytes, 4);
+  output.set(data, 8);
+  writeUint32BE(output, 8 + data.length, crc32(concatBytes([typeBytes, data])));
+
+  return output;
+}
+
+function parseAndroidColor(value, fallback = "#FFFFFF") {
+  const color = String(value || fallback)
+    .trim()
+    .replace(/^#/, "")
+    .toUpperCase();
+  const hex = /^[0-9A-F]{6}$/.test(color) || /^[0-9A-F]{8}$/.test(color) ? color : fallback.replace(/^#/, "");
+
+  if (hex.length === 8) {
+    return [
+      Number.parseInt(hex.slice(2, 4), 16),
+      Number.parseInt(hex.slice(4, 6), 16),
+      Number.parseInt(hex.slice(6, 8), 16),
+      Number.parseInt(hex.slice(0, 2), 16),
+    ];
+  }
+
+  return [
+    Number.parseInt(hex.slice(0, 2), 16),
+    Number.parseInt(hex.slice(2, 4), 16),
+    Number.parseInt(hex.slice(4, 6), 16),
+    0xff,
+  ];
+}
+
+function createSolidNinePatchPngBytes(colorValue) {
+  const width = 4;
+  const height = 4;
+  const stride = width * 4;
+  const raw = new Uint8Array(height * (stride + 1));
+  const color = parseAndroidColor(colorValue);
+
+  for (let y = 0; y < height; y += 1) {
+    const rowOffset = y * (stride + 1);
+    raw[rowOffset] = 0;
+
+    for (let x = 0; x < width; x += 1) {
+      const offset = rowOffset + 1 + x * 4;
+      const isStretchMarker =
+        (y === 0 && x > 0 && x < width - 1) ||
+        (x === 0 && y > 0 && y < height - 1) ||
+        (y === height - 1 && x > 0 && x < width - 1) ||
+        (x === width - 1 && y > 0 && y < height - 1);
+      const isContent = x > 0 && x < width - 1 && y > 0 && y < height - 1;
+      const pixel = isStretchMarker ? [0, 0, 0, 0xff] : isContent ? color : [0, 0, 0, 0];
+
+      raw.set(pixel, offset);
+    }
+  }
+
+  const ihdr = new Uint8Array(13);
+  writeUint32BE(ihdr, 0, width);
+  writeUint32BE(ihdr, 4, height);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+
+  return concatBytes([
+    pngSignature,
+    pngChunk("IHDR", ihdr),
+    pngChunk("IDAT", createStoredZlibStream(raw)),
+    pngChunk("IEND", new Uint8Array()),
+  ]);
+}
 
 const androidGeneratedTabSelectors = [
   {
@@ -118,6 +254,21 @@ function hasUpload(uploads, key) {
   return Boolean(upload && !upload.cleared);
 }
 
+function colorForKey(state, key) {
+  return state?.colors?.[key] ?? defaultThemeState.colors[key];
+}
+
+function addClearedAndroidTabBackgroundReplacement(replacements, state, uploads) {
+  if (uploads?.tabBackground?.cleared !== true) {
+    return;
+  }
+
+  const tabBackground = createSolidNinePatchPngBytes(colorForKey(state, "tabBackground"));
+  for (const name of IMAGE_TARGETS.tabBackground.android || []) {
+    replacements.set(name, tabBackground);
+  }
+}
+
 function buildGeneratedAndroidSelectors(uploads) {
   return new Map(
     androidGeneratedTabSelectors
@@ -155,6 +306,7 @@ export function buildIosEntries(templateEntries, { state, uploads = {} }) {
 
 export function buildAndroidEntries(templateEntries, { state, uploads = {} }) {
   const replacements = buildReplacementMap(uploads, "android");
+  addClearedAndroidTabBackgroundReplacement(replacements, state, uploads);
   const generatedSelectors = buildGeneratedAndroidSelectors(uploads);
 
   const entries = templateEntries.map((entry) => {

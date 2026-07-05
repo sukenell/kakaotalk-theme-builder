@@ -49,7 +49,6 @@ const colorControls = [
   ["sendButtonText", "전송 텍스트"],
   ["passcodeText", "암호 텍스트"],
   ["passcodeKeypadBackground", "암호 키패드 배경"],
-  ["notificationBackground", "알림 배경"],
 ];
 
 const hiddenUploadKeys = new Set([
@@ -216,6 +215,8 @@ const iosImageSizes = {
 };
 
 const androidNinePatchImageSizes = {
+  "src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png": [1442, 214],
+  "src/main/theme/drawable-sw600dp/theme_maintab_cell_image.9.png": [1442, 214],
   "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png": [124, 114],
   "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_02_image.9.png": [124, 114],
   "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_you_01_image.9.png": [124, 114],
