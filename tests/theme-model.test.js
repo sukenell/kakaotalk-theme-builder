@@ -153,6 +153,55 @@ test("main background color drives downloaded top notification backgrounds", () 
   assert.doesNotMatch(notificationXml, /#654321|#ABCDEF/);
 });
 
+test("downloaded top segment colors match preview selected menu colors", () => {
+  const state = {
+    colors: {
+      headerText: "#223344",
+      titleText: "#102030",
+      descriptionText: "#445566",
+      titlePressed: "#A1B2C3",
+      bodyPressed: "#D4E5F6",
+    },
+  };
+  const iosCss = `HeaderStyle-Main
+{
+    -ios-text-color: #664242;
+    -ios-tab-text-color: #B39898;
+    -ios-tab-highlighted-text-color: #664242;
+}
+MainViewStyle-Primary
+{
+    -ios-selected-background-color: #664242;
+}`;
+  const androidXml = `<resources>
+    <color name="theme_feature_browse_tab_color">#D49B9B</color>
+    <color name="theme_feature_browse_tab_focused_color">#664242</color>
+    <color name="theme_body_cell_pressed_color">#664242</color>
+</resources>`;
+
+  const patchedCss = patchIosThemeCss(iosCss, state);
+  const patchedXml = patchAndroidColorsXml(androidXml, state);
+  const iosSegmentCss = [
+    patchedCss.match(/-ios-tab-text-color: #[0-9A-F]+;/)?.[0] ?? "",
+    patchedCss.match(/-ios-tab-highlighted-text-color: #[0-9A-F]+;/)?.[0] ?? "",
+    patchedCss.match(/-ios-selected-background-color: #[0-9A-F]+;/)?.[0] ?? "",
+  ].join("\n");
+  const androidSegmentXml = [
+    patchedXml.match(/<color name="theme_feature_browse_tab_color">#[0-9A-F]+<\/color>/)?.[0] ?? "",
+    patchedXml.match(/<color name="theme_feature_browse_tab_focused_color">#[0-9A-F]+<\/color>/)?.[0] ?? "",
+    patchedXml.match(/<color name="theme_body_cell_pressed_color">#[0-9A-F]+<\/color>/)?.[0] ?? "",
+  ].join("\n");
+
+  assert.match(patchedCss, /HeaderStyle-Main[\s\S]*-ios-tab-text-color: #102030;/);
+  assert.match(patchedCss, /HeaderStyle-Main[\s\S]*-ios-tab-highlighted-text-color: #A1B2C3;/);
+  assert.match(patchedCss, /MainViewStyle-Primary[\s\S]*-ios-selected-background-color: #D4E5F6;/);
+  assert.doesNotMatch(iosSegmentCss, /#223344|#445566/);
+  assert.match(patchedXml, /name="theme_feature_browse_tab_color">#102030</);
+  assert.match(patchedXml, /name="theme_feature_browse_tab_focused_color">#A1B2C3</);
+  assert.match(patchedXml, /name="theme_body_cell_pressed_color">#D4E5F6</);
+  assert.doesNotMatch(androidSegmentXml, /#223344|#445566/);
+});
+
 test("theme versions normalize to numeric triplets and validate strictly", () => {
   assert.equal(normalizeThemeVersion("v1.2.3-beta"), "1.2.3");
   assert.equal(normalizeThemeVersion("1..2...3.4"), "1.2.3");

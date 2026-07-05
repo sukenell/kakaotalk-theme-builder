@@ -840,8 +840,12 @@ test("preview segment controls use the same pressed color data as downloadable t
   const friendSegmentActiveCss = css.match(/\.friend-segment\.is-active\s*\{[\s\S]*?\}/)?.[0] ?? "";
 
   assert.match(themeModel, /\["MainViewStyle-Primary", "-ios-text-color", "titleText"\]/);
+  assert.match(themeModel, /\["HeaderStyle-Main", "-ios-tab-text-color", "titleText"\]/);
+  assert.match(themeModel, /\["HeaderStyle-Main", "-ios-tab-highlighted-text-color", "titlePressed"\]/);
   assert.match(themeModel, /\["MainViewStyle-Primary", "-ios-selected-background-color", "bodyPressed"\]/);
   assert.match(themeModel, /theme_title_color:\s*"titleText"/);
+  assert.match(themeModel, /theme_feature_browse_tab_color:\s*"titleText"/);
+  assert.match(themeModel, /theme_feature_browse_tab_focused_color:\s*"titlePressed"/);
   assert.match(themeModel, /theme_body_cell_pressed_color:\s*"bodyPressed"/);
   assert.match(themeModel, /theme_body_cell_border_color:\s*"bodyBorder"/);
   assert.match(themeModel, /theme_title_pressed_color:\s*"titlePressed"/);
