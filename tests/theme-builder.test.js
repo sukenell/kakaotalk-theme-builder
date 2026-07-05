@@ -4,12 +4,6 @@ import zlib from "node:zlib";
 
 import { buildAndroidEntries, buildIosEntries, getSkippedAndroidUploads } from "../src/theme-builder.js";
 
-const transparentPngBytes = new Uint8Array([
-  137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0,
-  0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 156, 99, 248, 15, 4, 0, 9, 251, 3,
-  253, 160, 172, 220, 170, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
-]);
-
 function readUInt32(data, offset) {
   return data.readUInt32BE(offset);
 }
@@ -179,7 +173,7 @@ test("buildIosEntries appends uploaded iOS assets that are not in the base templ
   );
 });
 
-test("build entries replace cleared background image uploads with a transparent image", () => {
+test("build entries replace cleared passcode background image uploads with the main background color", () => {
   const iosEntries = [
     { name: "Images/passcodeBgImage@3x.png", data: new Uint8Array([1, 1, 1]) },
     { name: "KakaoTalkTheme.css", data: "BackgroundStyle-Passcode { background-color: #FFDEDE; }" },
@@ -199,8 +193,72 @@ test("build entries replace cleared background image uploads with a transparent 
     uploads: { passcodeBackgroundImage: { cleared: true } },
   });
 
-  assert.deepEqual(iosResult.find((entry) => entry.name === "Images/passcodeBgImage@3x.png").data, transparentPngBytes);
-  assert.deepEqual(androidResult.find((entry) => entry.name === androidTarget).data, transparentPngBytes);
+  const iosImage = readRgbaPngBytes(iosResult.find((entry) => entry.name === "Images/passcodeBgImage@3x.png").data);
+  const androidImage = readRgbaPngBytes(androidResult.find((entry) => entry.name === androidTarget).data);
+
+  assert.deepEqual(rgbaAt(iosImage, 0, 0), [0xff, 0xde, 0xde, 0xff]);
+  assert.deepEqual(rgbaAt(androidImage, 0, 0), [0xff, 0xde, 0xde, 0xff]);
+});
+
+test("cleared color-backed background image uploads export solid user colors", () => {
+  const entries = [
+    { name: "Images/mainBgImage@3x.png", data: new Uint8Array([1]) },
+    { name: "Images/chatroomBgImage@3x.png", data: new Uint8Array([2]) },
+    { name: "Images/passcodeBgImage@3x.png", data: new Uint8Array([3]) },
+    { name: "Images/maintabBgImage@3x.png", data: new Uint8Array([4]) },
+    { name: "KakaoTalkTheme.css", data: "MainViewStyle-Primary { background-color: #FFDEDE; }" },
+  ];
+  const state = { colors: { mainBackground: "#123456", tabBackground: "#ABCDEF" } };
+  const result = buildIosEntries(entries, {
+    state,
+    uploads: {
+      mainBackground: { cleared: true },
+      chatBackground: { cleared: true },
+      passcodeBackgroundImage: { cleared: true },
+      tabBackground: { cleared: true },
+    },
+  });
+
+  for (const name of ["Images/mainBgImage@3x.png", "Images/chatroomBgImage@3x.png", "Images/passcodeBgImage@3x.png"]) {
+    const image = readRgbaPngBytes(result.find((entry) => entry.name === name).data);
+
+    assert.deepEqual(rgbaAt(image, 0, 0), [0x12, 0x34, 0x56, 0xff]);
+  }
+
+  const tabImage = readRgbaPngBytes(result.find((entry) => entry.name === "Images/maintabBgImage@3x.png").data);
+
+  assert.deepEqual(rgbaAt(tabImage, 0, 0), [0xab, 0xcd, 0xef, 0xff]);
+});
+
+test("cleared Android background image uploads export solid user colors", () => {
+  const backgroundTargets = [
+    "src/main/theme/drawable-xxhdpi/theme_background_image.png",
+    "src/main/theme/drawable-sw600dp/theme_background_image.png",
+    "src/main/theme/drawable-xxhdpi/theme_chatroom_background_image.png",
+    "src/main/theme/drawable-sw600dp/theme_chatroom_background_image.png",
+    "src/main/theme/drawable-xxhdpi/theme_passcode_background_image.png",
+    "src/main/theme/drawable-sw600dp/theme_passcode_background_image.png",
+  ];
+  const result = buildAndroidEntries(
+    [
+      ...backgroundTargets.map((name, index) => ({ name, data: new Uint8Array([index + 1]) })),
+      { name: "src/main/theme/values/colors.xml", data: `<resources></resources>` },
+    ],
+    {
+      state: { colors: { mainBackground: "#123456" } },
+      uploads: {
+        mainBackground: { cleared: true },
+        chatBackground: { cleared: true },
+        passcodeBackgroundImage: { cleared: true },
+      },
+    },
+  );
+
+  for (const name of backgroundTargets) {
+    const image = readRgbaPngBytes(result.find((entry) => entry.name === name).data);
+
+    assert.deepEqual(rgbaAt(image, 0, 0), [0x12, 0x34, 0x56, 0xff]);
+  }
 });
 
 test("buildAndroidEntries patches XML and skips raw uploads for 9-patch resources", () => {

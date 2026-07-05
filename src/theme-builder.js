@@ -11,12 +11,13 @@ import { crc32 } from "./zip-utils.js";
 
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
-const transparentPngBytes = new Uint8Array([
-  137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0,
-  0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 156, 99, 248, 15, 4, 0, 9, 251, 3,
-  253, 160, 172, 220, 170, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
-]);
 const pngSignature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+const clearedBackgroundImageColorKeys = {
+  mainBackground: "mainBackground",
+  chatBackground: "mainBackground",
+  tabBackground: "tabBackground",
+  passcodeBackgroundImage: "mainBackground",
+};
 
 function concatBytes(parts) {
   const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
@@ -112,6 +113,25 @@ function parseAndroidColor(value, fallback = "#FFFFFF") {
   ];
 }
 
+function createSolidPngBytes(colorValue) {
+  const raw = new Uint8Array(5);
+  raw[0] = 0;
+  raw.set(parseAndroidColor(colorValue, "#00000000"), 1);
+
+  const ihdr = new Uint8Array(13);
+  writeUint32BE(ihdr, 0, 1);
+  writeUint32BE(ihdr, 4, 1);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+
+  return concatBytes([
+    pngSignature,
+    pngChunk("IHDR", ihdr),
+    pngChunk("IDAT", createStoredZlibStream(raw)),
+    pngChunk("IEND", new Uint8Array()),
+  ]);
+}
+
 function createSolidNinePatchPngBytes(colorValue) {
   const width = 4;
   const height = 4;
@@ -150,6 +170,8 @@ function createSolidNinePatchPngBytes(colorValue) {
     pngChunk("IEND", new Uint8Array()),
   ]);
 }
+
+const transparentPngBytes = createSolidPngBytes("#00000000");
 
 const androidGeneratedTabSelectors = [
   {
@@ -191,9 +213,19 @@ function asBytes(data) {
   return encoder.encode(String(data));
 }
 
-function getUploadDataForTarget(upload, name, { allowFallback = true } = {}) {
+function getClearedUploadDataForTarget(uploadKey, name, state, { allowFallback = true } = {}) {
+  const colorKey = clearedBackgroundImageColorKeys[uploadKey];
+  if (colorKey) {
+    const color = colorForKey(state, colorKey);
+    return name.endsWith(".9.png") ? createSolidNinePatchPngBytes(color) : createSolidPngBytes(color);
+  }
+
+  return allowFallback ? transparentPngBytes : undefined;
+}
+
+function getUploadDataForTarget(uploadKey, upload, name, state, { allowFallback = true } = {}) {
   if (upload?.cleared) {
-    return allowFallback ? transparentPngBytes : undefined;
+    return getClearedUploadDataForTarget(uploadKey, name, state, { allowFallback });
   }
 
   if (!upload || upload instanceof Uint8Array || upload instanceof ArrayBuffer) {
@@ -203,7 +235,7 @@ function getUploadDataForTarget(upload, name, { allowFallback = true } = {}) {
   return upload.variants?.[name] ?? (allowFallback ? upload.data ?? upload.bytes : undefined);
 }
 
-function buildReplacementMap(uploads, platform) {
+function buildReplacementMap(uploads, platform, state) {
   const replacements = new Map();
 
   for (const [uploadKey, upload] of Object.entries(uploads || {})) {
@@ -213,7 +245,7 @@ function buildReplacementMap(uploads, platform) {
     }
 
     for (const name of target[platform] || []) {
-      const data = getUploadDataForTarget(upload, name, {
+      const data = getUploadDataForTarget(uploadKey, upload, name, state, {
         allowFallback: !(platform === "android" && target.androidRequiresNinePatch),
       });
       if (data) {
@@ -258,17 +290,6 @@ function colorForKey(state, key) {
   return state?.colors?.[key] ?? defaultThemeState.colors[key];
 }
 
-function addClearedAndroidTabBackgroundReplacement(replacements, state, uploads) {
-  if (uploads?.tabBackground?.cleared !== true) {
-    return;
-  }
-
-  const tabBackground = createSolidNinePatchPngBytes(colorForKey(state, "tabBackground"));
-  for (const name of IMAGE_TARGETS.tabBackground.android || []) {
-    replacements.set(name, tabBackground);
-  }
-}
-
 function buildGeneratedAndroidSelectors(uploads) {
   return new Map(
     androidGeneratedTabSelectors
@@ -278,7 +299,7 @@ function buildGeneratedAndroidSelectors(uploads) {
 }
 
 export function buildIosEntries(templateEntries, { state, uploads = {} }) {
-  const replacements = buildReplacementMap(uploads, "ios");
+  const replacements = buildReplacementMap(uploads, "ios", state);
 
   const entries = templateEntries.map((entry) => {
     if (entry.name === "KakaoTalkTheme.css") {
@@ -305,8 +326,7 @@ export function buildIosEntries(templateEntries, { state, uploads = {} }) {
 }
 
 export function buildAndroidEntries(templateEntries, { state, uploads = {} }) {
-  const replacements = buildReplacementMap(uploads, "android");
-  addClearedAndroidTabBackgroundReplacement(replacements, state, uploads);
+  const replacements = buildReplacementMap(uploads, "android", state);
   const generatedSelectors = buildGeneratedAndroidSelectors(uploads);
 
   const entries = templateEntries.map((entry) => {
@@ -377,7 +397,9 @@ export function getSkippedAndroidUploads(uploads) {
         return false;
       }
 
-      return !target.android?.some((name) => getUploadDataForTarget(uploads[key], name, { allowFallback: false }));
+      return !target.android?.some((name) =>
+        getUploadDataForTarget(key, uploads[key], name, undefined, { allowFallback: false }),
+      );
     })
     .map((key) => IMAGE_TARGETS[key].label);
 }
