@@ -29,6 +29,7 @@ test("group avatar tiles can render the default no-profile image", async () => {
   assert.match(app, /classList\.add\("is-default-profile"\)/);
   assert.match(app, /style\.removeProperty\("--group-avatar-image"\)/);
   assert.match(css, /\.avatar\.default-profile,\s*\.avatar\.group-avatar \.group-avatar-item\.is-default-profile\s*\{/);
-  assert.match(css, /--preview-default-profile-image/);
-  assert.match(previewAssets, /"--preview-default-profile-image": cssUrl\(PREVIEW_DEFAULT_IMAGE_PATHS\.profileImage\)/);
+  assert.match(css, /--preview-profile-image/);
+  assert.doesNotMatch(css, /--preview-default-profile-image/);
+  assert.doesNotMatch(previewAssets, /--preview-default-profile-image/);
 });

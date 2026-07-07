@@ -233,6 +233,28 @@ test("chat preview includes default profile and extra basic/additional bubble sa
   assert.match(app, /previewTimeElements\.forEach/);
 });
 
+test("default profile upload drives every default avatar preview from one shared image", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const previewAssets = await readFile(new URL("../src/preview-assets.js", import.meta.url), "utf8");
+
+  assert.match(previewAssets, /profileImage:\s*\["--preview-profile-image"\]/);
+  assert.doesNotMatch(previewAssets, /--preview-default-profile-image/);
+  assert.doesNotMatch(css, /--preview-default-profile-image/);
+  assert.doesNotMatch(css, /--friend-profile-image/);
+  assert.doesNotMatch(app, /friendProfileImages|applyFriendProfileImages|data-profile-image-index/);
+  assert.doesNotMatch(html, /data-profile-image-index/);
+
+  for (const selector of [
+    /\.avatar\s*\{[\s\S]*var\(--preview-profile-image, none\) center \/ cover no-repeat/,
+    /\.avatar\.profile-avatar\s*\{[\s\S]*var\(--preview-profile-image, none\) center \/ cover no-repeat/,
+    /\.avatar\.default-profile,\s*\.avatar\.group-avatar \.group-avatar-item\.is-default-profile\s*\{[\s\S]*var\(--preview-profile-image, none\) center \/ cover no-repeat/,
+  ]) {
+    assert.match(css, selector);
+  }
+});
+
 test("upload panel no longer shows bubble generation or Android 9-patch helper copy", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
@@ -276,8 +298,8 @@ test("color controls show hex values on the picker and expose reset buttons", as
     ["headerText", "메인 글자 색"],
     ["titleText", "메뉴 글자 색"],
     ["paragraphText", "서브 글자색"],
-    ["bodyPressed", "선택 메뉴 배경 색"],
-    ["titlePressed", "선택 메뉴 글자 색"],
+    ["titlePressed", "선택 메뉴 배경 색"],
+    ["bodyPressed", "선택 메뉴 글자 색"],
     ["unreadCount", "레드닷 알림 색"],
     ["sendText", "나의 글자 색"],
     ["receiveText", "상대 글자 색"],
@@ -832,6 +854,7 @@ test("preview segment controls use the same pressed color data as downloadable t
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const themeModel = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
+  const colorControls = app.match(/const colorControls = \[[\s\S]*?\];/)?.[0] ?? "";
   const friendSegmentCss = css.match(/\.friend-segment\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const shoppingTabCss = css.match(/\.shopping-tab\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const moreSegmentCss = css.match(/\.more-segment\s*\{[\s\S]*?\}/)?.[0] ?? "";
@@ -851,8 +874,10 @@ test("preview segment controls use the same pressed color data as downloadable t
   assert.match(themeModel, /theme_title_pressed_color:\s*"titlePressed"/);
   assert.match(app, /setPreviewColorVariable\("--preview-title", colors\.titleText\);/);
   assert.match(app, /setPreviewColorVariable\("--preview-body-border", colors\.bodyBorder\);/);
-  assert.match(app, /setPreviewColorVariable\("--preview-selected-bg", colors\.bodyPressed\);/);
-  assert.match(app, /setPreviewColorVariable\("--preview-selected-text", colors\.titlePressed\);/);
+  assert.match(colorControls, /\["titlePressed", "선택 메뉴 배경 색"\]/);
+  assert.match(colorControls, /\["bodyPressed", "선택 메뉴 글자 색"\]/);
+  assert.match(app, /setPreviewColorVariable\("--preview-segment-selected-bg", colors\.titlePressed\);/);
+  assert.match(app, /setPreviewColorVariable\("--preview-segment-selected-text", colors\.bodyPressed\);/);
 
   for (const segmentCss of [friendSegmentCss, shoppingTabCss, moreSegmentCss]) {
     assert.match(segmentCss, /border: 1px solid var\(--preview-body-border, #26664242\);/);
@@ -864,8 +889,8 @@ test("preview segment controls use the same pressed color data as downloadable t
   assert.match(shoppingTabCss, /background: transparent;/);
 
   for (const segmentCss of [friendSegmentActiveCss, shoppingTabActiveCss, moreSegmentActiveCss]) {
-    assert.match(segmentCss, /background: var\(--preview-selected-bg, #ffb3b3\);/);
-    assert.match(segmentCss, /color: var\(--preview-selected-text, #b06b6b\);/);
+    assert.match(segmentCss, /background: var\(--preview-segment-selected-bg, #b06b6b\);/);
+    assert.match(segmentCss, /color: var\(--preview-segment-selected-text, #ffb3b3\);/);
     assert.doesNotMatch(segmentCss, /--preview-header|--preview-main-bg/);
   }
 });
@@ -970,15 +995,6 @@ test("reading log ad background image is replaceable and stays preview-only", as
   assert.match(css, /url\("\.\/assets\/preview\/more-ad-images\/readingLogAd\.png"\)/);
   for (const downloadableSource of [iosTemplate, androidThemeColors, androidThemeStrings]) {
     assert.doesNotMatch(downloadableSource, /readingLogAd|more-ad-images|shopping-preview|shopping-screen|#050505/);
-  }
-});
-
-test("friend preview profile image files are sequentially replaceable", async () => {
-  for (let index = 1; index <= 7; index += 1) {
-    const imagePath = `../assets/preview/profile-images/profileImage_${String(index).padStart(2, "0")}.png`;
-    const imageStat = await stat(new URL(imagePath, import.meta.url));
-
-    assert.equal(imageStat.isFile(), true);
   }
 });
 

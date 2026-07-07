@@ -89,7 +89,6 @@ export const PREVIEW_CSS_IMAGE_VARIABLES = {
   "--preview-tab-more-icon": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.tabMoreIcon),
   "--preview-tab-more-icon-selected": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.tabMoreIconSelected),
   "--preview-profile-image": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.profileImage),
-  "--preview-default-profile-image": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.profileImage),
   "--preview-theme-icon": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.themeIcon),
   "--preview-splash-image": "none",
   "--preview-passcode-image": cssUrl(PREVIEW_DEFAULT_IMAGE_PATHS.passcodeBackgroundImage),

@@ -37,8 +37,8 @@ const colorControls = [
   ["descriptionText", "설명 텍스트"],
   ["paragraphText", "서브 글자색"],
   ["sectionTitle", "섹션 타이틀"],
-  ["bodyPressed", "선택 메뉴 배경 색"],
-  ["titlePressed", "선택 메뉴 글자 색"],
+  ["titlePressed", "선택 메뉴 배경 색"],
+  ["bodyPressed", "선택 메뉴 글자 색"],
   ["sendText", "나의 글자 색"],
   ["receiveText", "상대 글자 색"],
   ["unreadCount", "레드닷 알림 색"],
@@ -132,16 +132,6 @@ const phoneStatusWidget = {
   network: "LTE",
   battery: "100%",
 };
-
-const friendProfileImages = [
-  "./assets/preview/profile-images/profileImage_01.png",
-  "./assets/preview/profile-images/profileImage_02.png",
-  "./assets/preview/profile-images/profileImage_03.png",
-  "./assets/preview/profile-images/profileImage_04.png",
-  "./assets/preview/profile-images/profileImage_05.png",
-  "./assets/preview/profile-images/profileImage_06.png",
-  "./assets/preview/profile-images/profileImage_07.png",
-];
 
 const shoppingPreviewImages = [
   "./assets/preview/shopping-images/shoppingImage_01.png",
@@ -271,7 +261,6 @@ const previewTimeElements = document.querySelectorAll("[data-preview-time]");
 const documentRoot = document.documentElement;
 
 applyPreviewDefaultImages(documentRoot);
-applyFriendProfileImages();
 applyShoppingPreviewImages();
 applyGroupAvatarImages();
 enableHorizontalDragScroll(".shopping-pick-carousel");
@@ -303,17 +292,6 @@ function applyFriendAdCaptionVisibility() {
 
   document.querySelectorAll("[data-friend-ad-caption]").forEach((caption) => {
     caption.hidden = !isVisible;
-  });
-}
-
-function applyFriendProfileImages() {
-  document.querySelectorAll("[data-profile-image-index]").forEach((avatar) => {
-    const imageIndex = Number(avatar.dataset.profileImageIndex);
-    const imagePath = friendProfileImages[imageIndex];
-
-    if (imagePath) {
-      avatar.style.setProperty("--friend-profile-image", `url("${imagePath}")`);
-    }
   });
 }
 
@@ -1291,6 +1269,8 @@ function updatePreview() {
   setPreviewColorVariable("--preview-paragraph", colors.paragraphText);
   setPreviewColorVariable("--preview-selected-bg", colors.bodyPressed);
   setPreviewColorVariable("--preview-selected-text", colors.titlePressed);
+  setPreviewColorVariable("--preview-segment-selected-bg", colors.titlePressed);
+  setPreviewColorVariable("--preview-segment-selected-text", colors.bodyPressed);
 
   Object.entries(previewImageVariables).forEach(([key, variables]) => {
     variables.forEach((variableName) => setOptionalImage(variableName, key, previews[key]));

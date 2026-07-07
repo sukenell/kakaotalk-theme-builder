@@ -1080,8 +1080,8 @@ h2 {
 
 .shopping-tab.is-active {
   border-color: transparent;
-  background: var(--preview-selected-bg, #ffb3b3);
-  color: var(--preview-selected-text, #b06b6b);
+  background: var(--preview-segment-selected-bg, #b06b6b);
+  color: var(--preview-segment-selected-text, #ffb3b3);
 }
 
 .shopping-summary-track {
@@ -1456,8 +1456,8 @@ h2 {
 
 .more-segment.is-active {
   border-color: transparent;
-  background: var(--preview-selected-bg, #ffb3b3);
-  color: var(--preview-selected-text, #b06b6b);
+  background: var(--preview-segment-selected-bg, #b06b6b);
+  color: var(--preview-segment-selected-text, #ffb3b3);
 }
 
 .more-service-panel {
@@ -1637,8 +1637,8 @@ h2 {
 }
 
 .friend-segment.is-active {
-  background: var(--preview-selected-bg, #ffb3b3);
-  color: var(--preview-selected-text, #b06b6b);
+  background: var(--preview-segment-selected-bg, #b06b6b);
+  color: var(--preview-segment-selected-text, #ffb3b3);
 }
 
 .friends-promo-card {
@@ -2108,7 +2108,6 @@ h2 {
 
 .avatar.profile-avatar {
   background:
-    var(--friend-profile-image, none) center / cover no-repeat,
     var(--preview-profile-image, none) center / cover no-repeat,
     #fff4f4;
 }
@@ -2116,7 +2115,7 @@ h2 {
 .avatar.default-profile,
 .avatar.group-avatar .group-avatar-item.is-default-profile {
   background:
-    var(--preview-default-profile-image, none) center / cover no-repeat,
+    var(--preview-profile-image, none) center / cover no-repeat,
     #fff4f4;
 }
 
