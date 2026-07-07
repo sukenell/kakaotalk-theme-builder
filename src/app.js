@@ -228,6 +228,7 @@ const androidNinePatchMarkers = {
   paddingX: [41, 81],
   paddingY: [38, 75],
 };
+const maxCanvasDownscaleRatio = 2;
 
 const state = cloneDefaultThemeState();
 const uploads = Object.fromEntries([...defaultClearedImageUploadKeys].map((key) => [key, { cleared: true }]));
@@ -1085,6 +1086,58 @@ function releaseLoadedImage(image) {
   }
 }
 
+function setHighQualityImageSmoothing(context) {
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+}
+
+function createRasterCanvas(width, height) {
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(width));
+  canvas.height = Math.max(1, Math.round(height));
+  return canvas;
+}
+
+function drawImageWithHighQualityResampling(
+  context,
+  image,
+  sourceX,
+  sourceY,
+  sourceWidth,
+  sourceHeight,
+  targetX,
+  targetY,
+  targetWidth,
+  targetHeight,
+) {
+  let currentImage = image;
+  let currentX = sourceX;
+  let currentY = sourceY;
+  let currentWidth = sourceWidth;
+  let currentHeight = sourceHeight;
+
+  while (currentWidth > targetWidth * maxCanvasDownscaleRatio || currentHeight > targetHeight * maxCanvasDownscaleRatio) {
+    const stepCanvas = createRasterCanvas(
+      Math.max(targetWidth, Math.ceil(currentWidth / maxCanvasDownscaleRatio)),
+      Math.max(targetHeight, Math.ceil(currentHeight / maxCanvasDownscaleRatio)),
+    );
+    const nextWidth = stepCanvas.width;
+    const nextHeight = stepCanvas.height;
+    const stepContext = stepCanvas.getContext("2d");
+    setHighQualityImageSmoothing(stepContext);
+    stepContext.drawImage(currentImage, currentX, currentY, currentWidth, currentHeight, 0, 0, nextWidth, nextHeight);
+
+    currentImage = stepCanvas;
+    currentX = 0;
+    currentY = 0;
+    currentWidth = nextWidth;
+    currentHeight = nextHeight;
+  }
+
+  setHighQualityImageSmoothing(context);
+  context.drawImage(currentImage, currentX, currentY, currentWidth, currentHeight, targetX, targetY, targetWidth, targetHeight);
+}
+
 function drawImageCoverRect(context, image, targetX, targetY, width, height) {
   const sourceWidth = image.width;
   const sourceHeight = image.height;
@@ -1094,9 +1147,7 @@ function drawImageCoverRect(context, image, targetX, targetY, width, height) {
   const cropX = (sourceWidth - cropWidth) / 2;
   const cropY = (sourceHeight - cropHeight) / 2;
 
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
-  context.drawImage(image, cropX, cropY, cropWidth, cropHeight, targetX, targetY, width, height);
+  drawImageWithHighQualityResampling(context, image, cropX, cropY, cropWidth, cropHeight, targetX, targetY, width, height);
 }
 
 function drawImageCover(context, image, width, height) {
@@ -1113,15 +1164,11 @@ function drawImageContainRect(context, image, targetX, targetY, width, height) {
   const drawX = targetX + (width - drawWidth) / 2;
   const drawY = targetY + (height - drawHeight) / 2;
 
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
-  context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  drawImageWithHighQualityResampling(context, image, 0, 0, sourceWidth, sourceHeight, drawX, drawY, drawWidth, drawHeight);
 }
 
 async function renderImageToPngBytes(image, width, height, { tintColor = "" } = {}) {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
+  const canvas = createRasterCanvas(width, height);
   const context = canvas.getContext("2d");
   drawImageCover(context, image, width, height);
   applyCanvasTint(context, tintColor, width, height);
@@ -1130,9 +1177,7 @@ async function renderImageToPngBytes(image, width, height, { tintColor = "" } = 
 }
 
 async function renderSplashImageToPngBytes(iconImage, width, height, { backgroundColor = "", backgroundImage } = {}) {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
+  const canvas = createRasterCanvas(width, height);
   const context = canvas.getContext("2d");
   const iconSize = Math.round(Math.min(width, height) * 0.16);
 
@@ -1151,9 +1196,7 @@ async function renderSplashImageToPngBytes(iconImage, width, height, { backgroun
 }
 
 async function renderImageToNinePatchPngBytes(image, width, height, { tintColor = "" } = {}) {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
+  const canvas = createRasterCanvas(width, height);
   const context = canvas.getContext("2d");
   context.clearRect(0, 0, width, height);
   drawImageCoverRect(context, image, 1, 1, width - 2, height - 2);

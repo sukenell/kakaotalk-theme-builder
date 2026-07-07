@@ -1288,6 +1288,23 @@ test("bubble uploads preview the same generated iOS variant used for downloads",
   assert.match(app, /IMAGE_TARGETS\[key\]\?\.previewIos \?\? IMAGE_TARGETS\[key\]\?\.ios\?\.\[0\]/);
 });
 
+test("large uploaded images are downscaled in high-quality stages before export", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /const maxCanvasDownscaleRatio = 2;/);
+  assert.match(app, /function drawImageWithHighQualityResampling/);
+  assert.match(
+    app,
+    /while \(currentWidth > targetWidth \* maxCanvasDownscaleRatio \|\| currentHeight > targetHeight \* maxCanvasDownscaleRatio\)/,
+  );
+  assert.match(app, /setHighQualityImageSmoothing\(stepContext\);/);
+  assert.match(app, /drawImageWithHighQualityResampling\(context, image, cropX, cropY, cropWidth, cropHeight, targetX, targetY, width, height\);/);
+  assert.match(
+    app,
+    /drawImageWithHighQualityResampling\(context, image, 0, 0, sourceWidth, sourceHeight, drawX, drawY, drawWidth, drawHeight\);/,
+  );
+});
+
 test("tab icon uploads use a 3x source and generate 2x plus 3x outputs", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const model = await readFile(new URL("../src/theme-model.js", import.meta.url), "utf8");
