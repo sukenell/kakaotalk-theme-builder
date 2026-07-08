@@ -18,6 +18,29 @@ const clearedBackgroundImageColorKeys = {
   tabBackground: "tabBackground",
   passcodeBackgroundImage: "mainBackground",
 };
+const iosBubbleLayoutKeys = {
+  "MessageCellStyle-Send": [
+    "sendBubbleNormal",
+    "sendBubbleSelected",
+    "sendBubbleTailless",
+    "sendBubbleTaillessSelected",
+  ],
+  "MessageCellStyle-Receive": [
+    "receiveBubbleNormal",
+    "receiveBubbleSelected",
+    "receiveBubbleTailless",
+    "receiveBubbleTaillessSelected",
+  ],
+};
+const bubbleNinePatchReferenceSize = {
+  width: 124,
+  height: 114,
+};
+const defaultBubbleNinePatchPadding = {
+  paddingX: [41, 81],
+  paddingY: [38, 75],
+};
+const defaultIosBubbleInsetPx = 10;
 
 function concatBytes(parts) {
   const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
@@ -298,14 +321,70 @@ function buildGeneratedAndroidSelectors(uploads) {
   );
 }
 
+function buildIosBubbleEdgeInsets(uploads) {
+  return Object.fromEntries(
+    Object.entries(iosBubbleLayoutKeys).flatMap(([styleName, keys]) => {
+      const layout = keys.map((key) => uploads?.[key]?.bubbleLayout).find(Boolean);
+      const edgeInsets = layout ? convertBubbleLayoutToIosEdgeInsets(layout) : "";
+      return edgeInsets ? [[styleName, edgeInsets]] : [];
+    }),
+  );
+}
+
+function convertBubbleLayoutToIosEdgeInsets(layout) {
+  const insets = getBubbleLayoutInsets(layout);
+  const defaultInsets = getBubbleLayoutInsets(defaultBubbleNinePatchPadding);
+
+  return [
+    scaleIosBubbleInset(insets.top, defaultInsets.top),
+    scaleIosBubbleInset(insets.right, defaultInsets.right),
+    scaleIosBubbleInset(insets.bottom, defaultInsets.bottom),
+    scaleIosBubbleInset(insets.left, defaultInsets.left),
+  ].join(" ");
+}
+
+function getBubbleLayoutInsets(layout) {
+  const paddingX = normalizeNinePatchPair(layout?.paddingX, defaultBubbleNinePatchPadding.paddingX);
+  const paddingY = normalizeNinePatchPair(layout?.paddingY, defaultBubbleNinePatchPadding.paddingY);
+  const innerWidth = bubbleNinePatchReferenceSize.width - 2;
+  const innerHeight = bubbleNinePatchReferenceSize.height - 2;
+
+  return {
+    top: Math.max(1, paddingY[0] - 1),
+    right: Math.max(1, innerWidth - paddingX[1]),
+    bottom: Math.max(1, innerHeight - paddingY[1]),
+    left: Math.max(1, paddingX[0] - 1),
+  };
+}
+
+function normalizeNinePatchPair(value, fallback) {
+  if (!Array.isArray(value) || value.length < 2) {
+    return [...fallback];
+  }
+
+  const first = Number(value[0]);
+  const second = Number(value[1]);
+  if (!Number.isFinite(first) || !Number.isFinite(second)) {
+    return [...fallback];
+  }
+
+  return [Math.round(first), Math.round(second)];
+}
+
+function scaleIosBubbleInset(value, defaultValue) {
+  const scaledValue = Math.round((value / defaultValue) * defaultIosBubbleInsetPx);
+  return `${Math.max(1, scaledValue)}px`;
+}
+
 export function buildIosEntries(templateEntries, { state, uploads = {} }) {
   const replacements = buildReplacementMap(uploads, "ios", state);
+  const bubbleEdgeInsets = buildIosBubbleEdgeInsets(uploads);
 
   const entries = templateEntries.map((entry) => {
     if (entry.name === "KakaoTalkTheme.css") {
       return {
         name: entry.name,
-        data: encoder.encode(patchIosThemeCss(asText(entry.data), state)),
+        data: encoder.encode(patchIosThemeCss(asText(entry.data), state, { bubbleEdgeInsets })),
       };
     }
 

@@ -228,16 +228,33 @@ const androidNinePatchMarkers = {
   paddingX: [41, 81],
   paddingY: [38, 75],
 };
+const bubbleNinePatchPreviewSize = {
+  width: 124,
+  height: 114,
+};
+const defaultBubbleNinePatchSettings = {
+  ...androidNinePatchMarkers,
+  fit: "contain",
+};
+const bubbleNinePatchFitModes = ["cover", "contain"];
+const bubbleNinePatchControlFields = [
+  { field: "stretchX", label: "가로 늘림", axis: "x" },
+  { field: "stretchY", label: "세로 늘림", axis: "y" },
+  { field: "paddingX", label: "내용 가로", axis: "x" },
+  { field: "paddingY", label: "내용 세로", axis: "y" },
+];
 const maxCanvasDownscaleRatio = 2;
 
 const state = cloneDefaultThemeState();
 const uploads = Object.fromEntries([...defaultClearedImageUploadKeys].map((key) => [key, { cleared: true }]));
 const previews = {};
 const uploadTints = {};
+const bubbleNinePatchSettings = {};
 const uploadRenderVersions = {};
 const templateCache = new Map();
 let currentPreviewIndex = 1;
 let currentPreviewDevice = "phone";
+let activeBubbleDetailKey = "sendBubbleNormal";
 let passcodeCount = 0;
 let isDownloadBusy = false;
 
@@ -257,6 +274,11 @@ const previewPreviousButton = document.querySelector("#preview-previous");
 const previewNextButton = document.querySelector("#preview-next");
 const previewDeviceButtons = document.querySelectorAll("[data-preview-device]");
 const passcodeScreen = document.querySelector(".passcode-screen");
+const bubbleDetailTitle = document.querySelector("[data-bubble-detail-title]");
+const bubbleDetailPanel = document.querySelector("[data-bubble-detail-panel]");
+const ninePatchPreview = document.querySelector("[data-nine-patch-preview]");
+const ninePatchSample = document.querySelector("[data-nine-patch-sample]");
+const ninePatchResetButton = document.querySelector("[data-nine-patch-reset]");
 const previewDateElements = document.querySelectorAll("[data-preview-date]");
 const previewTimeElements = document.querySelectorAll("[data-preview-time]");
 const documentRoot = document.documentElement;
@@ -602,6 +624,15 @@ function renderUploadControls() {
         actions.append(createUploadTintControl(key, target));
       }
       actions.append(button);
+      if (bubbleUploadKeys.has(key)) {
+        const detailButton = document.createElement("button");
+        detailButton.className = "detail-upload-button";
+        detailButton.type = "button";
+        detailButton.dataset.bubbleDetail = key;
+        detailButton.textContent = "상세";
+        detailButton.addEventListener("click", () => openBubbleDetail(key));
+        actions.append(detailButton);
+      }
       if (clearableImageKeys.has(key)) {
         const clearButton = document.createElement("button");
         clearButton.className = "clear-upload-button";
@@ -748,10 +779,200 @@ function setPreviewIndex(index) {
   });
   renderColorControls();
   renderUploadControls();
+  renderBubbleDetailControls();
+  updateBubbleDetailPreview();
 }
 
 function movePreview(direction) {
   setPreviewIndex(getNextPreviewIndex(currentPreviewIndex, direction));
+}
+
+function openBubbleDetail(key) {
+  if (!bubbleUploadKeys.has(key)) {
+    return;
+  }
+
+  activeBubbleDetailKey = key;
+  setPreviewIndex(PREVIEW_PAGES.findIndex((page) => page.id === "bubble-detail"));
+}
+
+function renderBubbleDetailControls() {
+  if (!bubbleDetailPanel) {
+    return;
+  }
+
+  const key = activeBubbleDetailKey;
+  const settings = getBubbleNinePatchSettings(key);
+  const fitControl = document.createElement("div");
+  fitControl.className = "nine-patch-fit-control";
+  fitControl.append(document.createElement("span"));
+  fitControl.firstElementChild.textContent = "배치";
+
+  bubbleNinePatchFitModes.forEach((mode) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = mode === "contain" ? "전체" : "채우기";
+    button.classList.toggle("is-active", settings.fit === mode);
+    button.addEventListener("click", async () => {
+      getBubbleNinePatchSettings(key).fit = mode;
+      renderBubbleDetailControls();
+      updateBubbleDetailPreview();
+      await refreshUploadImage(key);
+    });
+    fitControl.append(button);
+  });
+
+  const controls = bubbleNinePatchControlFields.map(({ field, label, axis }) => {
+    const control = document.createElement("label");
+    control.className = "nine-patch-control";
+    control.dataset.ninePatchControl = field;
+
+    const title = document.createElement("span");
+    title.textContent = label;
+
+    const startInput = createNinePatchRangeInput(key, field, 0, axis);
+    const startOutput = createNinePatchOutput(field, 0);
+    const endInput = createNinePatchRangeInput(key, field, 1, axis);
+    const endOutput = createNinePatchOutput(field, 1);
+
+    control.append(title, startInput, startOutput, endInput, endOutput);
+    return control;
+  });
+
+  bubbleDetailPanel.replaceChildren(fitControl, ...controls);
+  syncBubbleDetailControlValues();
+}
+
+function createNinePatchRangeInput(key, field, index, axis) {
+  const input = document.createElement("input");
+  input.type = "range";
+  input.min = "1";
+  input.max = String(getNinePatchAxisMax(axis));
+  input.step = "1";
+  input.dataset.ninePatchField = field;
+  input.dataset.ninePatchIndex = String(index);
+  input.ariaLabel = `${IMAGE_TARGETS[key].label} ${field} ${index + 1}`;
+  input.addEventListener("input", async () => {
+    updateNinePatchPairValue(key, field, index, Number(input.value));
+    syncBubbleDetailControlValues();
+    updateBubbleDetailPreview();
+    await refreshUploadImage(key);
+  });
+  return input;
+}
+
+function createNinePatchOutput(field, index) {
+  const output = document.createElement("output");
+  output.dataset.ninePatchValue = `${field}-${index}`;
+  return output;
+}
+
+function updateNinePatchPairValue(key, field, index, value) {
+  const settings = getBubbleNinePatchSettings(key);
+  const axis = field.endsWith("X") ? "x" : "y";
+  const nextValue = clampNinePatchPosition(value, axis);
+  const pair = [...settings[field]];
+  pair[index] = nextValue;
+
+  if (pair[0] > pair[1]) {
+    pair[index === 0 ? 1 : 0] = nextValue;
+  }
+
+  settings[field] = pair;
+}
+
+function syncBubbleDetailControlValues() {
+  if (!bubbleDetailPanel) {
+    return;
+  }
+
+  const settings = getBubbleNinePatchSettings(activeBubbleDetailKey);
+  bubbleDetailPanel.querySelectorAll("[data-nine-patch-field]").forEach((input) => {
+    const field = input.dataset.ninePatchField;
+    const index = Number(input.dataset.ninePatchIndex);
+    input.value = String(settings[field][index]);
+  });
+  bubbleDetailPanel.querySelectorAll("[data-nine-patch-value]").forEach((output) => {
+    const [field, index] = output.dataset.ninePatchValue.split("-");
+    output.value = String(settings[field][Number(index)]);
+  });
+}
+
+function updateBubbleDetailPreview() {
+  if (!ninePatchPreview) {
+    return;
+  }
+
+  const key = activeBubbleDetailKey;
+  const settings = getBubbleNinePatchSettings(key);
+  const target = IMAGE_TARGETS[key];
+  if (bubbleDetailTitle) {
+    bubbleDetailTitle.textContent = target?.label ?? "말풍선 상세";
+  }
+
+  const imageValue = previews[key] ? `url("${previews[key]}")` : getPreviewDefaultCssUrl(key) || "none";
+  ninePatchPreview.style.setProperty("--nine-patch-preview-image", imageValue);
+  setNinePatchGuideVariables(settings);
+
+  if (ninePatchSample) {
+    ninePatchSample.style.color = key.startsWith("receive")
+      ? "var(--preview-receive-text, #4d4d4d)"
+      : "var(--preview-send-text, #ffffff)";
+  }
+}
+
+function setNinePatchGuideVariables(settings) {
+  const { width, height } = bubbleNinePatchPreviewSize;
+  setNinePatchAxisVariables("stretch", "x", settings.stretchX, width);
+  setNinePatchAxisVariables("stretch", "y", settings.stretchY, height);
+  setNinePatchAxisVariables("padding", "x", settings.paddingX, width);
+  setNinePatchAxisVariables("padding", "y", settings.paddingY, height);
+}
+
+function setNinePatchAxisVariables(kind, axis, pair, size) {
+  const start = Math.max(0, Math.min(size - 1, pair[0]));
+  const end = Math.max(start, Math.min(size - 1, pair[1]));
+  const startPercent = `${(start / size) * 100}%`;
+  const endPercent = `${((size - end - 1) / size) * 100}%`;
+  const startName = axis === "x" ? "left" : "top";
+  const endName = axis === "x" ? "right" : "bottom";
+
+  ninePatchPreview.style.setProperty(`--nine-${kind}-${startName}`, startPercent);
+  ninePatchPreview.style.setProperty(`--nine-${kind}-${endName}`, endPercent);
+}
+
+function getBubbleNinePatchSettings(key) {
+  if (!bubbleNinePatchSettings[key]) {
+    bubbleNinePatchSettings[key] = cloneBubbleNinePatchSettings(defaultBubbleNinePatchSettings);
+  }
+
+  return bubbleNinePatchSettings[key];
+}
+
+function cloneBubbleNinePatchSettings(settings) {
+  return {
+    stretchX: [...settings.stretchX],
+    stretchY: [...settings.stretchY],
+    paddingX: [...settings.paddingX],
+    paddingY: [...settings.paddingY],
+    fit: bubbleNinePatchFitModes.includes(settings.fit) ? settings.fit : defaultBubbleNinePatchSettings.fit,
+  };
+}
+
+function getNinePatchAxisMax(axis) {
+  return (axis === "x" ? bubbleNinePatchPreviewSize.width : bubbleNinePatchPreviewSize.height) - 2;
+}
+
+function clampNinePatchPosition(value, axis) {
+  return Math.max(1, Math.min(getNinePatchAxisMax(axis), Number.isFinite(value) ? Math.round(value) : 1));
+}
+
+async function resetActiveBubbleDetail() {
+  const key = activeBubbleDetailKey;
+  bubbleNinePatchSettings[key] = cloneBubbleNinePatchSettings(defaultBubbleNinePatchSettings);
+  renderBubbleDetailControls();
+  updateBubbleDetailPreview();
+  await refreshUploadImage(key);
 }
 
 function setPreviewDevice(device) {
@@ -1011,6 +1232,7 @@ async function createUploadRecord(
 
   const image = await loadImage(source);
   try {
+    const bubbleLayout = bubbleUploadKeys.has(key) ? getBubbleNinePatchSettings(key) : undefined;
     const variants = shouldGenerateUploadVariants(key) ? await createUploadImageVariants(key, image, { tintColor }) : undefined;
     const data = tintColor
       ? await renderImageToPngBytes(image, image.width, image.height, { tintColor })
@@ -1022,6 +1244,7 @@ async function createUploadRecord(
       sourceType,
       sourceKind,
       variants,
+      bubbleLayout: bubbleLayout ? cloneBubbleNinePatchSettings(bubbleLayout) : undefined,
     };
   } finally {
     releaseLoadedImage(image);
@@ -1041,13 +1264,14 @@ function shouldGenerateUploadVariants(key) {
 async function createUploadImageVariants(key, image, { tintColor = "" } = {}) {
   const target = IMAGE_TARGETS[key];
   const variants = {};
+  const bubbleLayout = bubbleUploadKeys.has(key) ? getBubbleNinePatchSettings(key) : undefined;
 
   for (const name of target.ios || []) {
     const size = iosImageSizes[name];
     if (!size) {
       continue;
     }
-    variants[name] = await renderImageToPngBytes(image, size[0], size[1], { tintColor });
+    variants[name] = await renderImageToPngBytes(image, size[0], size[1], { tintColor, bubbleLayout });
   }
 
   for (const name of target.android || []) {
@@ -1055,7 +1279,7 @@ async function createUploadImageVariants(key, image, { tintColor = "" } = {}) {
     if (!size) {
       continue;
     }
-    variants[name] = await renderImageToNinePatchPngBytes(image, size[0], size[1], { tintColor });
+    variants[name] = await renderImageToNinePatchPngBytes(image, size[0], size[1], { tintColor, ninePatchMarkers: bubbleLayout });
   }
 
   return variants;
@@ -1167,13 +1391,27 @@ function drawImageContainRect(context, image, targetX, targetY, width, height) {
   drawImageWithHighQualityResampling(context, image, 0, 0, sourceWidth, sourceHeight, drawX, drawY, drawWidth, drawHeight);
 }
 
-async function renderImageToPngBytes(image, width, height, { tintColor = "" } = {}) {
+async function renderImageToPngBytes(image, width, height, { tintColor = "", bubbleLayout } = {}) {
   const canvas = createRasterCanvas(width, height);
   const context = canvas.getContext("2d");
-  drawImageCover(context, image, width, height);
+  if (bubbleLayout) {
+    drawBubbleImage(context, image, width, height, bubbleLayout);
+  } else {
+    drawImageCover(context, image, width, height);
+  }
   applyCanvasTint(context, tintColor, width, height);
 
   return canvasToPngBytes(canvas);
+}
+
+function drawBubbleImage(context, image, width, height, bubbleLayout) {
+  context.clearRect(0, 0, width, height);
+  if (bubbleLayout?.fit === "contain") {
+    drawImageContainRect(context, image, 0, 0, width, height);
+    return;
+  }
+
+  drawImageCoverRect(context, image, 0, 0, width, height);
 }
 
 async function renderSplashImageToPngBytes(iconImage, width, height, { backgroundColor = "", backgroundImage } = {}) {
@@ -1195,13 +1433,16 @@ async function renderSplashImageToPngBytes(iconImage, width, height, { backgroun
   return canvasToPngBytes(canvas);
 }
 
-async function renderImageToNinePatchPngBytes(image, width, height, { tintColor = "" } = {}) {
+async function renderImageToNinePatchPngBytes(image, width, height, { tintColor = "", ninePatchMarkers = androidNinePatchMarkers } = {}) {
   const canvas = createRasterCanvas(width, height);
   const context = canvas.getContext("2d");
   context.clearRect(0, 0, width, height);
-  drawImageCoverRect(context, image, 1, 1, width - 2, height - 2);
+  context.save();
+  context.translate(1, 1);
+  drawBubbleImage(context, image, width - 2, height - 2, ninePatchMarkers);
+  context.restore();
   applyCanvasTint(context, tintColor, width, height);
-  drawNinePatchMarkers(context, width, height);
+  drawNinePatchMarkers(context, width, height, ninePatchMarkers);
 
   return canvasToPngBytes(canvas);
 }
@@ -1216,8 +1457,8 @@ function applyCanvasTint(context, tintColor, width, height) {
   context.putImageData(imageData, 0, 0);
 }
 
-function drawNinePatchMarkers(context, width, height) {
-  const { stretchX, stretchY, paddingX, paddingY } = androidNinePatchMarkers;
+function drawNinePatchMarkers(context, width, height, ninePatchMarkers) {
+  const { stretchX, stretchY, paddingX, paddingY } = ninePatchMarkers;
   context.fillStyle = "#000000";
   context.fillRect(stretchX[0], 0, stretchX[1] - stretchX[0] + 1, 1);
   context.fillRect(0, stretchY[0], 1, stretchY[1] - stretchY[0] + 1);
@@ -1321,6 +1562,7 @@ function updatePreview() {
   Object.entries(previewBubbleSources).forEach(([variableName, keys]) => {
     setPreviewBubbleImage(variableName, keys);
   });
+  updateBubbleDetailPreview();
 
   if (previews.mainBackground && !previews.chatBackground && !isClearedImageUpload("chatBackground")) {
     chatScreen.style.backgroundImage = `url("${previews.mainBackground}")`;
@@ -1642,6 +1884,7 @@ previewNextButton.addEventListener("click", () => movePreview("next"));
 previewDeviceButtons.forEach((button) => {
   button.addEventListener("click", () => setPreviewDevice(button.dataset.previewDevice));
 });
+ninePatchResetButton?.addEventListener("click", resetActiveBubbleDetail);
 passcodeScreen.addEventListener("click", handlePasscodeClick);
 document.addEventListener("keydown", handleGlobalKeydown);
 downloadIosButton.addEventListener("click", downloadIosTheme);

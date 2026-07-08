@@ -16,7 +16,7 @@ test("PREVIEW_PAGES exposes multiple KakaoTalk template screens", () => {
   assert.ok(PREVIEW_PAGES.length >= 4);
   assert.deepEqual(
     PREVIEW_PAGES.map((page) => page.id),
-    ["home", "chat-list", "open-chat", "shopping", "more", "chat", "passcode", "splash", "theme-list"],
+    ["home", "chat-list", "open-chat", "shopping", "more", "chat", "bubble-detail", "passcode", "splash", "theme-list"],
   );
 });
 
@@ -97,6 +97,8 @@ test("getPreviewImageKeys returns only images used by the active preview page", 
     assert.equal(getPreviewImageKeys("more").includes(hiddenTabIconKey), false);
   }
   assert.deepEqual(getPreviewImageKeys("chat"), ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS]);
+  assert.deepEqual(getPreviewImageKeys("bubble-detail"), ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS]);
+  assert.deepEqual(getPreviewColorKeys("bubble-detail"), getPreviewColorKeys("chat"));
   assert.deepEqual(getPreviewImageKeys("passcode"), ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"]);
   assert.deepEqual(getPreviewColorKeys("splash"), ["mainBackground"]);
   assert.deepEqual(getPreviewImageKeys("splash"), ["splashImage", "themeIcon"]);
@@ -117,10 +119,12 @@ test("PREVIEW_PAGES uses bundled internal image assets for page icons", () => {
   assert.equal(getPreviewIconUrl("shopping"), "./assets/preview/page-icons/shopping.svg");
   assert.equal(getPreviewIconUrl("more"), "./assets/preview/page-icons/more.svg");
   assert.equal(getPreviewIconUrl("chat"), "./assets/preview/page-icons/chat.svg");
+  assert.equal(getPreviewIconUrl("bubble-detail"), "./assets/preview/page-icons/chat.svg");
   assert.equal(getPreviewIconUrl("passcode"), "./assets/preview/page-icons/lock.svg");
   assert.equal(getPreviewIconUrl("splash"), "./assets/preview/page-icons/loading.svg");
   assert.equal(getPreviewIconUrl("theme-list"), "./assets/preview/page-icons/brush.svg");
   assert.equal(PREVIEW_PAGES.find((page) => page.id === "open-chat")?.label, "지금");
+  assert.equal(PREVIEW_PAGES.find((page) => page.id === "bubble-detail")?.label, "말풍선 상세");
 });
 
 test("getNextPreviewIndex moves left and right with wraparound", () => {

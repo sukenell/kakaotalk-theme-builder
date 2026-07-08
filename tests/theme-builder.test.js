@@ -119,6 +119,51 @@ test("buildIosEntries applies generated 2x and 3x variants from one bubble uploa
   );
 });
 
+test("buildIosEntries applies bubble detail padding to iOS edge insets", () => {
+  const entries = [
+    {
+      name: "KakaoTalkTheme.css",
+      data: `
+MessageCellStyle-Send {
+  -ios-title-edgeinsets: 10px 10px 10px 10px;
+  -ios-group-title-edgeinsets: 10px 10px 10px 10px;
+}
+MessageCellStyle-Receive {
+  -ios-title-edgeinsets: 10px 10px 10px 10px;
+  -ios-group-title-edgeinsets: 10px 10px 10px 10px;
+}
+`,
+    },
+  ];
+
+  const result = buildIosEntries(entries, {
+    state: {},
+    uploads: {
+      sendBubbleNormal: {
+        data: new Uint8Array([1]),
+        bubbleLayout: {
+          paddingX: [21, 101],
+          paddingY: [11, 91],
+        },
+      },
+      receiveBubbleNormal: {
+        data: new Uint8Array([2]),
+        bubbleLayout: {
+          paddingX: [51, 91],
+          paddingY: [31, 75],
+        },
+      },
+    },
+  });
+
+  const css = new TextDecoder().decode(result.find((entry) => entry.name === "KakaoTalkTheme.css").data);
+
+  assert.match(css, /MessageCellStyle-Send[\s\S]*-ios-title-edgeinsets: 3px 5px 6px 5px;/);
+  assert.match(css, /MessageCellStyle-Send[\s\S]*-ios-group-title-edgeinsets: 3px 5px 6px 5px;/);
+  assert.match(css, /MessageCellStyle-Receive[\s\S]*-ios-title-edgeinsets: 8px 8px 10px 13px;/);
+  assert.match(css, /MessageCellStyle-Receive[\s\S]*-ios-group-title-edgeinsets: 8px 8px 10px 13px;/);
+});
+
 test("build entries preserve bundled default tab icons when no icon is uploaded", () => {
   const iosIcon = new Uint8Array([1, 2, 3]);
   const androidIcon = new Uint8Array([4, 5, 6]);

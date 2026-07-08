@@ -395,6 +395,7 @@ h2 {
 }
 
 .file-button,
+.detail-upload-button,
 .clear-upload-button {
   display: inline-flex;
   align-items: center;
@@ -408,6 +409,11 @@ h2 {
   color: #1f5952;
   font-weight: 800;
   line-height: 1;
+}
+
+.detail-upload-button {
+  border: 1px solid #d4e4df;
+  background: #ffffff;
 }
 
 .clear-upload-button {
@@ -665,6 +671,12 @@ h2 {
 .chat-preview {
   display: grid;
   grid-template-rows: 28px 58px 1fr 68px;
+}
+
+.bubble-detail-preview {
+  display: grid;
+  grid-template-rows: 28px 58px minmax(0, 1fr);
+  background: var(--preview-chat-bg, #ffdddd);
 }
 
 .passcode-preview {
@@ -2260,6 +2272,159 @@ h2 {
 .bubble.short {
   width: max-content;
   max-width: min(238px, 100%);
+}
+
+.bubble-detail-header {
+  background: var(--preview-main-bg, #ffdddd);
+}
+
+.bubble-detail-screen {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 12px;
+  min-height: 0;
+  padding: 14px 16px 16px;
+  overflow: hidden;
+  background:
+    var(--preview-chat-bg-image, none) center / cover no-repeat,
+    var(--preview-chat-bg, #ffdddd);
+}
+
+.nine-patch-stage {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+
+.nine-patch-preview {
+  --nine-stretch-left: 33%;
+  --nine-stretch-right: 34%;
+  --nine-stretch-top: 33%;
+  --nine-stretch-bottom: 34%;
+  --nine-padding-left: 33%;
+  --nine-padding-right: 34%;
+  --nine-padding-top: 33%;
+  --nine-padding-bottom: 34%;
+  position: relative;
+  width: min(78%, 248px);
+  aspect-ratio: 124 / 114;
+  background: var(--nine-patch-preview-image, var(--preview-send-image, none)) center / contain no-repeat;
+  image-rendering: auto;
+}
+
+.nine-patch-guide {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 999px;
+}
+
+.nine-patch-guide.stretch-x {
+  top: -8px;
+  left: var(--nine-stretch-left);
+  right: var(--nine-stretch-right);
+  height: 3px;
+  background: #2f9f68;
+}
+
+.nine-patch-guide.stretch-y {
+  top: var(--nine-stretch-top);
+  bottom: var(--nine-stretch-bottom);
+  left: -8px;
+  width: 3px;
+  background: #2f9f68;
+}
+
+.nine-patch-guide.padding-x {
+  right: var(--nine-padding-right);
+  bottom: -8px;
+  left: var(--nine-padding-left);
+  height: 3px;
+  background: #d45a87;
+}
+
+.nine-patch-guide.padding-y {
+  top: var(--nine-padding-top);
+  right: -8px;
+  bottom: var(--nine-padding-bottom);
+  width: 3px;
+  background: #d45a87;
+}
+
+.nine-patch-sample {
+  position: absolute;
+  inset:
+    var(--nine-padding-top)
+    var(--nine-padding-right)
+    var(--nine-padding-bottom)
+    var(--nine-padding-left);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  margin: 0;
+  color: var(--preview-send-text, #ffffff);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.bubble-detail-panel {
+  display: grid;
+  gap: 8px;
+  max-height: 184px;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.nine-patch-fit-control {
+  display: grid;
+  grid-template-columns: 54px 1fr 1fr;
+  align-items: center;
+  gap: 6px;
+  color: var(--preview-description, #6f5555);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.nine-patch-fit-control button {
+  height: 30px;
+  border: 1px solid color-mix(in srgb, var(--preview-body-border, #ead0d0) 84%, transparent);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--preview-title, #4d3434);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.nine-patch-fit-control button.is-active {
+  background: var(--preview-send-button, #664242);
+  color: var(--preview-send-button-text, #ffffff);
+}
+
+.nine-patch-control {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 34px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 5px;
+  color: var(--preview-description, #6f5555);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.nine-patch-control input[type="range"] {
+  min-width: 0;
+  accent-color: #2f9f68;
+}
+
+.nine-patch-control output {
+  width: 34px;
+  color: var(--preview-title, #4d3434);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .splash-preview {

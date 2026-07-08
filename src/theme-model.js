@@ -683,7 +683,7 @@ function replaceManifestValue(css, property, value) {
   return replaceInCssBlock(css, "ManifestStyle", property, cssString(value));
 }
 
-export function patchIosThemeCss(css, state) {
+export function patchIosThemeCss(css, state, { bubbleEdgeInsets = {} } = {}) {
   let nextCss = css;
   nextCss = replaceManifestValue(nextCss, "-kakaotalk-theme-name", state.appName);
   nextCss = replaceManifestValue(nextCss, "-kakaotalk-theme-version", state.version);
@@ -701,7 +701,7 @@ export function patchIosThemeCss(css, state) {
   }
 
   for (const [blockName, property] of IOS_BUBBLE_EDGE_INSET_BINDINGS) {
-    nextCss = replaceInCssBlock(nextCss, blockName, property, IOS_BUBBLE_EQUAL_EDGE_INSETS);
+    nextCss = replaceInCssBlock(nextCss, blockName, property, bubbleEdgeInsets[blockName] ?? IOS_BUBBLE_EQUAL_EDGE_INSETS);
   }
 
   for (const [blockName, property, value] of IOS_FIXED_DECLARATIONS) {

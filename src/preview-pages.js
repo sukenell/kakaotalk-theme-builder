@@ -22,6 +22,21 @@ const mainTabImageKeys = [
   "profileImage",
 ];
 
+const chatColorKeys = [
+  "mainBackground",
+  "headerText",
+  "descriptionText",
+  "sendText",
+  "receiveText",
+  "inputBarBackground",
+  "inputBarText",
+  "inputMenu",
+  "sendButton",
+  "sendButtonText",
+];
+
+const chatImageKeys = ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS];
+
 const pageIcon = (name) => `./assets/preview/page-icons/${name}`;
 
 export const PREVIEW_PAGES = [
@@ -89,19 +104,15 @@ export const PREVIEW_PAGES = [
     id: "chat",
     label: "채팅방",
     iconUrl: pageIcon("chat.svg"),
-    colorKeys: [
-      "mainBackground",
-      "headerText",
-      "descriptionText",
-      "sendText",
-      "receiveText",
-      "inputBarBackground",
-      "inputBarText",
-      "inputMenu",
-      "sendButton",
-      "sendButtonText",
-    ],
-    imageKeys: ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS],
+    colorKeys: chatColorKeys,
+    imageKeys: chatImageKeys,
+  },
+  {
+    id: "bubble-detail",
+    label: "말풍선 상세",
+    iconUrl: pageIcon("chat.svg"),
+    colorKeys: chatColorKeys,
+    imageKeys: chatImageKeys,
   },
   {
     id: "passcode",

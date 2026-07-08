@@ -7,7 +7,7 @@ import {
   PREVIEW_DEFAULT_IMAGE_PATHS,
   PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY,
 } from "../src/preview-assets.js";
-import { PREVIEW_PAGES } from "../src/preview-pages.js";
+import { CHAT_BUBBLE_IMAGE_KEYS, PREVIEW_PAGES } from "../src/preview-pages.js";
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -1286,6 +1286,45 @@ test("bubble uploads preview the same generated iOS variant used for downloads",
   assert.match(app, /function setPreviewBubbleImage/);
   assert.match(app, /image-set\(url\("\$\{url\}"\) \$\{target\.previewScale\}x\)/);
   assert.match(app, /IMAGE_TARGETS\[key\]\?\.previewIos \?\? IMAGE_TARGETS\[key\]\?\.ios\?\.\[0\]/);
+});
+
+test("bubble uploads expose nine-patch detail controls that drive preview and export rendering", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(html, /class="preview-slide bubble-detail-preview" aria-label="말풍선 상세 프리뷰"/);
+  assert.match(html, /data-nine-patch-preview/);
+  assert.match(html, /data-bubble-detail-panel/);
+  assert.match(css, /\.bubble-detail-preview\s*\{/);
+  assert.match(css, /\.nine-patch-preview\s*\{/);
+  assert.match(css, /\.nine-patch-guide\.stretch-x\s*\{/);
+  assert.match(css, /\.nine-patch-guide\.padding-x\s*\{/);
+
+  assert.match(app, /const bubbleNinePatchSettings = \{\};/);
+  assert.match(app, /let activeBubbleDetailKey = "sendBubbleNormal";/);
+  assert.match(app, /detailButton\.dataset\.bubbleDetail = key;/);
+  assert.match(app, /detailButton\.textContent = "상세";/);
+  assert.match(app, /detailButton\.addEventListener\("click", \(\) => openBubbleDetail\(key\)\);/);
+  assert.match(app, /function openBubbleDetail\(key\)/);
+  assert.match(app, /setPreviewIndex\(PREVIEW_PAGES\.findIndex\(\(page\) => page\.id === "bubble-detail"\)\);/);
+  assert.match(app, /function renderBubbleDetailControls/);
+  assert.match(app, /control\.dataset\.ninePatchControl = field;/);
+  assert.match(app, /await refreshUploadImage\(key\);/);
+  assert.match(app, /function getBubbleNinePatchSettings\(key\)/);
+  assert.match(app, /bubbleLayout: bubbleLayout \? cloneBubbleNinePatchSettings\(bubbleLayout\) : undefined,/);
+  assert.match(app, /const bubbleLayout = bubbleUploadKeys\.has\(key\) \? getBubbleNinePatchSettings\(key\) : undefined;/);
+  assert.match(app, /renderImageToPngBytes\(image, size\[0\], size\[1\], \{ tintColor, bubbleLayout \}\)/);
+  assert.match(app, /renderImageToNinePatchPngBytes\(image, size\[0\], size\[1\], \{ tintColor, ninePatchMarkers: bubbleLayout \}\)/);
+  assert.match(app, /function drawBubbleImage\(context, image, width, height, bubbleLayout\)/);
+  assert.match(app, /drawNinePatchMarkers\(context, width, height, ninePatchMarkers\);/);
+
+  assert.equal(PREVIEW_PAGES.find((page) => page.id === "bubble-detail")?.label, "말풍선 상세");
+  assert.deepEqual(PREVIEW_PAGES.find((page) => page.id === "bubble-detail")?.imageKeys, [
+    "chatBackground",
+    "profileImage",
+    ...CHAT_BUBBLE_IMAGE_KEYS,
+  ]);
 });
 
 test("large uploaded images are downscaled in high-quality stages before export", async () => {
