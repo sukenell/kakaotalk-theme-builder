@@ -1534,6 +1534,11 @@ function setPreviewColorVariable(variableName, value) {
   documentRoot.style.setProperty(variableName, toPreviewCssColor(value));
 }
 
+function setPreviewTabBackgroundColor(colors) {
+  const color = getPreviewImageUrl("tabBackground") ? "transparent" : toPreviewCssColor(colors.tabBackground);
+  documentRoot.style.setProperty("--preview-tab-bg", color);
+}
+
 function updatePreview() {
   const colors = getActiveColors(state);
   downloadTitle.textContent = state.appName;
@@ -1545,7 +1550,7 @@ function updatePreview() {
   });
 
   setPreviewColorVariable("--preview-main-bg", colors.mainBackground);
-  setPreviewColorVariable("--preview-tab-bg", colors.tabBackground);
+  setPreviewTabBackgroundColor(colors);
   setPreviewColorVariable("--preview-chat-bg", colors.mainBackground);
   setPreviewColorVariable("--preview-header", colors.headerText);
   setPreviewColorVariable("--preview-title", colors.titleText);

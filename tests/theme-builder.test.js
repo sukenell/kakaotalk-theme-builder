@@ -470,6 +470,72 @@ test("buildAndroidEntries applies main background color and image across main ta
   assert.deepEqual(result.find((entry) => entry.name === tabletBackgroundTarget).data, uploadBytes);
 });
 
+test("buildIosEntries makes the tab color transparent when a tab background image is uploaded", () => {
+  const result = buildIosEntries(
+    [
+      {
+        name: "KakaoTalkTheme.css",
+        data: `TabBarStyle-Main
+{
+    background-color: #FFFFFF;
+}`,
+      },
+      { name: "Images/maintabBgImage@2x.png", data: new Uint8Array([1, 1, 1]) },
+      { name: "Images/maintabBgImage@3x.png", data: new Uint8Array([2, 2, 2]) },
+    ],
+    {
+      state: { colors: { tabBackground: "#ABCDEF" } },
+      uploads: {
+        tabBackground: {
+          data: new Uint8Array([3, 3, 3]),
+          variants: {
+            "Images/maintabBgImage@2x.png": new Uint8Array([4, 4, 4]),
+            "Images/maintabBgImage@3x.png": new Uint8Array([5, 5, 5]),
+          },
+        },
+      },
+    },
+  );
+  const patchedCss = new TextDecoder().decode(result.find((entry) => entry.name === "KakaoTalkTheme.css").data);
+
+  assert.match(patchedCss, /TabBarStyle-Main[\s\S]*background-color: transparent;/);
+  assert.deepEqual(result.find((entry) => entry.name === "Images/maintabBgImage@2x.png").data, new Uint8Array([4, 4, 4]));
+  assert.deepEqual(result.find((entry) => entry.name === "Images/maintabBgImage@3x.png").data, new Uint8Array([5, 5, 5]));
+});
+
+test("buildAndroidEntries makes the tab color transparent when a tab background image is uploaded", () => {
+  const tabTarget = "src/main/theme/drawable-xxhdpi/theme_maintab_cell_image.9.png";
+  const generatedNinePatch = new Uint8Array([9, 9, 9]);
+  const result = buildAndroidEntries(
+    [
+      {
+        name: "src/main/theme/values/colors.xml",
+        data: `<resources>
+    <color name="theme_maintab_cell_color">#FFFFFF</color>
+</resources>`,
+      },
+      { name: tabTarget, data: new Uint8Array([2, 2, 2]) },
+    ],
+    {
+      state: { colors: { tabBackground: "#ABCDEF" } },
+      uploads: {
+        tabBackground: {
+          data: new Uint8Array([3, 3, 3]),
+          variants: {
+            [tabTarget]: generatedNinePatch,
+          },
+        },
+      },
+    },
+  );
+  const colorsXml = new TextDecoder().decode(
+    result.find((entry) => entry.name === "src/main/theme/values/colors.xml").data,
+  );
+
+  assert.match(colorsXml, /name="theme_maintab_cell_color">#00ABCDEF</);
+  assert.deepEqual(result.find((entry) => entry.name === tabTarget).data, generatedNinePatch);
+});
+
 test("buildAndroidEntries applies generated 9-patch variants for bubble uploads", () => {
   const bubbleTarget = "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png";
   const entries = [

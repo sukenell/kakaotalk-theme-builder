@@ -699,7 +699,7 @@ function replaceManifestValue(css, property, value) {
   return replaceInCssBlock(css, "ManifestStyle", property, cssString(value));
 }
 
-export function patchIosThemeCss(css, state, { bubbleEdgeInsets = {} } = {}) {
+export function patchIosThemeCss(css, state, { bubbleEdgeInsets = {}, transparentTabBackground = false } = {}) {
   let nextCss = css;
   nextCss = replaceManifestValue(nextCss, "-kakaotalk-theme-name", state.appName);
   nextCss = replaceManifestValue(nextCss, "-kakaotalk-theme-version", state.version);
@@ -710,6 +710,10 @@ export function patchIosThemeCss(css, state, { bubbleEdgeInsets = {} } = {}) {
 
   for (const [blockName, property, colorKey] of IOS_COLOR_BINDINGS) {
     nextCss = replaceInCssBlock(nextCss, blockName, property, colorFor(state, colorKey));
+  }
+
+  if (transparentTabBackground) {
+    nextCss = replaceInCssBlock(nextCss, "TabBarStyle-Main", "background-color", "transparent");
   }
 
   for (const [blockName, property] of IOS_MAIN_BACKGROUND_IMAGE_BINDINGS) {
@@ -744,7 +748,7 @@ function replaceXmlResource(xml, tagName, resourceName, value) {
 export function patchAndroidColorsXml(
   xml,
   state,
-  { transparentMainBackgroundCells = false, transparentTabIconColors = false } = {},
+  { transparentMainBackgroundCells = false, transparentTabBackground = false, transparentTabIconColors = false } = {},
 ) {
   let nextXml = xml;
 
@@ -760,6 +764,15 @@ export function patchAndroidColorsXml(
     for (const resourceName of ANDROID_MAIN_BACKGROUND_CELL_RESOURCES) {
       nextXml = replaceXmlResource(nextXml, "color", resourceName, transparentMainBackground);
     }
+  }
+
+  if (transparentTabBackground) {
+    nextXml = replaceXmlResource(
+      nextXml,
+      "color",
+      "theme_maintab_cell_color",
+      toTransparentAndroidColor(colorFor(state, "tabBackground")),
+    );
   }
 
   if (transparentTabIconColors) {

@@ -414,12 +414,13 @@ function scaleIosBubbleInset(value, defaultValue) {
 export function buildIosEntries(templateEntries, { state, uploads = {} }) {
   const replacements = buildReplacementMap(uploads, "ios", state);
   const bubbleEdgeInsets = buildIosBubbleEdgeInsets(uploads);
+  const transparentTabBackground = hasUpload(uploads, "tabBackground");
 
   const entries = templateEntries.map((entry) => {
     if (entry.name === "KakaoTalkTheme.css") {
       return {
         name: entry.name,
-        data: encoder.encode(patchIosThemeCss(asText(entry.data), state, { bubbleEdgeInsets })),
+        data: encoder.encode(patchIosThemeCss(asText(entry.data), state, { bubbleEdgeInsets, transparentTabBackground })),
       };
     }
 
@@ -464,6 +465,7 @@ export function buildAndroidEntries(templateEntries, { state, uploads = {} }) {
         data: encoder.encode(
           patchAndroidColorsXml(asText(entry.data), state, {
             transparentMainBackgroundCells: hasUpload(uploads, "mainBackground"),
+            transparentTabBackground: hasUpload(uploads, "tabBackground"),
             transparentTabIconColors: hasTabIconUpload(uploads),
           }),
         ),

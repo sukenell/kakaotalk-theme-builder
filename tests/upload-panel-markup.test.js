@@ -325,7 +325,9 @@ test("color controls show hex values on the picker and expose reset buttons", as
   assert.match(app, /hexInput\.select\(\);/);
   assert.match(app, /normalizeHexColorInput/);
   assert.match(app, /function toPreviewCssColor/);
-  assert.match(app, /setPreviewColorVariable\("--preview-tab-bg", colors\.tabBackground\);/);
+  assert.match(app, /setPreviewTabBackgroundColor\(colors\);/);
+  assert.match(app, /function setPreviewTabBackgroundColor\(colors\) \{/);
+  assert.match(app, /getPreviewImageUrl\("tabBackground"\) \? "transparent" : toPreviewCssColor\(colors\.tabBackground\)/);
   assert.match(app, /element\.style\.backgroundColor = toPreviewCssColor\(colors\[colorKey\]\);/);
   assert.match(app, /resetButton\.textContent = "초기화";/);
   assert.match(app, /defaultThemeState\.colors\[key\]/);
@@ -958,6 +960,9 @@ test("preview color variables use the same color keys as downloadable themes", a
       match[1],
     ]),
   );
+  if (/setPreviewTabBackgroundColor\(colors\);/.test(app)) {
+    previewColorBindings.set("tabBackground", "--preview-tab-bg");
+  }
   const previewColorKeys = [...new Set(PREVIEW_PAGES.flatMap((page) => page.colorKeys))];
 
   for (const key of previewColorKeys) {

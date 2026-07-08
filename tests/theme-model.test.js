@@ -50,6 +50,26 @@ test("default tab background color is white in preview and downloaded themes", (
   assert.match(patchAndroidColorsXml(androidXml, defaultThemeState), /name="theme_maintab_cell_color">#FFFFFF</);
 });
 
+test("tab background image exports transparent tab colors", () => {
+  const iosCss = `TabBarStyle-Main
+{
+    background-color: #FFFFFF;
+}`;
+  const androidXml = `<resources>
+    <color name="theme_maintab_cell_color">#FFFFFF</color>
+</resources>`;
+  const state = { colors: { tabBackground: "#ABCDEF" } };
+
+  assert.match(
+    patchIosThemeCss(iosCss, state, { transparentTabBackground: true }),
+    /TabBarStyle-Main[\s\S]*background-color: transparent;/,
+  );
+  assert.match(
+    patchAndroidColorsXml(androidXml, state, { transparentTabBackground: true }),
+    /name="theme_maintab_cell_color">#00ABCDEF</,
+  );
+});
+
 test("default passcode background matches the main background in preview and downloaded themes", () => {
   assert.equal(defaultThemeState.colors.mainBackground, "#FFDEDE");
   assert.equal(defaultThemeState.colors.passcodeBackground, defaultThemeState.colors.mainBackground);
