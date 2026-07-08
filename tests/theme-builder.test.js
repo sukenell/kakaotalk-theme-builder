@@ -190,6 +190,40 @@ test("build entries preserve bundled default tab icons when no icon is uploaded"
   );
 });
 
+test("buildAndroidEntries makes tab icon colors transparent when an uploaded tab image exists", () => {
+  const chatIconTarget = "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_image.png";
+  const uploadedChatIcon = new Uint8Array([9, 9, 9]);
+  const result = buildAndroidEntries(
+    [
+      { name: chatIconTarget, data: new Uint8Array([1, 1, 1]) },
+      {
+        name: "src/main/theme/values/colors.xml",
+        data: `<resources>
+    <color name="theme_feature_browse_tab_color">#D49B9B</color>
+    <color name="theme_feature_browse_tab_focused_color">#664242</color>
+</resources>`,
+      },
+    ],
+    {
+      state: {
+        colors: {
+          titleText: "#102030",
+          titlePressed: "#A1B2C3",
+        },
+      },
+      uploads: {
+        tabChatIcon: uploadedChatIcon,
+      },
+    },
+  );
+
+  const colors = new TextDecoder().decode(result.find((entry) => entry.name === "src/main/theme/values/colors.xml").data);
+
+  assert.deepEqual(result.find((entry) => entry.name === chatIconTarget).data, uploadedChatIcon);
+  assert.match(colors, /name="theme_feature_browse_tab_color">#00102030</);
+  assert.match(colors, /name="theme_feature_browse_tab_focused_color">#00A1B2C3</);
+});
+
 test("buildIosEntries appends uploaded iOS assets that are not in the base template", () => {
   const rawUpload = new Uint8Array([9, 9, 9]);
   const twoXVariant = new Uint8Array([2, 2]);

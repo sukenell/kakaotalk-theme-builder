@@ -747,6 +747,14 @@ function createUploadTintControl(key, target) {
   return control;
 }
 
+function getUploadTintColor(key, sourceKind) {
+  if (!tintableUploadKeys.has(key) || sourceKind === "upload") {
+    return "";
+  }
+
+  return normalizeTintColor(uploadTints[key]);
+}
+
 function renderPreviewTabs() {
   previewTabs.replaceChildren(
     ...PREVIEW_PAGES.map((page, index) => {
@@ -1035,13 +1043,13 @@ async function handleUpload(key, file) {
 }
 
 async function refreshUploadImage(key) {
-  const tintColor = tintableUploadKeys.has(key) ? normalizeTintColor(uploadTints[key]) : "";
+  const requestedTintColor = tintableUploadKeys.has(key) ? normalizeTintColor(uploadTints[key]) : "";
   const upload = uploads[key];
-  if (isClearedImageUpload(key) || (!upload && !tintColor)) {
+  if (isClearedImageUpload(key) || (!upload && !requestedTintColor)) {
     return;
   }
 
-  if (upload && getUploadSourceKind(upload) === "default" && !tintColor) {
+  if (upload && getUploadSourceKind(upload) === "default" && !requestedTintColor) {
     clearGeneratedTintUpload(key);
     return;
   }
@@ -1052,7 +1060,7 @@ async function refreshUploadImage(key) {
   let sourceType = getUploadSourceType(upload);
   let sourceKind = getUploadSourceKind(upload) || "upload";
 
-  if (!sourceData && tintColor) {
+  if (!sourceData && requestedTintColor) {
     const defaultSource = await getDefaultUploadSource(key);
     if (!defaultSource) {
       return;
@@ -1225,7 +1233,7 @@ async function createUploadRecord(
   sourceType = "",
   { sourceKind = "upload" } = {},
 ) {
-  const tintColor = tintableUploadKeys.has(key) ? normalizeTintColor(uploadTints[key]) : "";
+  const tintColor = getUploadTintColor(key, sourceKind);
   if (!shouldGenerateUploadVariants(key) && !tintColor) {
     return sourceBytes;
   }

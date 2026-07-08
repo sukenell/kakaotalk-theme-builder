@@ -1,5 +1,6 @@
 import {
   IMAGE_TARGETS,
+  TAB_ICON_IMAGE_KEYS,
   defaultThemeState,
   patchAndroidBuildGradle,
   patchAndroidColorsXml,
@@ -309,6 +310,10 @@ function hasUpload(uploads, key) {
   return Boolean(upload && !upload.cleared);
 }
 
+function hasTabIconUpload(uploads) {
+  return TAB_ICON_IMAGE_KEYS.some((key) => hasUpload(uploads, key));
+}
+
 function colorForKey(state, key) {
   return state?.colors?.[key] ?? defaultThemeState.colors[key];
 }
@@ -429,6 +434,7 @@ export function buildAndroidEntries(templateEntries, { state, uploads = {} }) {
         data: encoder.encode(
           patchAndroidColorsXml(asText(entry.data), state, {
             transparentMainBackgroundCells: hasUpload(uploads, "mainBackground"),
+            transparentTabIconColors: hasTabIconUpload(uploads),
           }),
         ),
       };

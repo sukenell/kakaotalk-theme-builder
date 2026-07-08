@@ -354,6 +354,16 @@ test("tab icon uploads expose optional PNG tinting before theme export", async (
   assert.match(app, /tintImageDataPixels\(imageData, tintColor\);/);
 });
 
+test("uploaded tab icon images are not recolored by tab tint settings", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /function getUploadTintColor\(key, sourceKind\)/);
+  assert.match(app, /sourceKind === "upload"/);
+  assert.match(app, /const requestedTintColor = tintableUploadKeys\.has\(key\) \? normalizeTintColor\(uploadTints\[key\]\) : "";/);
+  assert.match(app, /const tintColor = getUploadTintColor\(key, sourceKind\);/);
+  assert.match(app, /const tintColor = getUploadTintColor\(key, sourceKind\);[\s\S]*createUploadImageVariants\(key, image, \{ tintColor \}\)/);
+});
+
 test("tab icon upload actions place the color control before the upload button", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 

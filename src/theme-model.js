@@ -111,6 +111,10 @@ const ANDROID_MAIN_BACKGROUND_CELL_RESOURCES = [
   "theme_body_cell_color",
   "theme_body_secondary_cell_color",
 ];
+const ANDROID_TAB_ICON_COLOR_BINDINGS = {
+  theme_feature_browse_tab_color: "titleText",
+  theme_feature_browse_tab_focused_color: "titlePressed",
+};
 
 const defaultColors = {
   mainBackground: "#FFDEDE",
@@ -725,7 +729,11 @@ function replaceXmlResource(xml, tagName, resourceName, value) {
   );
 }
 
-export function patchAndroidColorsXml(xml, state, { transparentMainBackgroundCells = false } = {}) {
+export function patchAndroidColorsXml(
+  xml,
+  state,
+  { transparentMainBackgroundCells = false, transparentTabIconColors = false } = {},
+) {
   let nextXml = xml;
 
   for (const [resourceName, colorKey] of Object.entries(ANDROID_COLOR_BINDINGS)) {
@@ -739,6 +747,12 @@ export function patchAndroidColorsXml(xml, state, { transparentMainBackgroundCel
     const transparentMainBackground = toTransparentAndroidColor(colorFor(state, "mainBackground"));
     for (const resourceName of ANDROID_MAIN_BACKGROUND_CELL_RESOURCES) {
       nextXml = replaceXmlResource(nextXml, "color", resourceName, transparentMainBackground);
+    }
+  }
+
+  if (transparentTabIconColors) {
+    for (const [resourceName, colorKey] of Object.entries(ANDROID_TAB_ICON_COLOR_BINDINGS)) {
+      nextXml = replaceXmlResource(nextXml, "color", resourceName, toTransparentAndroidColor(colorFor(state, colorKey)));
     }
   }
 
