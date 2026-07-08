@@ -1048,7 +1048,9 @@ h2 {
   border-top-color: rgba(0, 0, 0, 0.07);
   background:
     var(--preview-tab-image, none) center / cover no-repeat,
-    var(--preview-tab-bg, #ffdddd);
+    linear-gradient(var(--preview-tab-bg, #ffdddd), var(--preview-tab-bg, #ffdddd)),
+    var(--preview-main-image, none) bottom center / cover no-repeat,
+    var(--preview-main-bg, #ffdddd);
 }
 
 .shopping-preview .bottom-tabs button {
@@ -2501,7 +2503,9 @@ h2 {
   justify-content: space-around;
   background:
     var(--preview-tab-image, none) center / cover no-repeat,
-    var(--preview-tab-bg, #ffdddd);
+    linear-gradient(var(--preview-tab-bg, #ffdddd), var(--preview-tab-bg, #ffdddd)),
+    var(--preview-main-image, none) bottom center / cover no-repeat,
+    var(--preview-main-bg, #ffdddd);
   border-top: 1px solid rgba(0, 0, 0, 0.07);
 }
 

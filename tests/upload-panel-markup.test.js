@@ -525,6 +525,22 @@ test("bottom tab preview removes text labels and centers icons in the downloaded
   ]);
 });
 
+test("bottom tab background image transparency reveals the main background in preview", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const bottomTabsCss =
+    [...css.matchAll(/\.bottom-tabs\s*\{[\s\S]*?\n\}/g)]
+      .map((match) => match[0])
+      .find((block) => block.includes("--preview-tab-content-height")) ?? "";
+  const shoppingBottomTabsCss = css.match(/\.shopping-preview \.bottom-tabs\s*\{[\s\S]*?\n\}/)?.[0] ?? "";
+
+  for (const tabCss of [bottomTabsCss, shoppingBottomTabsCss]) {
+    assert.match(tabCss, /var\(--preview-tab-image, none\)/);
+    assert.match(tabCss, /linear-gradient\(var\(--preview-tab-bg, #ffdddd\), var\(--preview-tab-bg, #ffdddd\)\)/);
+    assert.match(tabCss, /var\(--preview-main-image, none\)/);
+    assert.match(tabCss, /var\(--preview-main-bg, #ffdddd\)/);
+  }
+});
+
 test("tab icon upload thumbnails show the bundled default icons before upload", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
