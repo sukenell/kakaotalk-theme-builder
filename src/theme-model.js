@@ -190,6 +190,18 @@ export const TAB_ICON_IMAGE_KEYS = [
   "tabGameIconSelected",
 ];
 
+export const TAB_ICON_IMAGE_KEY_PAIRS = [
+  ["tabFriendIcon", "tabFriendIconSelected"],
+  ["tabChatIcon", "tabChatIconSelected"],
+  ["tabOpenChatIcon", "tabOpenChatIconSelected"],
+  ["tabShoppingIcon", "tabShoppingIconSelected"],
+  ["tabMoreIcon", "tabMoreIconSelected"],
+  ["tabCallIcon", "tabCallIconSelected"],
+  ["tabPiccomaIcon", "tabPiccomaIconSelected"],
+  ["tabFindIcon", "tabFindIconSelected"],
+  ["tabGameIcon", "tabGameIconSelected"],
+];
+
 export const VISIBLE_TAB_ICON_IMAGE_KEYS = [
   "tabFriendIcon",
   "tabFriendIconSelected",

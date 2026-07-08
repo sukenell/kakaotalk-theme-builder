@@ -364,6 +364,17 @@ test("uploaded tab icon images are not recolored by tab tint settings", async ()
   assert.match(app, /const tintColor = getUploadTintColor\(key, sourceKind\);[\s\S]*createUploadImageVariants\(key, image, \{ tintColor \}\)/);
 });
 
+test("tab icon preview uses the uploaded normal or selected pair when one side is missing", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /const tabIconFallbackKeys = Object\.fromEntries/);
+  assert.match(app, /TAB_ICON_IMAGE_KEY_PAIRS\.flatMap/);
+  assert.match(app, /function getPreviewImageUrl\(key\)/);
+  assert.match(app, /return previews\[key\] \?\? previews\[tabIconFallbackKeys\[key\]\];/);
+  assert.match(app, /setOptionalImage\(variableName, key, getPreviewImageUrl\(key\)\)/);
+  assert.match(app, /if \(getPreviewImageUrl\(key\)\) \{/);
+});
+
 test("tab icon upload actions place the color control before the upload button", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 

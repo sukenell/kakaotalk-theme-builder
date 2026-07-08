@@ -1,5 +1,6 @@
 import {
   IMAGE_TARGETS,
+  TAB_ICON_IMAGE_KEY_PAIRS,
   TAB_ICON_IMAGE_KEYS,
   defaultThemeState,
   patchAndroidBuildGradle,
@@ -278,7 +279,36 @@ function buildReplacementMap(uploads, platform, state) {
     }
   }
 
+  applyTabIconPairFallbackReplacements(replacements, uploads, platform, state);
   return replacements;
+}
+
+function applyTabIconPairFallbackReplacements(replacements, uploads, platform, state) {
+  for (const [normalKey, selectedKey] of TAB_ICON_IMAGE_KEY_PAIRS) {
+    applyTabIconPairFallbackReplacement(replacements, uploads, platform, state, normalKey, selectedKey);
+    applyTabIconPairFallbackReplacement(replacements, uploads, platform, state, selectedKey, normalKey);
+  }
+}
+
+function applyTabIconPairFallbackReplacement(replacements, uploads, platform, state, targetKey, fallbackKey) {
+  if (hasUpload(uploads, targetKey) || !hasUpload(uploads, fallbackKey)) {
+    return;
+  }
+
+  const target = IMAGE_TARGETS[targetKey];
+  const fallbackTarget = IMAGE_TARGETS[fallbackKey];
+  const fallbackUpload = uploads[fallbackKey];
+  for (const [index, name] of (target?.[platform] || []).entries()) {
+    if (replacements.has(name)) {
+      continue;
+    }
+
+    const fallbackName = fallbackTarget?.[platform]?.[index] ?? name;
+    const data = getUploadDataForTarget(fallbackKey, fallbackUpload, fallbackName, state);
+    if (data) {
+      replacements.set(name, data);
+    }
+  }
 }
 
 function appendMissingEntries(entries, additions) {

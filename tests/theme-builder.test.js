@@ -224,6 +224,51 @@ test("buildAndroidEntries makes tab icon colors transparent when an uploaded tab
   assert.match(colors, /name="theme_feature_browse_tab_focused_color">#00A1B2C3</);
 });
 
+test("build entries reuse one uploaded tab icon for its selected and normal pair", () => {
+  const normalIosTarget = "Images/maintabIcoChats@3x.png";
+  const selectedIosTarget = "Images/maintabIcoChatsSelected@3x.png";
+  const normalAndroidTarget = "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_image.png";
+  const selectedAndroidTarget = "src/main/theme/drawable-xxhdpi/theme_maintab_ico_chats_focused_image.png";
+  const normalIosVariant = new Uint8Array([3, 3, 3]);
+  const normalUpload = new Uint8Array([9, 9, 9]);
+
+  const iosResult = buildIosEntries(
+    [
+      { name: normalIosTarget, data: new Uint8Array([1]) },
+      { name: selectedIosTarget, data: new Uint8Array([2]) },
+    ],
+    {
+      state: {},
+      uploads: {
+        tabChatIcon: {
+          data: normalUpload,
+          variants: {
+            [normalIosTarget]: normalIosVariant,
+          },
+        },
+      },
+    },
+  );
+  const androidResult = buildAndroidEntries(
+    [
+      { name: normalAndroidTarget, data: new Uint8Array([1]) },
+      { name: selectedAndroidTarget, data: new Uint8Array([2]) },
+      { name: "src/main/theme/values/colors.xml", data: `<resources></resources>` },
+    ],
+    {
+      state: {},
+      uploads: {
+        tabChatIcon: normalUpload,
+      },
+    },
+  );
+
+  assert.deepEqual(iosResult.find((entry) => entry.name === normalIosTarget).data, normalIosVariant);
+  assert.deepEqual(iosResult.find((entry) => entry.name === selectedIosTarget).data, normalIosVariant);
+  assert.deepEqual(androidResult.find((entry) => entry.name === normalAndroidTarget).data, normalUpload);
+  assert.deepEqual(androidResult.find((entry) => entry.name === selectedAndroidTarget).data, normalUpload);
+});
+
 test("buildIosEntries appends uploaded iOS assets that are not in the base template", () => {
   const rawUpload = new Uint8Array([9, 9, 9]);
   const twoXVariant = new Uint8Array([2, 2]);

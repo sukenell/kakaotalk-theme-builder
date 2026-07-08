@@ -5,6 +5,7 @@ import { getNextPreviewIndex, getPreviewColorKeys, getPreviewImageKeys, PREVIEW_
 import {
   ADDITIONAL_IMAGE_KEYS,
   CHAT_BUBBLE_IMAGE_KEYS,
+  TAB_ICON_IMAGE_KEY_PAIRS,
   TAB_ICON_IMAGE_KEYS,
   VISIBLE_TAB_ICON_IMAGE_KEYS,
   cloneDefaultThemeState,
@@ -114,6 +115,12 @@ const tabIconUploadLabels = {
   tabMoreIcon: "더보기1",
   tabMoreIconSelected: "더보기2",
 };
+const tabIconFallbackKeys = Object.fromEntries(
+  TAB_ICON_IMAGE_KEY_PAIRS.flatMap(([normalKey, selectedKey]) => [
+    [normalKey, selectedKey],
+    [selectedKey, normalKey],
+  ]),
+);
 
 const uploadDisplaySizePlatforms = [
   ["ios", "IOS"],
@@ -1008,8 +1015,8 @@ function applyUploadThumb(element, key) {
     return;
   }
 
-  if (previews[key]) {
-    element.style.backgroundImage = `url("${previews[key]}")`;
+  if (getPreviewImageUrl(key)) {
+    element.style.backgroundImage = `url("${getPreviewImageUrl(key)}")`;
     return;
   }
 
@@ -1565,7 +1572,7 @@ function updatePreview() {
   setPreviewColorVariable("--preview-segment-selected-text", colors.bodyPressed);
 
   Object.entries(previewImageVariables).forEach(([key, variables]) => {
-    variables.forEach((variableName) => setOptionalImage(variableName, key, previews[key]));
+    variables.forEach((variableName) => setOptionalImage(variableName, key, getPreviewImageUrl(key)));
   });
   Object.entries(previewBubbleSources).forEach(([variableName, keys]) => {
     setPreviewBubbleImage(variableName, keys);
@@ -1602,6 +1609,10 @@ function setOptionalImage(variableName, key, url) {
   }
 
   documentRoot.style.setProperty(variableName, imageValue);
+}
+
+function getPreviewImageUrl(key) {
+  return previews[key] ?? previews[tabIconFallbackKeys[key]];
 }
 
 function setPreviewBubbleImage(variableName, keys) {
