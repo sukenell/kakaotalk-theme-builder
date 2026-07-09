@@ -1349,7 +1349,7 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(css, /\.shuffle-icon\s*\{/);
   assert.match(css, /\.reset-icon\s*\{/);
   assert.match(css, /\.nine-patch-preview\s*\{/);
-  assert.match(css, /\.nine-patch-preview\s*\{[\s\S]*--nine-padding-left: 10px;[\s\S]*--nine-padding-bottom: 10px;/);
+  assert.match(css, /\.nine-patch-preview\s*\{[\s\S]*--nine-padding-left: 33%;[\s\S]*--nine-padding-bottom: 34%;/);
   assert.match(css, /\.nine-patch-guide\.stretch-x\s*\{/);
   assert.match(css, /\.nine-patch-guide\.padding-x\s*\{/);
   assert.match(css, /\.nine-patch-guide\.stretch-x\s*\{[\s\S]*border-left: 1px dashed/);
@@ -1372,14 +1372,15 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(app, /activeBubbleDetailKey = CHAT_BUBBLE_IMAGE_KEYS\[\(index \+ 1\) % CHAT_BUBBLE_IMAGE_KEYS\.length\];/);
   assert.match(app, /bubbleDetailNextButton\?\.addEventListener\("click", cycleActiveBubbleDetail\);/);
   assert.match(app, /setPreviewIndex\(PREVIEW_PAGES\.findIndex\(\(page\) => page\.id === "bubble-detail"\)\);/);
-  assert.match(app, /getScaledNinePatchContentInsets/);
   assert.match(app, /getNinePatchAxisControlMax/);
+  assert.match(app, /getNinePatchContentReferenceSizeForMarkers/);
   assert.match(app, /getNinePatchReferenceSizeForSource/);
   assert.match(app, /getNinePatchReferenceSizeForMarkers/);
   assert.match(app, /rebaseNinePatchSettingsForReferenceSize/);
-  assert.match(app, /setNinePatchContentInsetVariables\(settings\);/);
+  assert.match(app, /setNinePatchContentGuideVariables\(settings\);/);
   assert.match(app, /setNinePatchPreviewReferenceSize\(settings\);/);
-  assert.match(app, /--nine-padding-left/);
+  assert.match(app, /setNinePatchAxisVariables\("padding", "x", settings\.paddingX, width\);/);
+  assert.match(app, /setNinePatchAxisVariables\("padding", "y", settings\.paddingY, height\);/);
   assert.match(css, /aspect-ratio: var\(--nine-patch-preview-aspect-ratio, 124 \/ 114\);/);
   assert.match(app, /function renderBubbleDetailControls/);
   assert.match(app, /control\.dataset\.ninePatchControl = field;/);

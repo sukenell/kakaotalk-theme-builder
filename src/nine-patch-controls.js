@@ -128,6 +128,21 @@ export function getNinePatchReferenceSizeForMarkers(settings, minimumReferenceSi
   };
 }
 
+export function getNinePatchContentReferenceSizeForMarkers(settings, minimumReferenceSize = NINE_PATCH_REFERENCE_SIZE) {
+  const minimum = normalizeNinePatchReferenceSize(minimumReferenceSize);
+
+  return {
+    width: Math.max(
+      minimum.width,
+      getNinePatchPairExtent(settings?.paddingX, defaultNinePatchMarkers.paddingX) + 2,
+    ),
+    height: Math.max(
+      minimum.height,
+      getNinePatchPairExtent(settings?.paddingY, defaultNinePatchMarkers.paddingY) + 2,
+    ),
+  };
+}
+
 export function getNinePatchAxisControlMax(axis, referenceSize = NINE_PATCH_REFERENCE_SIZE) {
   const reference = normalizeNinePatchReferenceSize(referenceSize);
   const referenceMax = (axis === "x" ? reference.width : reference.height) - 2;

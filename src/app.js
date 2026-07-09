@@ -32,9 +32,9 @@ import { getDefaultGroupAvatarItemIndexes } from "./group-avatar-profiles.js";
 import {
   MINIMUM_NINE_PATCH_CONTENT_SIZE,
   getNinePatchAxisControlMax,
+  getNinePatchContentReferenceSizeForMarkers,
   getNinePatchReferenceSizeForSource,
   getNinePatchReferenceSizeForMarkers,
-  getScaledNinePatchContentInsets,
   rebaseNinePatchSettingsForReferenceSize,
   updateNinePatchPair,
 } from "./nine-patch-controls.js";
@@ -989,7 +989,7 @@ function setNinePatchGuideVariables(settings) {
   const { width, height } = getBubbleNinePatchReferenceSize(settings);
   setNinePatchAxisVariables("stretch", "x", settings.stretchX, width);
   setNinePatchAxisVariables("stretch", "y", settings.stretchY, height);
-  setNinePatchContentInsetVariables(settings);
+  setNinePatchContentGuideVariables(settings);
 }
 
 function setNinePatchPreviewReferenceSize(settings) {
@@ -997,12 +997,10 @@ function setNinePatchPreviewReferenceSize(settings) {
   ninePatchPreview.style.setProperty("--nine-patch-preview-aspect-ratio", `${width} / ${height}`);
 }
 
-function setNinePatchContentInsetVariables(settings) {
-  const insets = getScaledNinePatchContentInsets(settings);
-  ninePatchPreview.style.setProperty("--nine-padding-left", `${insets.left}px`);
-  ninePatchPreview.style.setProperty("--nine-padding-right", `${insets.right}px`);
-  ninePatchPreview.style.setProperty("--nine-padding-top", `${insets.top}px`);
-  ninePatchPreview.style.setProperty("--nine-padding-bottom", `${insets.bottom}px`);
+function setNinePatchContentGuideVariables(settings) {
+  const { width, height } = getNinePatchContentReferenceSizeForMarkers(settings);
+  setNinePatchAxisVariables("padding", "x", settings.paddingX, width);
+  setNinePatchAxisVariables("padding", "y", settings.paddingY, height);
 }
 
 function setNinePatchAxisVariables(kind, axis, pair, size) {

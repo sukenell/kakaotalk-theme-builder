@@ -8,6 +8,7 @@ import {
   MINIMUM_NINE_PATCH_CONTENT_SIZE,
   NINE_PATCH_REFERENCE_SIZE,
   getNinePatchAxisControlMax,
+  getNinePatchContentReferenceSizeForMarkers,
   getNinePatchReferenceSizeForSource,
   getNinePatchReferenceSizeForMarkers,
   getScaledNinePatchContentInsets,
@@ -180,6 +181,34 @@ test("nine-patch reference size expands to contain guide values up to the contro
     width: 302,
     height: 114,
   });
+});
+
+test("nine-patch content reference size ignores stretch-only expansion", () => {
+  const stretchExpanded = {
+    stretchX: [41, 300],
+    stretchY: [38, 300],
+    paddingX: DEFAULT_NINE_PATCH_PADDING.paddingX,
+    paddingY: DEFAULT_NINE_PATCH_PADDING.paddingY,
+    referenceSize: { width: 302, height: 302 },
+  };
+
+  assert.deepEqual(getNinePatchReferenceSizeForMarkers(stretchExpanded), {
+    width: 302,
+    height: 302,
+  });
+  assert.deepEqual(getNinePatchContentReferenceSizeForMarkers(stretchExpanded), NINE_PATCH_REFERENCE_SIZE);
+
+  assert.deepEqual(
+    getNinePatchContentReferenceSizeForMarkers({
+      ...stretchExpanded,
+      paddingX: [41, 300],
+      paddingY: [38, 300],
+    }),
+    {
+      width: 302,
+      height: 302,
+    },
+  );
 });
 
 test("nine-patch content insets stay anchored when only the stretch canvas grows", () => {

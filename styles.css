@@ -2344,10 +2344,10 @@ h2 {
   --nine-stretch-right: 34%;
   --nine-stretch-top: 33%;
   --nine-stretch-bottom: 34%;
-  --nine-padding-left: 10px;
-  --nine-padding-right: 10px;
-  --nine-padding-top: 10px;
-  --nine-padding-bottom: 10px;
+  --nine-padding-left: 33%;
+  --nine-padding-right: 34%;
+  --nine-padding-top: 33%;
+  --nine-padding-bottom: 34%;
   position: relative;
   width: min(78%, 248px);
   aspect-ratio: var(--nine-patch-preview-aspect-ratio, 124 / 114);
