@@ -876,9 +876,10 @@ function renderBubbleDetailControls() {
 
 function createNinePatchRangeInput(key, field, index, axis) {
   const input = document.createElement("input");
+  const bounds = getNinePatchInputBounds(key, field, index, axis);
   input.type = "range";
-  input.min = "1";
-  input.max = String(getNinePatchAxisMax(axis));
+  input.min = String(bounds.min);
+  input.max = String(bounds.max);
   input.step = "1";
   input.dataset.ninePatchField = field;
   input.dataset.ninePatchIndex = String(index);
@@ -902,10 +903,43 @@ function updateNinePatchPairValue(key, field, index, value) {
   const settings = getBubbleNinePatchSettings(key);
   const axis = field.endsWith("X") ? "x" : "y";
   const minSpan = field.startsWith("padding") ? MINIMUM_NINE_PATCH_CONTENT_SIZE[axis] : 0;
+  const containPair = getNinePatchContainPair(field);
   settings[field] = updateNinePatchPair(settings[field], index, value, {
-    max: getNinePatchAxisMax(axis),
+    max: getNinePatchAxisMax(axis, key),
     minSpan,
+    containPair,
   });
+}
+
+function getNinePatchInputBounds(key, field, index, axis) {
+  const bounds = {
+    min: 1,
+    max: getNinePatchAxisMax(axis, key),
+  };
+  const containPair = getNinePatchContainPair(field);
+
+  if (!containPair) {
+    return bounds;
+  }
+
+  if (index === 0) {
+    bounds.max = Math.min(bounds.max, containPair[0]);
+  } else {
+    bounds.min = Math.max(bounds.min, containPair[1]);
+  }
+
+  return bounds;
+}
+
+function getNinePatchContainPair(field) {
+  if (field === "stretchX") {
+    return androidNinePatchMarkers.stretchX;
+  }
+  if (field === "stretchY") {
+    return androidNinePatchMarkers.stretchY;
+  }
+
+  return undefined;
 }
 
 function syncBubbleDetailControlValues() {

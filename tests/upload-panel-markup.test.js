@@ -1381,6 +1381,11 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(css, /aspect-ratio: var\(--nine-patch-preview-aspect-ratio, 124 \/ 114\);/);
   assert.match(app, /function renderBubbleDetailControls/);
   assert.match(app, /control\.dataset\.ninePatchControl = field;/);
+  assert.match(app, /const bounds = getNinePatchInputBounds\(key, field, index, axis\);/);
+  assert.match(app, /input\.min = String\(bounds\.min\);/);
+  assert.match(app, /input\.max = String\(bounds\.max\);/);
+  assert.match(app, /function getNinePatchContainPair\(field\)/);
+  assert.match(app, /containPair,/);
   assert.match(app, /await refreshUploadImage\(key\);/);
   assert.match(app, /function getBubbleNinePatchSettings\(key\)/);
   assert.match(app, /bubbleLayout: bubbleLayout \? cloneBubbleNinePatchSettings\(bubbleLayout\) : undefined,/);
