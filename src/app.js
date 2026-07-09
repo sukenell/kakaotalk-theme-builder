@@ -31,7 +31,9 @@ import { normalizeTintColor, tintImageDataPixels } from "./image-tint.js";
 import { getDefaultGroupAvatarItemIndexes } from "./group-avatar-profiles.js";
 import {
   MINIMUM_NINE_PATCH_CONTENT_SIZE,
+  getNinePatchReferenceSizeForSource,
   getScaledNinePatchContentInsets,
+  rebaseNinePatchSettingsForReferenceSize,
   updateNinePatchPair,
 } from "./nine-patch-controls.js";
 
@@ -246,6 +248,7 @@ const bubbleNinePatchPreviewSize = {
 };
 const defaultBubbleNinePatchSettings = {
   ...androidNinePatchMarkers,
+  referenceSize: bubbleNinePatchPreviewSize,
   fit: "contain",
 };
 const bubbleNinePatchFitModes = ["cover", "contain"];
@@ -946,10 +949,16 @@ function updateBubbleDetailPreview() {
 }
 
 function setNinePatchGuideVariables(settings) {
-  const { width, height } = bubbleNinePatchPreviewSize;
+  setNinePatchPreviewReferenceSize(settings);
+  const { width, height } = getBubbleNinePatchReferenceSize(settings);
   setNinePatchAxisVariables("stretch", "x", settings.stretchX, width);
   setNinePatchAxisVariables("stretch", "y", settings.stretchY, height);
   setNinePatchContentInsetVariables(settings);
+}
+
+function setNinePatchPreviewReferenceSize(settings) {
+  const { width, height } = getBubbleNinePatchReferenceSize(settings);
+  ninePatchPreview.style.setProperty("--nine-patch-preview-aspect-ratio", `${width} / ${height}`);
 }
 
 function setNinePatchContentInsetVariables(settings) {
@@ -974,7 +983,7 @@ function setNinePatchAxisVariables(kind, axis, pair, size) {
 
 function getBubbleNinePatchSettings(key) {
   if (!bubbleNinePatchSettings[key]) {
-    bubbleNinePatchSettings[key] = cloneBubbleNinePatchSettings(defaultBubbleNinePatchSettings);
+    bubbleNinePatchSettings[key] = createDefaultBubbleNinePatchSettings();
   }
 
   return bubbleNinePatchSettings[key];
@@ -986,20 +995,35 @@ function cloneBubbleNinePatchSettings(settings) {
     stretchY: [...settings.stretchY],
     paddingX: [...settings.paddingX],
     paddingY: [...settings.paddingY],
+    referenceSize: { ...getBubbleNinePatchReferenceSize(settings) },
     fit: bubbleNinePatchFitModes.includes(settings.fit) ? settings.fit : defaultBubbleNinePatchSettings.fit,
   };
 }
 
-function getNinePatchAxisMax(axis) {
-  return (axis === "x" ? bubbleNinePatchPreviewSize.width : bubbleNinePatchPreviewSize.height) - 2;
+function getBubbleNinePatchReferenceSize(settings) {
+  return settings?.referenceSize ?? bubbleNinePatchPreviewSize;
+}
+
+function getNinePatchAxisMax(axis, key = activeBubbleDetailKey) {
+  const referenceSize = getBubbleNinePatchReferenceSize(getBubbleNinePatchSettings(key));
+  return (axis === "x" ? referenceSize.width : referenceSize.height) - 2;
 }
 
 async function resetActiveBubbleDetail() {
   const key = activeBubbleDetailKey;
-  bubbleNinePatchSettings[key] = cloneBubbleNinePatchSettings(defaultBubbleNinePatchSettings);
+  const referenceSize = getBubbleNinePatchReferenceSize(getBubbleNinePatchSettings(key));
+  bubbleNinePatchSettings[key] = createDefaultBubbleNinePatchSettings(referenceSize);
   renderBubbleDetailControls();
   updateBubbleDetailPreview();
   await refreshUploadImage(key);
+}
+
+function createDefaultBubbleNinePatchSettings(referenceSize = bubbleNinePatchPreviewSize) {
+  return rebaseNinePatchSettingsForReferenceSize(
+    cloneBubbleNinePatchSettings(defaultBubbleNinePatchSettings),
+    referenceSize,
+    bubbleNinePatchPreviewSize,
+  );
 }
 
 function setPreviewDevice(device) {
@@ -1259,6 +1283,7 @@ async function createUploadRecord(
 
   const image = await loadImage(source);
   try {
+    syncBubbleNinePatchSettingsForImage(key, image);
     const bubbleLayout = bubbleUploadKeys.has(key) ? getBubbleNinePatchSettings(key) : undefined;
     const variants = shouldGenerateUploadVariants(key) ? await createUploadImageVariants(key, image, { tintColor }) : undefined;
     const data = tintColor
@@ -1298,7 +1323,8 @@ async function createUploadImageVariants(key, image, { tintColor = "" } = {}) {
     if (!size) {
       continue;
     }
-    variants[name] = await renderImageToPngBytes(image, size[0], size[1], { tintColor, bubbleLayout });
+    const renderSize = getUploadVariantRenderSize(key, image, name, size);
+    variants[name] = await renderImageToPngBytes(image, renderSize[0], renderSize[1], { tintColor, bubbleLayout });
   }
 
   for (const name of target.android || []) {
@@ -1306,10 +1332,38 @@ async function createUploadImageVariants(key, image, { tintColor = "" } = {}) {
     if (!size) {
       continue;
     }
-    variants[name] = await renderImageToNinePatchPngBytes(image, size[0], size[1], { tintColor, ninePatchMarkers: bubbleLayout });
+    const renderSize = getUploadVariantRenderSize(key, image, name, size);
+    variants[name] = await renderImageToNinePatchPngBytes(image, renderSize[0], renderSize[1], { tintColor, ninePatchMarkers: bubbleLayout });
   }
 
   return variants;
+}
+
+function syncBubbleNinePatchSettingsForImage(key, image) {
+  if (!bubbleUploadKeys.has(key)) {
+    return;
+  }
+
+  const referenceSize = getNinePatchReferenceSizeForSource(image);
+  const settings = getBubbleNinePatchSettings(key);
+  bubbleNinePatchSettings[key] = rebaseNinePatchSettingsForReferenceSize(settings, referenceSize);
+}
+
+function getUploadVariantRenderSize(key, image, name, fallbackSize) {
+  if (!bubbleUploadKeys.has(key)) {
+    return fallbackSize;
+  }
+
+  if (name.endsWith(".9.png")) {
+    const { width, height } = getBubbleNinePatchReferenceSize(getBubbleNinePatchSettings(key));
+    return [Math.max(fallbackSize[0], width), Math.max(fallbackSize[1], height)];
+  }
+
+  const scale = name.includes("@2x") ? 2 / 3 : 1;
+  return [
+    Math.max(fallbackSize[0], Math.round(image.width * scale)),
+    Math.max(fallbackSize[1], Math.round(image.height * scale)),
+  ];
 }
 
 async function loadImage(file) {

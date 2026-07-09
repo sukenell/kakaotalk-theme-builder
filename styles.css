@@ -2350,7 +2350,7 @@ h2 {
   --nine-padding-bottom: 10px;
   position: relative;
   width: min(78%, 248px);
-  aspect-ratio: 124 / 114;
+  aspect-ratio: var(--nine-patch-preview-aspect-ratio, 124 / 114);
   background: var(--nine-patch-preview-image, var(--preview-send-image, none)) center / contain no-repeat;
   image-rendering: auto;
 }

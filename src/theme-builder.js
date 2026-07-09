@@ -380,7 +380,7 @@ function convertBubbleLayoutToIosEdgeInsets(layout) {
 
 function getBubbleLayoutInsets(layout) {
   return getNinePatchContentInsets(layout, {
-    referenceSize: bubbleNinePatchReferenceSize,
+    referenceSize: layout?.referenceSize ?? bubbleNinePatchReferenceSize,
     fallbackPadding: defaultBubbleNinePatchPadding,
   });
 }

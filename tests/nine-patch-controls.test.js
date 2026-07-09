@@ -3,8 +3,12 @@ import test from "node:test";
 
 import {
   DEFAULT_BUBBLE_CONTENT_INSET_PX,
+  DEFAULT_NINE_PATCH_PADDING,
   MINIMUM_NINE_PATCH_CONTENT_SIZE,
+  NINE_PATCH_REFERENCE_SIZE,
+  getNinePatchReferenceSizeForSource,
   getScaledNinePatchContentInsets,
+  rebaseNinePatchSettingsForReferenceSize,
   updateNinePatchPair,
 } from "../src/nine-patch-controls.js";
 
@@ -63,5 +67,35 @@ test("nine-patch content insets match downloaded bubble padding scale", () => {
     right: 5,
     bottom: 6,
     left: 5,
+  });
+});
+
+test("larger bubble images expand guides outward without shrinking the base layout", () => {
+  assert.deepEqual(getNinePatchReferenceSizeForSource({ width: 120, height: 105 }), NINE_PATCH_REFERENCE_SIZE);
+  assert.deepEqual(getNinePatchReferenceSizeForSource({ width: 180, height: 150 }), {
+    width: 182,
+    height: 152,
+  });
+
+  const expanded = rebaseNinePatchSettingsForReferenceSize(
+    {
+      stretchX: DEFAULT_NINE_PATCH_PADDING.paddingX,
+      stretchY: DEFAULT_NINE_PATCH_PADDING.paddingY,
+      paddingX: DEFAULT_NINE_PATCH_PADDING.paddingX,
+      paddingY: DEFAULT_NINE_PATCH_PADDING.paddingY,
+      referenceSize: NINE_PATCH_REFERENCE_SIZE,
+    },
+    { width: 182, height: 152 },
+  );
+
+  assert.deepEqual(expanded.paddingX, [70, 110]);
+  assert.deepEqual(expanded.paddingY, [57, 94]);
+  assert.equal(expanded.paddingX[1] - expanded.paddingX[0], 40);
+  assert.equal(expanded.paddingY[1] - expanded.paddingY[0], 37);
+  assert.deepEqual(getScaledNinePatchContentInsets(expanded), {
+    top: 15,
+    right: 17,
+    bottom: 15,
+    left: 17,
   });
 });
