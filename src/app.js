@@ -286,6 +286,7 @@ const bubbleDetailPanel = document.querySelector("[data-bubble-detail-panel]");
 const ninePatchPreview = document.querySelector("[data-nine-patch-preview]");
 const ninePatchSample = document.querySelector("[data-nine-patch-sample]");
 const ninePatchResetButton = document.querySelector("[data-nine-patch-reset]");
+const bubbleDetailNextButton = document.querySelector("[data-bubble-detail-next]");
 const previewDateElements = document.querySelectorAll("[data-preview-date]");
 const previewTimeElements = document.querySelectorAll("[data-preview-time]");
 const documentRoot = document.documentElement;
@@ -809,6 +810,13 @@ function openBubbleDetail(key) {
 
   activeBubbleDetailKey = key;
   setPreviewIndex(PREVIEW_PAGES.findIndex((page) => page.id === "bubble-detail"));
+}
+
+function cycleActiveBubbleDetail() {
+  const index = CHAT_BUBBLE_IMAGE_KEYS.indexOf(activeBubbleDetailKey);
+  activeBubbleDetailKey = CHAT_BUBBLE_IMAGE_KEYS[(index + 1) % CHAT_BUBBLE_IMAGE_KEYS.length];
+  renderBubbleDetailControls();
+  updateBubbleDetailPreview();
 }
 
 function renderBubbleDetailControls() {
@@ -1909,6 +1917,7 @@ previewDeviceButtons.forEach((button) => {
   button.addEventListener("click", () => setPreviewDevice(button.dataset.previewDevice));
 });
 ninePatchResetButton?.addEventListener("click", resetActiveBubbleDetail);
+bubbleDetailNextButton?.addEventListener("click", cycleActiveBubbleDetail);
 passcodeScreen.addEventListener("click", handlePasscodeClick);
 document.addEventListener("keydown", handleGlobalKeydown);
 downloadIosButton.addEventListener("click", downloadIosTheme);

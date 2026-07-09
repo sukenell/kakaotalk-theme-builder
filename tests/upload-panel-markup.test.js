@@ -1338,7 +1338,11 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(html, /class="preview-slide bubble-detail-preview" aria-label="말풍선 상세 프리뷰"/);
   assert.match(html, /data-nine-patch-preview/);
   assert.match(html, /data-bubble-detail-panel/);
+  assert.match(html, /data-bubble-detail-next/);
+  assert.match(html, /class="shuffle-icon"/);
   assert.match(css, /\.bubble-detail-preview\s*\{/);
+  assert.match(css, /\.bubble-detail-actions\s*\{/);
+  assert.match(css, /\.shuffle-icon\s*\{/);
   assert.match(css, /\.nine-patch-preview\s*\{/);
   assert.match(css, /\.nine-patch-guide\.stretch-x\s*\{/);
   assert.match(css, /\.nine-patch-guide\.padding-x\s*\{/);
@@ -1349,6 +1353,10 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(app, /detailButton\.textContent = "상세";/);
   assert.match(app, /detailButton\.addEventListener\("click", \(\) => openBubbleDetail\(key\)\);/);
   assert.match(app, /function openBubbleDetail\(key\)/);
+  assert.match(app, /function cycleActiveBubbleDetail\(\)/);
+  assert.match(app, /const index = CHAT_BUBBLE_IMAGE_KEYS\.indexOf\(activeBubbleDetailKey\);/);
+  assert.match(app, /activeBubbleDetailKey = CHAT_BUBBLE_IMAGE_KEYS\[\(index \+ 1\) % CHAT_BUBBLE_IMAGE_KEYS\.length\];/);
+  assert.match(app, /bubbleDetailNextButton\?\.addEventListener\("click", cycleActiveBubbleDetail\);/);
   assert.match(app, /setPreviewIndex\(PREVIEW_PAGES\.findIndex\(\(page\) => page\.id === "bubble-detail"\)\);/);
   assert.match(app, /function renderBubbleDetailControls/);
   assert.match(app, /control\.dataset\.ninePatchControl = field;/);
