@@ -30,8 +30,25 @@ export function updateNinePatchPair(pair, index, value, { max, minSpan = 0, cont
     clampNinePatchPosition(pair?.[0], limit),
     clampNinePatchPosition(pair?.[1], limit),
   ];
+  let requiredPair;
 
   nextPair[index === 0 ? 0 : 1] = clampNinePatchPosition(value, limit);
+
+  if (Array.isArray(containPair) && containPair.length >= 2) {
+    requiredPair = [
+      clampNinePatchPosition(containPair[0], limit),
+      clampNinePatchPosition(containPair[1], limit),
+    ];
+    if (requiredPair[0] > requiredPair[1]) {
+      requiredPair[1] = requiredPair[0];
+    }
+    if (index === 0 && nextPair[0] > requiredPair[0]) {
+      nextPair[0] = requiredPair[0];
+    }
+    if (index !== 0 && nextPair[1] < requiredPair[1]) {
+      nextPair[1] = requiredPair[1];
+    }
+  }
 
   if (nextPair[0] > nextPair[1]) {
     nextPair[index === 0 ? 1 : 0] = nextPair[index === 0 ? 0 : 1];
@@ -47,14 +64,7 @@ export function updateNinePatchPair(pair, index, value, { max, minSpan = 0, cont
     }
   }
 
-  if (Array.isArray(containPair) && containPair.length >= 2) {
-    const requiredPair = [
-      clampNinePatchPosition(containPair[0], limit),
-      clampNinePatchPosition(containPair[1], limit),
-    ];
-    if (requiredPair[0] > requiredPair[1]) {
-      requiredPair[1] = requiredPair[0];
-    }
+  if (requiredPair) {
     if (nextPair[0] > requiredPair[0]) {
       nextPair[0] = requiredPair[0];
     }
@@ -168,7 +178,8 @@ export function rebaseNinePatchSettingsForReferenceSize(
   nextReferenceSize,
   previousReferenceSize = settings?.referenceSize ?? NINE_PATCH_REFERENCE_SIZE,
 ) {
-  const nextReference = getNinePatchReferenceSizeForMarkers(settings, nextReferenceSize);
+  const sourceReference = normalizeNinePatchReferenceSize(nextReferenceSize);
+  const nextReference = getNinePatchReferenceSizeForMarkers(settings, sourceReference);
   const maxX = nextReference.width - 2;
   const maxY = nextReference.height - 2;
 
@@ -188,7 +199,7 @@ export function rebaseNinePatchSettingsForReferenceSize(
     ),
     paddingX: clampNinePatchPairToBounds(settings?.paddingX, maxX, defaultNinePatchMarkers.paddingX),
     paddingY: clampNinePatchPairToBounds(settings?.paddingY, maxY, defaultNinePatchMarkers.paddingY),
-    referenceSize: nextReference,
+    referenceSize: sourceReference,
   };
 }
 

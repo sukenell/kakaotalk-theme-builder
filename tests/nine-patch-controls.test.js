@@ -16,41 +16,61 @@ import {
   updateNinePatchPair,
 } from "../src/nine-patch-controls.js";
 
-test("nine-patch padding pairs keep a readable content width", () => {
+test("nine-patch padding pairs keep the default content width and can only expand outward", () => {
   assert.equal(MINIMUM_NINE_PATCH_CONTENT_SIZE.x, 40);
 
   assert.deepEqual(
     updateNinePatchPair([41, 81], 0, 80, {
       max: 122,
       minSpan: MINIMUM_NINE_PATCH_CONTENT_SIZE.x,
+      containPair: DEFAULT_NINE_PATCH_PADDING.paddingX,
     }),
-    [80, 120],
+    [41, 81],
   );
   assert.deepEqual(
-    updateNinePatchPair([41, 81], 0, 120, {
+    updateNinePatchPair([41, 81], 0, 20, {
       max: 122,
       minSpan: MINIMUM_NINE_PATCH_CONTENT_SIZE.x,
+      containPair: DEFAULT_NINE_PATCH_PADDING.paddingX,
     }),
-    [82, 122],
+    [20, 81],
   );
   assert.deepEqual(
     updateNinePatchPair([41, 81], 1, 10, {
       max: 122,
       minSpan: MINIMUM_NINE_PATCH_CONTENT_SIZE.x,
+      containPair: DEFAULT_NINE_PATCH_PADDING.paddingX,
     }),
-    [1, 41],
+    [41, 81],
+  );
+  assert.deepEqual(
+    updateNinePatchPair([41, 81], 1, 100, {
+      max: 122,
+      minSpan: MINIMUM_NINE_PATCH_CONTENT_SIZE.x,
+      containPair: DEFAULT_NINE_PATCH_PADDING.paddingX,
+    }),
+    [41, 100],
   );
 });
 
-test("nine-patch padding pairs keep a one-line content height", () => {
+test("nine-patch padding pairs keep the default content height and can only expand outward", () => {
   assert.equal(MINIMUM_NINE_PATCH_CONTENT_SIZE.y, 18);
 
   assert.deepEqual(
     updateNinePatchPair([38, 75], 1, 42, {
       max: 112,
       minSpan: MINIMUM_NINE_PATCH_CONTENT_SIZE.y,
+      containPair: DEFAULT_NINE_PATCH_PADDING.paddingY,
     }),
-    [24, 42],
+    [38, 75],
+  );
+  assert.deepEqual(
+    updateNinePatchPair([38, 75], 0, 12, {
+      max: 112,
+      minSpan: MINIMUM_NINE_PATCH_CONTENT_SIZE.y,
+      containPair: DEFAULT_NINE_PATCH_PADDING.paddingY,
+    }),
+    [12, 75],
   );
 });
 
@@ -177,7 +197,8 @@ test("nine-patch reference size expands to contain guide values up to the contro
   const rebased = rebaseNinePatchSettingsForReferenceSize(layout, NINE_PATCH_REFERENCE_SIZE);
   assert.deepEqual(rebased.stretchX, [41, 300]);
   assert.deepEqual(rebased.paddingX, [41, 300]);
-  assert.deepEqual(rebased.referenceSize, {
+  assert.deepEqual(rebased.referenceSize, NINE_PATCH_REFERENCE_SIZE);
+  assert.deepEqual(getNinePatchReferenceSizeForMarkers(rebased), {
     width: 302,
     height: 114,
   });

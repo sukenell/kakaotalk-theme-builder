@@ -32,7 +32,6 @@ import { getDefaultGroupAvatarItemIndexes } from "./group-avatar-profiles.js";
 import {
   MINIMUM_NINE_PATCH_CONTENT_SIZE,
   getNinePatchAxisControlMax,
-  getNinePatchContentReferenceSizeForMarkers,
   getNinePatchReferenceSizeForSource,
   getNinePatchReferenceSizeForMarkers,
   rebaseNinePatchSettingsForReferenceSize,
@@ -937,8 +936,14 @@ function getNinePatchContainPair(field) {
   if (field === "stretchX") {
     return androidNinePatchMarkers.stretchX;
   }
+  if (field === "paddingX") {
+    return androidNinePatchMarkers.paddingX;
+  }
   if (field === "stretchY") {
     return androidNinePatchMarkers.stretchY;
+  }
+  if (field === "paddingY") {
+    return androidNinePatchMarkers.paddingY;
   }
 
   return undefined;
@@ -993,12 +998,15 @@ function setNinePatchGuideVariables(settings) {
 }
 
 function setNinePatchPreviewReferenceSize(settings) {
-  const { width, height } = getBubbleNinePatchReferenceSize(settings);
-  ninePatchPreview.style.setProperty("--nine-patch-preview-aspect-ratio", `${width} / ${height}`);
+  const previewSize = getBubbleNinePatchReferenceSize(settings);
+  const sourceSize = getBubbleNinePatchSourceReferenceSize(settings);
+  ninePatchPreview.style.setProperty("--nine-patch-preview-aspect-ratio", `${previewSize.width} / ${previewSize.height}`);
+  ninePatchPreview.style.setProperty("--nine-source-width", `${(sourceSize.width / previewSize.width) * 100}%`);
+  ninePatchPreview.style.setProperty("--nine-source-height", `${(sourceSize.height / previewSize.height) * 100}%`);
 }
 
 function setNinePatchContentGuideVariables(settings) {
-  const { width, height } = getNinePatchContentReferenceSizeForMarkers(settings);
+  const { width, height } = getBubbleNinePatchReferenceSize(settings);
   setNinePatchAxisVariables("padding", "x", settings.paddingX, width);
   setNinePatchAxisVariables("padding", "y", settings.paddingY, height);
 }
@@ -1029,13 +1037,17 @@ function cloneBubbleNinePatchSettings(settings) {
     stretchY: [...settings.stretchY],
     paddingX: [...settings.paddingX],
     paddingY: [...settings.paddingY],
-    referenceSize: { ...getBubbleNinePatchReferenceSize(settings) },
+    referenceSize: { ...getBubbleNinePatchSourceReferenceSize(settings) },
     fit: bubbleNinePatchFitModes.includes(settings.fit) ? settings.fit : defaultBubbleNinePatchSettings.fit,
   };
 }
 
+function getBubbleNinePatchSourceReferenceSize(settings) {
+  return settings?.referenceSize ?? bubbleNinePatchPreviewSize;
+}
+
 function getBubbleNinePatchReferenceSize(settings) {
-  return getNinePatchReferenceSizeForMarkers(settings, settings?.referenceSize ?? bubbleNinePatchPreviewSize);
+  return getNinePatchReferenceSizeForMarkers(settings, getBubbleNinePatchSourceReferenceSize(settings));
 }
 
 function getNinePatchAxisMax(axis, key = activeBubbleDetailKey) {
