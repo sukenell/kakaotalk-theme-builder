@@ -2345,41 +2345,48 @@ h2 {
 
 .nine-patch-guide {
   position: absolute;
+  inset: 0;
   z-index: 2;
   pointer-events: none;
-  border-radius: 999px;
+  border-radius: 0;
 }
 
 .nine-patch-guide.stretch-x {
-  top: -8px;
+  top: 0;
+  bottom: 0;
   left: var(--nine-stretch-left);
   right: var(--nine-stretch-right);
-  height: 3px;
-  background: #2f9f68;
+  border-left: 1px dashed rgba(39, 177, 105, 0.94);
+  border-right: 1px dashed rgba(39, 177, 105, 0.94);
 }
 
 .nine-patch-guide.stretch-y {
   top: var(--nine-stretch-top);
   bottom: var(--nine-stretch-bottom);
-  left: -8px;
-  width: 3px;
-  background: #2f9f68;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed rgba(39, 177, 105, 0.94);
+  border-bottom: 1px dashed rgba(39, 177, 105, 0.94);
 }
 
 .nine-patch-guide.padding-x {
+  top: 0;
   right: var(--nine-padding-right);
-  bottom: -8px;
+  bottom: 0;
   left: var(--nine-padding-left);
-  height: 3px;
-  background: #d45a87;
+  z-index: 3;
+  border-left: 1px solid rgba(95, 82, 218, 0.82);
+  border-right: 1px solid rgba(95, 82, 218, 0.82);
 }
 
 .nine-patch-guide.padding-y {
   top: var(--nine-padding-top);
-  right: -8px;
+  right: 0;
   bottom: var(--nine-padding-bottom);
-  width: 3px;
-  background: #d45a87;
+  left: 0;
+  z-index: 3;
+  border-top: 1px solid rgba(95, 82, 218, 0.82);
+  border-bottom: 1px solid rgba(95, 82, 218, 0.82);
 }
 
 .nine-patch-sample {
@@ -2394,6 +2401,9 @@ h2 {
   place-items: center;
   min-width: 0;
   margin: 0;
+  border-radius: 3px;
+  background: rgba(95, 82, 218, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(69, 58, 181, 0.38);
   color: var(--preview-send-text, #ffffff);
   font-size: 13px;
   font-weight: 800;

@@ -1346,8 +1346,16 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(css, /\.nine-patch-preview\s*\{/);
   assert.match(css, /\.nine-patch-guide\.stretch-x\s*\{/);
   assert.match(css, /\.nine-patch-guide\.padding-x\s*\{/);
+  assert.match(css, /\.nine-patch-guide\.stretch-x\s*\{[\s\S]*border-left: 1px dashed/);
+  assert.match(css, /\.nine-patch-guide\.stretch-y\s*\{[\s\S]*border-top: 1px dashed/);
+  assert.match(css, /\.nine-patch-guide\.padding-x\s*\{[\s\S]*border-left: 1px solid/);
+  assert.match(css, /\.nine-patch-guide\.padding-y\s*\{[\s\S]*border-top: 1px solid/);
+  assert.match(css, /\.nine-patch-sample\s*\{[\s\S]*background: rgba\(95, 82, 218, 0\.34\);/);
+  assert.match(css, /\.nine-patch-sample\s*\{[\s\S]*box-shadow: inset 0 0 0 1px rgba\(69, 58, 181, 0\.38\);/);
 
   assert.match(app, /const bubbleNinePatchSettings = \{\};/);
+  assert.match(app, /MINIMUM_NINE_PATCH_CONTENT_SIZE/);
+  assert.match(app, /updateNinePatchPair/);
   assert.match(app, /let activeBubbleDetailKey = "sendBubbleNormal";/);
   assert.match(app, /detailButton\.dataset\.bubbleDetail = key;/);
   assert.match(app, /detailButton\.textContent = "상세";/);

@@ -29,6 +29,7 @@ import { createStoredZip } from "./zip-utils.js";
 import { formatKoreanDate, formatKoreanTime } from "./date-format.js";
 import { normalizeTintColor, tintImageDataPixels } from "./image-tint.js";
 import { getDefaultGroupAvatarItemIndexes } from "./group-avatar-profiles.js";
+import { MINIMUM_NINE_PATCH_CONTENT_SIZE, updateNinePatchPair } from "./nine-patch-controls.js";
 
 const colorControls = [
   ["mainBackground", "배경 색"],
@@ -893,15 +894,11 @@ function createNinePatchOutput(field, index) {
 function updateNinePatchPairValue(key, field, index, value) {
   const settings = getBubbleNinePatchSettings(key);
   const axis = field.endsWith("X") ? "x" : "y";
-  const nextValue = clampNinePatchPosition(value, axis);
-  const pair = [...settings[field]];
-  pair[index] = nextValue;
-
-  if (pair[0] > pair[1]) {
-    pair[index === 0 ? 1 : 0] = nextValue;
-  }
-
-  settings[field] = pair;
+  const minSpan = field.startsWith("padding") ? MINIMUM_NINE_PATCH_CONTENT_SIZE[axis] : 0;
+  settings[field] = updateNinePatchPair(settings[field], index, value, {
+    max: getNinePatchAxisMax(axis),
+    minSpan,
+  });
 }
 
 function syncBubbleDetailControlValues() {
@@ -984,10 +981,6 @@ function cloneBubbleNinePatchSettings(settings) {
 
 function getNinePatchAxisMax(axis) {
   return (axis === "x" ? bubbleNinePatchPreviewSize.width : bubbleNinePatchPreviewSize.height) - 2;
-}
-
-function clampNinePatchPosition(value, axis) {
-  return Math.max(1, Math.min(getNinePatchAxisMax(axis), Number.isFinite(value) ? Math.round(value) : 1));
 }
 
 async function resetActiveBubbleDetail() {
