@@ -179,13 +179,13 @@ export function rebaseNinePatchSettingsForReferenceSize(
 
 export function getNinePatchContentInsets(
   layout,
-  { referenceSize = NINE_PATCH_REFERENCE_SIZE, fallbackPadding = DEFAULT_NINE_PATCH_PADDING } = {},
+  { baseReferenceSize = NINE_PATCH_REFERENCE_SIZE, fallbackPadding = DEFAULT_NINE_PATCH_PADDING } = {},
 ) {
-  const effectiveReferenceSize = normalizeNinePatchReferenceSize(layout?.referenceSize ?? referenceSize);
+  const baseReference = normalizeNinePatchReferenceSize(baseReferenceSize);
   const paddingX = normalizeNinePatchPair(layout?.paddingX, fallbackPadding.paddingX);
   const paddingY = normalizeNinePatchPair(layout?.paddingY, fallbackPadding.paddingY);
-  const innerWidth = effectiveReferenceSize.width - 2;
-  const innerHeight = effectiveReferenceSize.height - 2;
+  const innerWidth = Math.max(baseReference.width - 2, paddingX[1]);
+  const innerHeight = Math.max(baseReference.height - 2, paddingY[1]);
 
   return {
     top: Math.max(1, paddingY[0] - 1),
@@ -204,9 +204,12 @@ export function getScaledNinePatchContentInsets(
     defaultInsetPx = DEFAULT_BUBBLE_CONTENT_INSET_PX,
   } = {},
 ) {
-  const insets = getNinePatchContentInsets(layout, { referenceSize, fallbackPadding });
+  const insets = getNinePatchContentInsets(layout, {
+    baseReferenceSize: defaultReferenceSize,
+    fallbackPadding,
+  });
   const defaultInsets = getNinePatchContentInsets(fallbackPadding, {
-    referenceSize: defaultReferenceSize,
+    baseReferenceSize: defaultReferenceSize,
     fallbackPadding,
   });
 

@@ -126,8 +126,8 @@ test("larger bubble images expand guides outward without shrinking the base layo
   assert.equal(expanded.paddingY[1] - expanded.paddingY[0], 37);
   assert.deepEqual(getScaledNinePatchContentInsets(expanded), {
     top: 10,
-    right: 24,
-    bottom: 20,
+    right: 10,
+    bottom: 10,
     left: 10,
   });
 });
@@ -179,5 +179,35 @@ test("nine-patch reference size expands to contain guide values up to the contro
   assert.deepEqual(rebased.referenceSize, {
     width: 302,
     height: 114,
+  });
+});
+
+test("nine-patch content insets stay anchored when only the stretch canvas grows", () => {
+  const stretchExpanded = {
+    stretchX: [41, 300],
+    stretchY: [38, 300],
+    paddingX: DEFAULT_NINE_PATCH_PADDING.paddingX,
+    paddingY: DEFAULT_NINE_PATCH_PADDING.paddingY,
+    referenceSize: { width: 302, height: 302 },
+  };
+
+  assert.deepEqual(getScaledNinePatchContentInsets(stretchExpanded), {
+    top: 10,
+    right: 10,
+    bottom: 10,
+    left: 10,
+  });
+
+  const contentExpanded = {
+    ...stretchExpanded,
+    paddingX: [41, 300],
+    paddingY: [38, 300],
+  };
+
+  assert.deepEqual(getScaledNinePatchContentInsets(contentExpanded), {
+    top: 10,
+    right: 1,
+    bottom: 1,
+    left: 10,
   });
 });
