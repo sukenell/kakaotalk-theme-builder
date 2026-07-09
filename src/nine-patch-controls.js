@@ -6,6 +6,7 @@ export const NINE_PATCH_REFERENCE_SIZE = {
   width: 124,
   height: 114,
 };
+export const MAX_NINE_PATCH_GUIDE_POSITION = 300;
 export const DEFAULT_NINE_PATCH_PADDING = {
   paddingX: [41, 81],
   paddingY: [38, 75],
@@ -100,6 +101,39 @@ export function getNinePatchReferenceSizeForSource(sourceSize, minimumReferenceS
   };
 }
 
+function getNinePatchPairExtent(pair, fallback) {
+  const normalizedPair = normalizeNinePatchPair(pair, fallback);
+  return Math.max(normalizedPair[0], normalizedPair[1]);
+}
+
+export function getNinePatchReferenceSizeForMarkers(settings, minimumReferenceSize = NINE_PATCH_REFERENCE_SIZE) {
+  const requestedMinimum = normalizeNinePatchReferenceSize(minimumReferenceSize);
+  const storedReference = normalizeNinePatchReferenceSize(settings?.referenceSize, requestedMinimum);
+  const minimum = {
+    width: Math.max(requestedMinimum.width, storedReference.width),
+    height: Math.max(requestedMinimum.height, storedReference.height),
+  };
+
+  return {
+    width: Math.max(
+      minimum.width,
+      getNinePatchPairExtent(settings?.stretchX, defaultNinePatchMarkers.stretchX) + 2,
+      getNinePatchPairExtent(settings?.paddingX, defaultNinePatchMarkers.paddingX) + 2,
+    ),
+    height: Math.max(
+      minimum.height,
+      getNinePatchPairExtent(settings?.stretchY, defaultNinePatchMarkers.stretchY) + 2,
+      getNinePatchPairExtent(settings?.paddingY, defaultNinePatchMarkers.paddingY) + 2,
+    ),
+  };
+}
+
+export function getNinePatchAxisControlMax(axis, referenceSize = NINE_PATCH_REFERENCE_SIZE) {
+  const reference = normalizeNinePatchReferenceSize(referenceSize);
+  const referenceMax = (axis === "x" ? reference.width : reference.height) - 2;
+  return Math.max(MAX_NINE_PATCH_GUIDE_POSITION, referenceMax);
+}
+
 function clampNinePatchPairToBounds(pair, max, fallback, containPair) {
   const limit = Math.max(1, Number.isFinite(max) ? Math.round(max) : 1);
   const nextPair = normalizeNinePatchPair(pair, fallback).map((position) => clampNinePatchPosition(position, limit));
@@ -119,7 +153,7 @@ export function rebaseNinePatchSettingsForReferenceSize(
   nextReferenceSize,
   previousReferenceSize = settings?.referenceSize ?? NINE_PATCH_REFERENCE_SIZE,
 ) {
-  const nextReference = normalizeNinePatchReferenceSize(nextReferenceSize);
+  const nextReference = getNinePatchReferenceSizeForMarkers(settings, nextReferenceSize);
   const maxX = nextReference.width - 2;
   const maxY = nextReference.height - 2;
 

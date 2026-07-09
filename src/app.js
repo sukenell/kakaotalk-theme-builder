@@ -31,7 +31,9 @@ import { normalizeTintColor, tintImageDataPixels } from "./image-tint.js";
 import { getDefaultGroupAvatarItemIndexes } from "./group-avatar-profiles.js";
 import {
   MINIMUM_NINE_PATCH_CONTENT_SIZE,
+  getNinePatchAxisControlMax,
   getNinePatchReferenceSizeForSource,
+  getNinePatchReferenceSizeForMarkers,
   getScaledNinePatchContentInsets,
   rebaseNinePatchSettingsForReferenceSize,
   updateNinePatchPair,
@@ -1035,12 +1037,12 @@ function cloneBubbleNinePatchSettings(settings) {
 }
 
 function getBubbleNinePatchReferenceSize(settings) {
-  return settings?.referenceSize ?? bubbleNinePatchPreviewSize;
+  return getNinePatchReferenceSizeForMarkers(settings, settings?.referenceSize ?? bubbleNinePatchPreviewSize);
 }
 
 function getNinePatchAxisMax(axis, key = activeBubbleDetailKey) {
   const referenceSize = getBubbleNinePatchReferenceSize(getBubbleNinePatchSettings(key));
-  return (axis === "x" ? referenceSize.width : referenceSize.height) - 2;
+  return getNinePatchAxisControlMax(axis, referenceSize);
 }
 
 async function resetActiveBubbleDetail() {

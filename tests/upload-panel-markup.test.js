@@ -1373,7 +1373,9 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(app, /bubbleDetailNextButton\?\.addEventListener\("click", cycleActiveBubbleDetail\);/);
   assert.match(app, /setPreviewIndex\(PREVIEW_PAGES\.findIndex\(\(page\) => page\.id === "bubble-detail"\)\);/);
   assert.match(app, /getScaledNinePatchContentInsets/);
+  assert.match(app, /getNinePatchAxisControlMax/);
   assert.match(app, /getNinePatchReferenceSizeForSource/);
+  assert.match(app, /getNinePatchReferenceSizeForMarkers/);
   assert.match(app, /rebaseNinePatchSettingsForReferenceSize/);
   assert.match(app, /setNinePatchContentInsetVariables\(settings\);/);
   assert.match(app, /setNinePatchPreviewReferenceSize\(settings\);/);
@@ -1394,6 +1396,7 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(app, /renderImageToPngBytes\(image, renderSize\[0\], renderSize\[1\], \{ tintColor, bubbleLayout \}\)/);
   assert.match(app, /renderImageToNinePatchPngBytes\(image, renderSize\[0\], renderSize\[1\], \{ tintColor, ninePatchMarkers: bubbleLayout \}\)/);
   assert.match(app, /function getUploadVariantRenderSize\(key, image, name, fallbackSize\)/);
+  assert.match(app, /return getNinePatchAxisControlMax\(axis, referenceSize\);/);
   assert.match(app, /function drawBubbleImage\(context, image, width, height, bubbleLayout\)/);
   assert.match(app, /drawNinePatchMarkers\(context, width, height, ninePatchMarkers\);/);
 

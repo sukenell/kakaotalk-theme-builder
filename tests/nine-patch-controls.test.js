@@ -4,9 +4,12 @@ import test from "node:test";
 import {
   DEFAULT_BUBBLE_CONTENT_INSET_PX,
   DEFAULT_NINE_PATCH_PADDING,
+  MAX_NINE_PATCH_GUIDE_POSITION,
   MINIMUM_NINE_PATCH_CONTENT_SIZE,
   NINE_PATCH_REFERENCE_SIZE,
+  getNinePatchAxisControlMax,
   getNinePatchReferenceSizeForSource,
+  getNinePatchReferenceSizeForMarkers,
   getScaledNinePatchContentInsets,
   rebaseNinePatchSettingsForReferenceSize,
   updateNinePatchPair,
@@ -144,4 +147,37 @@ test("nine-patch content pairs can expand past four times the default span for l
 
   assert.equal(paddingX[1] - paddingX[0], 160);
   assert.equal(paddingY[1] - paddingY[0], 148);
+});
+
+test("nine-patch controls expose a 300px maximum for default-size bubbles", () => {
+  assert.equal(MAX_NINE_PATCH_GUIDE_POSITION, 300);
+  assert.equal(getNinePatchAxisControlMax("x", NINE_PATCH_REFERENCE_SIZE), 300);
+  assert.equal(getNinePatchAxisControlMax("y", NINE_PATCH_REFERENCE_SIZE), 300);
+
+  const largeReference = getNinePatchReferenceSizeForSource({ width: 520, height: 450 });
+  assert.equal(getNinePatchAxisControlMax("x", largeReference), 520);
+  assert.equal(getNinePatchAxisControlMax("y", largeReference), 450);
+});
+
+test("nine-patch reference size expands to contain guide values up to the control maximum", () => {
+  const layout = {
+    stretchX: [41, 300],
+    stretchY: [38, 75],
+    paddingX: [41, 300],
+    paddingY: [38, 75],
+    referenceSize: NINE_PATCH_REFERENCE_SIZE,
+  };
+
+  assert.deepEqual(getNinePatchReferenceSizeForMarkers(layout), {
+    width: 302,
+    height: 114,
+  });
+
+  const rebased = rebaseNinePatchSettingsForReferenceSize(layout, NINE_PATCH_REFERENCE_SIZE);
+  assert.deepEqual(rebased.stretchX, [41, 300]);
+  assert.deepEqual(rebased.paddingX, [41, 300]);
+  assert.deepEqual(rebased.referenceSize, {
+    width: 302,
+    height: 114,
+  });
 });
