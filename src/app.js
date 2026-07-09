@@ -29,7 +29,11 @@ import { createStoredZip } from "./zip-utils.js";
 import { formatKoreanDate, formatKoreanTime } from "./date-format.js";
 import { normalizeTintColor, tintImageDataPixels } from "./image-tint.js";
 import { getDefaultGroupAvatarItemIndexes } from "./group-avatar-profiles.js";
-import { MINIMUM_NINE_PATCH_CONTENT_SIZE, updateNinePatchPair } from "./nine-patch-controls.js";
+import {
+  MINIMUM_NINE_PATCH_CONTENT_SIZE,
+  getScaledNinePatchContentInsets,
+  updateNinePatchPair,
+} from "./nine-patch-controls.js";
 
 const colorControls = [
   ["mainBackground", "배경 색"],
@@ -945,8 +949,15 @@ function setNinePatchGuideVariables(settings) {
   const { width, height } = bubbleNinePatchPreviewSize;
   setNinePatchAxisVariables("stretch", "x", settings.stretchX, width);
   setNinePatchAxisVariables("stretch", "y", settings.stretchY, height);
-  setNinePatchAxisVariables("padding", "x", settings.paddingX, width);
-  setNinePatchAxisVariables("padding", "y", settings.paddingY, height);
+  setNinePatchContentInsetVariables(settings);
+}
+
+function setNinePatchContentInsetVariables(settings) {
+  const insets = getScaledNinePatchContentInsets(settings);
+  ninePatchPreview.style.setProperty("--nine-padding-left", `${insets.left}px`);
+  ninePatchPreview.style.setProperty("--nine-padding-right", `${insets.right}px`);
+  ninePatchPreview.style.setProperty("--nine-padding-top", `${insets.top}px`);
+  ninePatchPreview.style.setProperty("--nine-padding-bottom", `${insets.bottom}px`);
 }
 
 function setNinePatchAxisVariables(kind, axis, pair, size) {

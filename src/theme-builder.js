@@ -9,6 +9,12 @@ import {
   patchAndroidStringsXml,
   patchIosThemeCss,
 } from "./theme-model.js";
+import {
+  DEFAULT_BUBBLE_CONTENT_INSET_PX,
+  DEFAULT_NINE_PATCH_PADDING,
+  NINE_PATCH_REFERENCE_SIZE,
+  getNinePatchContentInsets,
+} from "./nine-patch-controls.js";
 import { crc32 } from "./zip-utils.js";
 
 const decoder = new TextDecoder();
@@ -34,15 +40,9 @@ const iosBubbleLayoutKeys = {
     "receiveBubbleTaillessSelected",
   ],
 };
-const bubbleNinePatchReferenceSize = {
-  width: 124,
-  height: 114,
-};
-const defaultBubbleNinePatchPadding = {
-  paddingX: [41, 81],
-  paddingY: [38, 75],
-};
-const defaultIosBubbleInsetPx = 10;
+const bubbleNinePatchReferenceSize = NINE_PATCH_REFERENCE_SIZE;
+const defaultBubbleNinePatchPadding = DEFAULT_NINE_PATCH_PADDING;
+const defaultIosBubbleInsetPx = DEFAULT_BUBBLE_CONTENT_INSET_PX;
 
 function concatBytes(parts) {
   const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
@@ -379,31 +379,10 @@ function convertBubbleLayoutToIosEdgeInsets(layout) {
 }
 
 function getBubbleLayoutInsets(layout) {
-  const paddingX = normalizeNinePatchPair(layout?.paddingX, defaultBubbleNinePatchPadding.paddingX);
-  const paddingY = normalizeNinePatchPair(layout?.paddingY, defaultBubbleNinePatchPadding.paddingY);
-  const innerWidth = bubbleNinePatchReferenceSize.width - 2;
-  const innerHeight = bubbleNinePatchReferenceSize.height - 2;
-
-  return {
-    top: Math.max(1, paddingY[0] - 1),
-    right: Math.max(1, innerWidth - paddingX[1]),
-    bottom: Math.max(1, innerHeight - paddingY[1]),
-    left: Math.max(1, paddingX[0] - 1),
-  };
-}
-
-function normalizeNinePatchPair(value, fallback) {
-  if (!Array.isArray(value) || value.length < 2) {
-    return [...fallback];
-  }
-
-  const first = Number(value[0]);
-  const second = Number(value[1]);
-  if (!Number.isFinite(first) || !Number.isFinite(second)) {
-    return [...fallback];
-  }
-
-  return [Math.round(first), Math.round(second)];
+  return getNinePatchContentInsets(layout, {
+    referenceSize: bubbleNinePatchReferenceSize,
+    fallbackPadding: defaultBubbleNinePatchPadding,
+  });
 }
 
 function scaleIosBubbleInset(value, defaultValue) {

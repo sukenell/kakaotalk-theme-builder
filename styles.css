@@ -2280,9 +2280,10 @@ h2 {
   background: var(--preview-main-bg, #ffdddd);
 }
 
-.bubble-detail-actions {
+.bubble-detail-header .bubble-detail-actions {
   display: inline-flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 6px;
 }
 
@@ -2296,16 +2297,27 @@ h2 {
   color: var(--preview-header, #664242);
   font-size: 18px;
   font-weight: 900;
+  line-height: 1;
 }
 
-.shuffle-icon {
+.bubble-detail-action-icon {
   display: block;
   width: 18px;
   height: 18px;
   background: currentColor;
+}
+
+.shuffle-icon {
   mask: url("data:image/svg+xml,%3Csvg%20viewBox%3D%270%200%2024%2024%27%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M16%203h5v5%27%2F%3E%3Cpath%20d%3D%27M4%2020l17-17%27%2F%3E%3Cpath%20d%3D%27M21%2016v5h-5%27%2F%3E%3Cpath%20d%3D%27M15%2015l6%206%27%2F%3E%3Cpath%20d%3D%27M4%204l5%205%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
     center / contain no-repeat;
   -webkit-mask: url("data:image/svg+xml,%3Csvg%20viewBox%3D%270%200%2024%2024%27%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M16%203h5v5%27%2F%3E%3Cpath%20d%3D%27M4%2020l17-17%27%2F%3E%3Cpath%20d%3D%27M21%2016v5h-5%27%2F%3E%3Cpath%20d%3D%27M15%2015l6%206%27%2F%3E%3Cpath%20d%3D%27M4%204l5%205%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
+    center / contain no-repeat;
+}
+
+.reset-icon {
+  mask: url("data:image/svg+xml,%3Csvg%20viewBox%3D%270%200%2024%2024%27%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%2012a9%209%200%201%200%203-6.7%27%2F%3E%3Cpath%20d%3D%27M3%203v6h6%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
+    center / contain no-repeat;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20viewBox%3D%270%200%2024%2024%27%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%2012a9%209%200%201%200%203-6.7%27%2F%3E%3Cpath%20d%3D%27M3%203v6h6%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
     center / contain no-repeat;
 }
 
@@ -2332,10 +2344,10 @@ h2 {
   --nine-stretch-right: 34%;
   --nine-stretch-top: 33%;
   --nine-stretch-bottom: 34%;
-  --nine-padding-left: 33%;
-  --nine-padding-right: 34%;
-  --nine-padding-top: 33%;
-  --nine-padding-bottom: 34%;
+  --nine-padding-left: 10px;
+  --nine-padding-right: 10px;
+  --nine-padding-top: 10px;
+  --nine-padding-bottom: 10px;
   position: relative;
   width: min(78%, 248px);
   aspect-ratio: 124 / 114;
