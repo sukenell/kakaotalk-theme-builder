@@ -1337,6 +1337,7 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
 
   assert.match(html, /class="preview-slide bubble-detail-preview" aria-label="말풍선 상세 프리뷰"/);
   assert.match(html, /data-nine-patch-preview/);
+  assert.match(html, /class="nine-patch-crop"/);
   assert.match(html, /data-bubble-detail-panel/);
   assert.match(html, /data-bubble-detail-next/);
   assert.match(html, /class="bubble-detail-action-icon shuffle-icon"/);
@@ -1349,6 +1350,10 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(css, /\.shuffle-icon\s*\{/);
   assert.match(css, /\.reset-icon\s*\{/);
   assert.match(css, /\.nine-patch-preview\s*\{/);
+  assert.match(css, /--nine-crop-width: 100%;/);
+  assert.match(css, /\.nine-patch-crop\s*\{/);
+  assert.match(css, /\.nine-patch-crop\s*\{[\s\S]*background: var\(--nine-patch-preview-image, var\(--preview-send-image, none\)\) center \/ cover no-repeat;/);
+  assert.match(css, /\.nine-patch-crop\s*\{[\s\S]*box-shadow:[\s\S]*0 0 0 999px rgba\(255, 255, 255, 0\.16\);/);
   assert.match(css, /\.nine-patch-preview\s*\{[\s\S]*--nine-padding-left: 33%;[\s\S]*--nine-padding-bottom: 34%;/);
   assert.match(css, /\.nine-patch-guide\.stretch-x\s*\{/);
   assert.match(css, /\.nine-patch-guide\.padding-x\s*\{/);
@@ -1380,8 +1385,12 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(app, /setNinePatchContentGuideVariables\(settings\);/);
   assert.match(app, /setNinePatchPreviewReferenceSize\(settings\);/);
   assert.match(app, /function getBubbleNinePatchSourceReferenceSize\(settings\)/);
+  assert.match(app, /const bubbleNinePatchCropGuideSize = \{/);
+  assert.match(app, /function getBubbleNinePatchPreviewReferenceSize\(settings\)/);
   assert.match(app, /--nine-source-width/);
   assert.match(app, /--nine-source-height/);
+  assert.match(app, /--nine-crop-width/);
+  assert.match(app, /--nine-crop-height/);
   assert.match(app, /setNinePatchAxisVariables\("padding", "x", settings\.paddingX, width\);/);
   assert.match(app, /setNinePatchAxisVariables\("padding", "y", settings\.paddingY, height\);/);
   assert.match(css, /aspect-ratio: var\(--nine-patch-preview-aspect-ratio, 124 \/ 114\);/);

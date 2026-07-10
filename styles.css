@@ -2348,8 +2348,14 @@ h2 {
   --nine-padding-right: 34%;
   --nine-padding-top: 33%;
   --nine-padding-bottom: 34%;
+  --nine-source-left: 0%;
+  --nine-source-top: 0%;
   --nine-source-width: 100%;
   --nine-source-height: 100%;
+  --nine-crop-left: 0%;
+  --nine-crop-top: 0%;
+  --nine-crop-width: 100%;
+  --nine-crop-height: 100%;
   position: relative;
   width: min(78%, 248px);
   aspect-ratio: var(--nine-patch-preview-aspect-ratio, 124 / 114);
@@ -2360,18 +2366,36 @@ h2 {
 .nine-patch-preview::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
+  top: var(--nine-source-top, 0%);
+  left: var(--nine-source-left, 0%);
+  z-index: 0;
   width: var(--nine-source-width, 100%);
   height: var(--nine-source-height, 100%);
   background: var(--nine-patch-preview-image, var(--preview-send-image, none)) center / contain no-repeat;
+  opacity: 0.34;
+  pointer-events: none;
+}
+
+.nine-patch-crop {
+  position: absolute;
+  top: var(--nine-crop-top, 0%);
+  left: var(--nine-crop-left, 0%);
+  z-index: 1;
+  width: var(--nine-crop-width, 100%);
+  height: var(--nine-crop-height, 100%);
+  overflow: hidden;
+  background: var(--nine-patch-preview-image, var(--preview-send-image, none)) center / cover no-repeat;
+  border: 1px solid rgba(32, 27, 27, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.66),
+    0 0 0 999px rgba(255, 255, 255, 0.16);
   pointer-events: none;
 }
 
 .nine-patch-guide {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
   border-radius: 0;
 }
@@ -2399,7 +2423,7 @@ h2 {
   right: var(--nine-padding-right);
   bottom: 0;
   left: var(--nine-padding-left);
-  z-index: 3;
+  z-index: 4;
   border-left: 1px solid rgba(95, 82, 218, 0.82);
   border-right: 1px solid rgba(95, 82, 218, 0.82);
 }
@@ -2409,7 +2433,7 @@ h2 {
   right: 0;
   bottom: var(--nine-padding-bottom);
   left: 0;
-  z-index: 3;
+  z-index: 4;
   border-top: 1px solid rgba(95, 82, 218, 0.82);
   border-bottom: 1px solid rgba(95, 82, 218, 0.82);
 }
@@ -2421,7 +2445,7 @@ h2 {
     var(--nine-padding-right)
     var(--nine-padding-bottom)
     var(--nine-padding-left);
-  z-index: 1;
+  z-index: 2;
   display: grid;
   place-items: center;
   min-width: 0;

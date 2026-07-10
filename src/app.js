@@ -248,6 +248,10 @@ const bubbleNinePatchPreviewSize = {
   width: 124,
   height: 114,
 };
+const bubbleNinePatchCropGuideSize = {
+  width: 120,
+  height: 120,
+};
 const defaultBubbleNinePatchSettings = {
   ...androidNinePatchMarkers,
   referenceSize: bubbleNinePatchPreviewSize,
@@ -999,22 +1003,35 @@ function updateBubbleDetailPreview() {
 
 function setNinePatchGuideVariables(settings) {
   setNinePatchPreviewReferenceSize(settings);
-  const { width, height } = getBubbleNinePatchReferenceSize(settings);
+  const { width, height } = getBubbleNinePatchPreviewReferenceSize(settings);
   setNinePatchAxisVariables("stretch", "x", settings.stretchX, width);
   setNinePatchAxisVariables("stretch", "y", settings.stretchY, height);
   setNinePatchContentGuideVariables(settings);
 }
 
 function setNinePatchPreviewReferenceSize(settings) {
-  const previewSize = getBubbleNinePatchReferenceSize(settings);
+  const previewSize = getBubbleNinePatchPreviewReferenceSize(settings);
   const sourceSize = getBubbleNinePatchSourceReferenceSize(settings);
+  const sourceLeft = Math.max(0, (previewSize.width - sourceSize.width) / 2);
+  const sourceTop = Math.max(0, (previewSize.height - sourceSize.height) / 2);
+  const cropWidth = Math.min(bubbleNinePatchCropGuideSize.width, previewSize.width);
+  const cropHeight = Math.min(bubbleNinePatchCropGuideSize.height, previewSize.height);
+  const cropLeft = Math.max(0, (previewSize.width - cropWidth) / 2);
+  const cropTop = Math.max(0, (previewSize.height - cropHeight) / 2);
+
   ninePatchPreview.style.setProperty("--nine-patch-preview-aspect-ratio", `${previewSize.width} / ${previewSize.height}`);
+  ninePatchPreview.style.setProperty("--nine-source-left", `${(sourceLeft / previewSize.width) * 100}%`);
+  ninePatchPreview.style.setProperty("--nine-source-top", `${(sourceTop / previewSize.height) * 100}%`);
   ninePatchPreview.style.setProperty("--nine-source-width", `${(sourceSize.width / previewSize.width) * 100}%`);
   ninePatchPreview.style.setProperty("--nine-source-height", `${(sourceSize.height / previewSize.height) * 100}%`);
+  ninePatchPreview.style.setProperty("--nine-crop-left", `${(cropLeft / previewSize.width) * 100}%`);
+  ninePatchPreview.style.setProperty("--nine-crop-top", `${(cropTop / previewSize.height) * 100}%`);
+  ninePatchPreview.style.setProperty("--nine-crop-width", `${(cropWidth / previewSize.width) * 100}%`);
+  ninePatchPreview.style.setProperty("--nine-crop-height", `${(cropHeight / previewSize.height) * 100}%`);
 }
 
 function setNinePatchContentGuideVariables(settings) {
-  const { width, height } = getBubbleNinePatchReferenceSize(settings);
+  const { width, height } = getBubbleNinePatchPreviewReferenceSize(settings);
   setNinePatchAxisVariables("padding", "x", settings.paddingX, width);
   setNinePatchAxisVariables("padding", "y", settings.paddingY, height);
 }
@@ -1056,6 +1073,14 @@ function getBubbleNinePatchSourceReferenceSize(settings) {
 
 function getBubbleNinePatchReferenceSize(settings) {
   return getNinePatchReferenceSizeForMarkers(settings, getBubbleNinePatchSourceReferenceSize(settings));
+}
+
+function getBubbleNinePatchPreviewReferenceSize(settings) {
+  const referenceSize = getBubbleNinePatchReferenceSize(settings);
+  return {
+    width: Math.max(referenceSize.width, bubbleNinePatchCropGuideSize.width),
+    height: Math.max(referenceSize.height, bubbleNinePatchCropGuideSize.height),
+  };
 }
 
 function getNinePatchAxisMax(axis, key = activeBubbleDetailKey) {
