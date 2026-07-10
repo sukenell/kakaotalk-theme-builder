@@ -111,6 +111,29 @@ export function getNinePatchReferenceSizeForSource(sourceSize, minimumReferenceS
   };
 }
 
+function getCenteredNinePatchPairForAxis(axisLength, fallback) {
+  const limit = Math.max(1, Math.round(axisLength) - 2);
+  const fallbackPair = normalizeNinePatchPair(fallback, [1, Math.min(limit, 1)]);
+  const span = Math.max(0, Math.min(limit - 1, fallbackPair[1] - fallbackPair[0]));
+  const center = limit / 2;
+  const start = Math.max(1, Math.min(limit - span, Math.round(center - span / 2)));
+
+  return [start, start + span];
+}
+
+export function getDefaultNinePatchMarkersForReferenceSize(referenceSize = NINE_PATCH_REFERENCE_SIZE) {
+  const reference = normalizeNinePatchReferenceSize(referenceSize);
+  const stretchX = getCenteredNinePatchPairForAxis(reference.width, defaultNinePatchMarkers.stretchX);
+  const stretchY = getCenteredNinePatchPairForAxis(reference.height, defaultNinePatchMarkers.stretchY);
+
+  return {
+    stretchX,
+    stretchY,
+    paddingX: [...stretchX],
+    paddingY: [...stretchY],
+  };
+}
+
 function getNinePatchPairExtent(pair, fallback) {
   const normalizedPair = normalizeNinePatchPair(pair, fallback);
   return Math.max(normalizedPair[0], normalizedPair[1]);
@@ -173,41 +196,67 @@ function clampNinePatchPairToBounds(pair, max, fallback, containPair) {
   return nextPair;
 }
 
+function pairsMatch(first, second) {
+  return first[0] === second[0] && first[1] === second[1];
+}
+
+function rebaseNinePatchPair(pair, previousDefault, nextDefault) {
+  const normalizedPair = normalizeNinePatchPair(pair, previousDefault);
+  return pairsMatch(normalizedPair, previousDefault) ? [...nextDefault] : normalizedPair;
+}
+
 export function rebaseNinePatchSettingsForReferenceSize(
   settings,
   nextReferenceSize,
   previousReferenceSize = settings?.referenceSize ?? NINE_PATCH_REFERENCE_SIZE,
 ) {
   const sourceReference = normalizeNinePatchReferenceSize(nextReferenceSize);
-  const nextReference = getNinePatchReferenceSizeForMarkers(settings, sourceReference);
+  const previousSourceReference = normalizeNinePatchReferenceSize(previousReferenceSize);
+  const previousDefaults = getDefaultNinePatchMarkersForReferenceSize(previousSourceReference);
+  const nextDefaults = getDefaultNinePatchMarkersForReferenceSize(sourceReference);
+  const stretchX = rebaseNinePatchPair(settings?.stretchX, previousDefaults.stretchX, nextDefaults.stretchX);
+  const stretchY = rebaseNinePatchPair(settings?.stretchY, previousDefaults.stretchY, nextDefaults.stretchY);
+  const paddingX = rebaseNinePatchPair(settings?.paddingX, previousDefaults.paddingX, nextDefaults.paddingX);
+  const paddingY = rebaseNinePatchPair(settings?.paddingY, previousDefaults.paddingY, nextDefaults.paddingY);
+  const nextReference = getNinePatchReferenceSizeForMarkers(
+    {
+      ...settings,
+      stretchX,
+      stretchY,
+      paddingX,
+      paddingY,
+      referenceSize: sourceReference,
+    },
+    sourceReference,
+  );
   const maxX = nextReference.width - 2;
   const maxY = nextReference.height - 2;
 
   return {
     ...settings,
     stretchX: clampNinePatchPairToBounds(
-      settings?.stretchX,
+      stretchX,
       maxX,
-      defaultNinePatchMarkers.stretchX,
-      defaultNinePatchMarkers.stretchX,
+      nextDefaults.stretchX,
+      nextDefaults.stretchX,
     ),
     stretchY: clampNinePatchPairToBounds(
-      settings?.stretchY,
+      stretchY,
       maxY,
-      defaultNinePatchMarkers.stretchY,
-      defaultNinePatchMarkers.stretchY,
+      nextDefaults.stretchY,
+      nextDefaults.stretchY,
     ),
-    paddingX: clampNinePatchPairToBounds(settings?.paddingX, maxX, defaultNinePatchMarkers.paddingX),
-    paddingY: clampNinePatchPairToBounds(settings?.paddingY, maxY, defaultNinePatchMarkers.paddingY),
+    paddingX: clampNinePatchPairToBounds(paddingX, maxX, nextDefaults.paddingX, nextDefaults.paddingX),
+    paddingY: clampNinePatchPairToBounds(paddingY, maxY, nextDefaults.paddingY, nextDefaults.paddingY),
     referenceSize: sourceReference,
   };
 }
 
 export function getNinePatchContentInsets(
   layout,
-  { baseReferenceSize = NINE_PATCH_REFERENCE_SIZE, fallbackPadding = DEFAULT_NINE_PATCH_PADDING } = {},
+  { baseReferenceSize, referenceSize, fallbackPadding = DEFAULT_NINE_PATCH_PADDING } = {},
 ) {
-  const baseReference = normalizeNinePatchReferenceSize(baseReferenceSize);
+  const baseReference = normalizeNinePatchReferenceSize(baseReferenceSize ?? referenceSize ?? NINE_PATCH_REFERENCE_SIZE);
   const paddingX = normalizeNinePatchPair(layout?.paddingX, fallbackPadding.paddingX);
   const paddingY = normalizeNinePatchPair(layout?.paddingY, fallbackPadding.paddingY);
   const innerWidth = Math.max(baseReference.width - 2, paddingX[1]);
@@ -224,14 +273,14 @@ export function getNinePatchContentInsets(
 export function getScaledNinePatchContentInsets(
   layout,
   {
-    referenceSize = NINE_PATCH_REFERENCE_SIZE,
+    referenceSize = layout?.referenceSize ?? NINE_PATCH_REFERENCE_SIZE,
     defaultReferenceSize = NINE_PATCH_REFERENCE_SIZE,
     fallbackPadding = DEFAULT_NINE_PATCH_PADDING,
     defaultInsetPx = DEFAULT_BUBBLE_CONTENT_INSET_PX,
   } = {},
 ) {
   const insets = getNinePatchContentInsets(layout, {
-    baseReferenceSize: defaultReferenceSize,
+    baseReferenceSize: referenceSize,
     fallbackPadding,
   });
   const defaultInsets = getNinePatchContentInsets(fallbackPadding, {

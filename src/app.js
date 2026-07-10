@@ -31,6 +31,7 @@ import { normalizeTintColor, tintImageDataPixels } from "./image-tint.js";
 import { getDefaultGroupAvatarItemIndexes } from "./group-avatar-profiles.js";
 import {
   MINIMUM_NINE_PATCH_CONTENT_SIZE,
+  getDefaultNinePatchMarkersForReferenceSize,
   getNinePatchAxisControlMax,
   getNinePatchReferenceSizeForSource,
   getNinePatchReferenceSizeForMarkers,
@@ -904,7 +905,7 @@ function updateNinePatchPairValue(key, field, index, value) {
   const settings = getBubbleNinePatchSettings(key);
   const axis = field.endsWith("X") ? "x" : "y";
   const minSpan = field.startsWith("padding") ? MINIMUM_NINE_PATCH_CONTENT_SIZE[axis] : 0;
-  const containPair = getNinePatchContainPair(field);
+  const containPair = getNinePatchContainPair(key, field);
   settings[field] = updateNinePatchPair(settings[field], index, value, {
     max: getNinePatchAxisMax(axis, key),
     minSpan,
@@ -917,7 +918,7 @@ function getNinePatchInputBounds(key, field, index, axis) {
     min: 1,
     max: getNinePatchAxisMax(axis, key),
   };
-  const containPair = getNinePatchContainPair(field);
+  const containPair = getNinePatchContainPair(key, field);
 
   if (!containPair) {
     return bounds;
@@ -932,21 +933,28 @@ function getNinePatchInputBounds(key, field, index, axis) {
   return bounds;
 }
 
-function getNinePatchContainPair(field) {
+function getNinePatchContainPair(key, field) {
+  const defaultMarkers = getBubbleNinePatchDefaultMarkers(key);
   if (field === "stretchX") {
-    return androidNinePatchMarkers.stretchX;
+    return defaultMarkers.stretchX;
   }
   if (field === "paddingX") {
-    return androidNinePatchMarkers.paddingX;
+    return defaultMarkers.paddingX;
   }
   if (field === "stretchY") {
-    return androidNinePatchMarkers.stretchY;
+    return defaultMarkers.stretchY;
   }
   if (field === "paddingY") {
-    return androidNinePatchMarkers.paddingY;
+    return defaultMarkers.paddingY;
   }
 
   return undefined;
+}
+
+function getBubbleNinePatchDefaultMarkers(key) {
+  return getDefaultNinePatchMarkersForReferenceSize(
+    getBubbleNinePatchSourceReferenceSize(getBubbleNinePatchSettings(key)),
+  );
 }
 
 function syncBubbleDetailControlValues() {
@@ -1057,7 +1065,7 @@ function getNinePatchAxisMax(axis, key = activeBubbleDetailKey) {
 
 async function resetActiveBubbleDetail() {
   const key = activeBubbleDetailKey;
-  const referenceSize = getBubbleNinePatchReferenceSize(getBubbleNinePatchSettings(key));
+  const referenceSize = getBubbleNinePatchSourceReferenceSize(getBubbleNinePatchSettings(key));
   bubbleNinePatchSettings[key] = createDefaultBubbleNinePatchSettings(referenceSize);
   renderBubbleDetailControls();
   updateBubbleDetailPreview();

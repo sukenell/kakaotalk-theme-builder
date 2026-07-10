@@ -164,6 +164,39 @@ MessageCellStyle-Receive {
   assert.match(css, /MessageCellStyle-Receive[\s\S]*-ios-group-title-edgeinsets: 8px 8px 10px 13px;/);
 });
 
+test("buildIosEntries uses uploaded bubble reference size for centered edge insets", () => {
+  const entries = [
+    {
+      name: "KakaoTalkTheme.css",
+      data: `
+MessageCellStyle-Send {
+  -ios-title-edgeinsets: 10px 10px 10px 10px;
+  -ios-group-title-edgeinsets: 10px 10px 10px 10px;
+}
+`,
+    },
+  ];
+
+  const result = buildIosEntries(entries, {
+    state: {},
+    uploads: {
+      sendBubbleNormal: {
+        data: new Uint8Array([1]),
+        bubbleLayout: {
+          paddingX: [108, 148],
+          paddingY: [27, 64],
+          referenceSize: { width: 257, height: 93 },
+        },
+      },
+    },
+  });
+
+  const css = new TextDecoder().decode(result.find((entry) => entry.name === "KakaoTalkTheme.css").data);
+
+  assert.match(css, /MessageCellStyle-Send[\s\S]*-ios-title-edgeinsets: 7px 26px 7px 27px;/);
+  assert.match(css, /MessageCellStyle-Send[\s\S]*-ios-group-title-edgeinsets: 7px 26px 7px 27px;/);
+});
+
 test("build entries preserve bundled default tab icons when no icon is uploaded", () => {
   const iosIcon = new Uint8Array([1, 2, 3]);
   const androidIcon = new Uint8Array([4, 5, 6]);

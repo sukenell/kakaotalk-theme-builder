@@ -7,6 +7,7 @@ import {
   MAX_NINE_PATCH_GUIDE_POSITION,
   MINIMUM_NINE_PATCH_CONTENT_SIZE,
   NINE_PATCH_REFERENCE_SIZE,
+  getDefaultNinePatchMarkersForReferenceSize,
   getNinePatchAxisControlMax,
   getNinePatchContentReferenceSizeForMarkers,
   getNinePatchReferenceSizeForSource,
@@ -105,6 +106,22 @@ test("nine-patch stretch pairs keep the default range and can only expand outwar
   );
 });
 
+test("nine-patch default markers are centered within the source image", () => {
+  assert.deepEqual(getDefaultNinePatchMarkersForReferenceSize(NINE_PATCH_REFERENCE_SIZE), {
+    stretchX: [41, 81],
+    stretchY: [38, 75],
+    paddingX: [41, 81],
+    paddingY: [38, 75],
+  });
+
+  assert.deepEqual(getDefaultNinePatchMarkersForReferenceSize({ width: 257, height: 93 }), {
+    stretchX: [108, 148],
+    stretchY: [27, 64],
+    paddingX: [108, 148],
+    paddingY: [27, 64],
+  });
+});
+
 test("nine-patch content insets match downloaded bubble padding scale", () => {
   assert.equal(DEFAULT_BUBBLE_CONTENT_INSET_PX, 10);
   assert.deepEqual(getScaledNinePatchContentInsets({ paddingX: [41, 81], paddingY: [38, 75] }), {
@@ -121,7 +138,7 @@ test("nine-patch content insets match downloaded bubble padding scale", () => {
   });
 });
 
-test("larger bubble images expand guides outward without shrinking the base layout", () => {
+test("larger bubble images center the default content guide without shrinking it", () => {
   assert.deepEqual(getNinePatchReferenceSizeForSource({ width: 120, height: 105 }), NINE_PATCH_REFERENCE_SIZE);
   assert.deepEqual(getNinePatchReferenceSizeForSource({ width: 180, height: 150 }), {
     width: 182,
@@ -139,18 +156,31 @@ test("larger bubble images expand guides outward without shrinking the base layo
     { width: 182, height: 152 },
   );
 
-  assert.deepEqual(expanded.stretchX, DEFAULT_NINE_PATCH_PADDING.paddingX);
-  assert.deepEqual(expanded.stretchY, DEFAULT_NINE_PATCH_PADDING.paddingY);
-  assert.deepEqual(expanded.paddingX, DEFAULT_NINE_PATCH_PADDING.paddingX);
-  assert.deepEqual(expanded.paddingY, DEFAULT_NINE_PATCH_PADDING.paddingY);
+  assert.deepEqual(expanded.stretchX, [70, 110]);
+  assert.deepEqual(expanded.stretchY, [57, 94]);
+  assert.deepEqual(expanded.paddingX, [70, 110]);
+  assert.deepEqual(expanded.paddingY, [57, 94]);
   assert.equal(expanded.paddingX[1] - expanded.paddingX[0], 40);
   assert.equal(expanded.paddingY[1] - expanded.paddingY[0], 37);
-  assert.deepEqual(getScaledNinePatchContentInsets(expanded), {
-    top: 10,
-    right: 10,
-    bottom: 10,
-    left: 10,
-  });
+  assert.deepEqual(expanded.referenceSize, { width: 182, height: 152 });
+});
+
+test("larger bubble images preserve custom content guides that already contain the center", () => {
+  const expanded = rebaseNinePatchSettingsForReferenceSize(
+    {
+      stretchX: [40, 140],
+      stretchY: [30, 120],
+      paddingX: [30, 150],
+      paddingY: [20, 120],
+      referenceSize: NINE_PATCH_REFERENCE_SIZE,
+    },
+    { width: 182, height: 152 },
+  );
+
+  assert.deepEqual(expanded.stretchX, [40, 140]);
+  assert.deepEqual(expanded.stretchY, [30, 120]);
+  assert.deepEqual(expanded.paddingX, [30, 150]);
+  assert.deepEqual(expanded.paddingY, [20, 120]);
 });
 
 test("nine-patch content pairs can expand past four times the default span for large images", () => {
@@ -210,7 +240,7 @@ test("nine-patch content reference size ignores stretch-only expansion", () => {
     stretchY: [38, 300],
     paddingX: DEFAULT_NINE_PATCH_PADDING.paddingX,
     paddingY: DEFAULT_NINE_PATCH_PADDING.paddingY,
-    referenceSize: { width: 302, height: 302 },
+    referenceSize: NINE_PATCH_REFERENCE_SIZE,
   };
 
   assert.deepEqual(getNinePatchReferenceSizeForMarkers(stretchExpanded), {
@@ -238,7 +268,7 @@ test("nine-patch content insets stay anchored when only the stretch canvas grows
     stretchY: [38, 300],
     paddingX: DEFAULT_NINE_PATCH_PADDING.paddingX,
     paddingY: DEFAULT_NINE_PATCH_PADDING.paddingY,
-    referenceSize: { width: 302, height: 302 },
+    referenceSize: NINE_PATCH_REFERENCE_SIZE,
   };
 
   assert.deepEqual(getScaledNinePatchContentInsets(stretchExpanded), {

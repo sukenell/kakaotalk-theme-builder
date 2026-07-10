@@ -1361,6 +1361,7 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
 
   assert.match(app, /const bubbleNinePatchSettings = \{\};/);
   assert.match(app, /MINIMUM_NINE_PATCH_CONTENT_SIZE/);
+  assert.match(app, /getDefaultNinePatchMarkersForReferenceSize/);
   assert.match(app, /updateNinePatchPair/);
   assert.match(app, /let activeBubbleDetailKey = "sendBubbleNormal";/);
   assert.match(app, /detailButton\.dataset\.bubbleDetail = key;/);
@@ -1394,7 +1395,8 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(app, /const bounds = getNinePatchInputBounds\(key, field, index, axis\);/);
   assert.match(app, /input\.min = String\(bounds\.min\);/);
   assert.match(app, /input\.max = String\(bounds\.max\);/);
-  assert.match(app, /function getNinePatchContainPair\(field\)/);
+  assert.match(app, /function getNinePatchContainPair\(key, field\)/);
+  assert.match(app, /function getBubbleNinePatchDefaultMarkers\(key\)/);
   assert.match(app, /containPair,/);
   assert.match(app, /await refreshUploadImage\(key\);/);
   assert.match(app, /function getBubbleNinePatchSettings\(key\)/);
