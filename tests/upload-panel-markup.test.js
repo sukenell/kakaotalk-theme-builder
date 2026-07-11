@@ -233,6 +233,28 @@ test("chat preview includes default profile and extra basic/additional bubble sa
   assert.match(app, /previewTimeElements\.forEach/);
 });
 
+test("chat preview keeps mentions, hashtags, links, and typing indicator visibly styled", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const chatStart = html.indexOf('class="preview-slide chat-preview"');
+  const passcodeStart = html.indexOf('class="preview-slide passcode-preview"');
+  const chatMarkup = html.slice(chatStart, passcodeStart);
+
+  assert.match(chatMarkup, /<span class="message-token mention">@가야<\/span>/);
+  assert.match(chatMarkup, /<span class="message-token hashtag">#마라탕<\/span>/);
+  assert.match(
+    chatMarkup,
+    /<a class="message-token message-link" href="https:\/\/talk\.kakao\.com" target="_blank" rel="noopener noreferrer">https:\/\/talk\.kakao\.com<\/a>/,
+  );
+  assert.match(chatMarkup, /<p class="bubble receive-bubble typing-bubble" aria-label="상대방 입력 중">…<\/p>/);
+  assert.ok(chatMarkup.indexOf('class="message-group receive typing-group"') > chatMarkup.lastIndexOf('class="message-group send"'));
+  assert.match(css, /\.message-token\s*\{[\s\S]*color: var\(--preview-link-text, #0a7cff\);/);
+  assert.match(css, /\.message-link\s*\{[\s\S]*text-decoration-line: underline;/);
+  assert.match(css, /\.typing-group\s*\{[\s\S]*position: absolute;[\s\S]*bottom: 8px;/);
+  assert.match(css, /\.typing-bubble\s*\{[\s\S]*color: var\(--preview-receive-text, #4d4d4d\);/);
+  assert.doesNotMatch(css, /\.typing-bubble\s*\{[\s\S]*color: transparent;/);
+});
+
 test("default profile upload drives every default avatar preview from one shared image", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");

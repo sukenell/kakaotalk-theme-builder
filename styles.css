@@ -2263,6 +2263,33 @@ h2 {
   color: var(--preview-receive-text, #4d4d4d);
 }
 
+.typing-group {
+  position: absolute;
+  left: 14px;
+  bottom: 8px;
+  z-index: 2;
+  margin-bottom: 0;
+}
+
+.message-token {
+  color: var(--preview-link-text, #0a7cff);
+}
+
+.message-link {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.typing-bubble {
+  min-width: 34px;
+  color: var(--preview-receive-text, #4d4d4d);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+}
+
 .send-bubble.additional-bubble {
   border-image-source: var(--preview-send-additional-image, none);
 }
