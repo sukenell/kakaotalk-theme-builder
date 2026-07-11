@@ -592,7 +592,7 @@ ManifestStyle
   assert.match(patchAndroidColorsXml(xml, state), /name="theme_chatroom_background_color">#FFDEDE</);
 });
 
-test("patchIosThemeCss updates manifest and core preview colors", () => {
+test("patchIosThemeCss updates manifest and downloadable chat text colors", () => {
   const css = `
 ManifestStyle
 {
@@ -688,7 +688,12 @@ BottomBannerStyle-Light
   assert.match(patched, /BackgroundStyle-ChatRoom[\s\S]*background-color: #101418;/);
   assert.match(patched, /InputBarStyle-Chat[\s\S]*-ios-button-normal-background-color: #000000;/);
   assert.match(patched, /InputBarStyle-Chat[\s\S]*-ios-button-normal-background-alpha: 0\.04;/);
+  assert.match(patched, /MessageCellStyle-Send[\s\S]*-ios-text-color: #111111;/);
+  assert.match(patched, /MessageCellStyle-Send[\s\S]*-ios-selected-text-color: #111111;/);
   assert.match(patched, /MessageCellStyle-Send[\s\S]*-ios-unread-text-color: #FFE066;/);
+  assert.match(patched, /MessageCellStyle-Receive[\s\S]*-ios-text-color: #F6F6F6;/);
+  assert.match(patched, /MessageCellStyle-Receive[\s\S]*-ios-selected-text-color: #F6F6F6;/);
+  assert.match(patched, /MessageCellStyle-Receive[\s\S]*-ios-unread-text-color: #FFE066;/);
   assert.match(patched, /MessageCellStyle-Send[\s\S]*-ios-title-edgeinsets: 10px 10px 10px 10px;/);
   assert.match(patched, /MessageCellStyle-Send[\s\S]*-ios-group-title-edgeinsets: 10px 10px 10px 10px;/);
   assert.match(patched, /MessageCellStyle-Receive[\s\S]*-ios-title-edgeinsets: 10px 10px 10px 10px;/);
@@ -754,6 +759,8 @@ test("patchAndroidColorsXml updates named color resources", () => {
   assert.match(patched, /name="theme_tab_lightbannerbadge_background_color">#FAFAF7</);
   assert.match(patched, /name="theme_tab_bannerbadge_background_color">#FAFAF7</);
   assert.match(patched, /name="theme_chatroom_background_color">#FAFAF7</);
+  assert.match(patched, /name="theme_chatroom_bubble_me_color">#111111</);
+  assert.match(patched, /name="theme_chatroom_bubble_you_color">#333333</);
   assert.match(patched, /name="theme_chatroom_unread_count_color">#F95D5D</);
   assert.match(patched, /name="theme_chatroom_input_bar_menu_button_color">#0A000000</);
 });
