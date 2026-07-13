@@ -1,10 +1,13 @@
 import {
   IMAGE_TARGETS,
+  PASSCODE_DOT_IMAGE_KEYS,
+  PASSCODE_DOT_SELECTED_IMAGE_KEYS,
   TAB_ICON_IMAGE_KEY_PAIRS,
   TAB_ICON_IMAGE_KEYS,
   defaultThemeState,
   patchAndroidBuildGradle,
   patchAndroidColorsXml,
+  patchAndroidKotlinSource,
   patchAndroidManifestXml,
   patchAndroidStringsXml,
   patchIosThemeCss,
@@ -221,6 +224,11 @@ const androidGeneratedTabSelectors = [
     selectedDrawable: "theme_maintab_ico_game_focused_image",
   },
 ];
+const duplicateAndroidThemeStringEntries = new Map([
+  ["src/main/theme/values/strings.xml", "src/main/res/values/strings.xml"],
+  ["src/main/theme/values-ko/strings.xml", "src/main/res/values-ko/strings.xml"],
+  ["src/main/theme/values-ja/strings.xml", "src/main/res/values-ja/strings.xml"],
+]);
 
 function asText(data) {
   return typeof data === "string" ? data : decoder.decode(data);
@@ -280,7 +288,25 @@ function buildReplacementMap(uploads, platform, state) {
   }
 
   applyTabIconPairFallbackReplacements(replacements, uploads, platform, state);
+  applyPasscodeSlotReplacements(replacements, uploads, platform, state);
   return replacements;
+}
+
+function applyPasscodeSlotReplacements(replacements, uploads, platform, state) {
+  for (const key of [...PASSCODE_DOT_IMAGE_KEYS.slice(1), ...PASSCODE_DOT_SELECTED_IMAGE_KEYS.slice(1)]) {
+    const upload = uploads?.[key];
+    const target = IMAGE_TARGETS[key];
+    if (!target || !upload) {
+      continue;
+    }
+
+    for (const name of target[platform] || []) {
+      const data = getUploadDataForTarget(key, upload, name, state);
+      if (data) {
+        replacements.set(name, data);
+      }
+    }
+  }
 }
 
 function applyTabIconPairFallbackReplacements(replacements, uploads, platform, state) {
@@ -324,6 +350,11 @@ function appendMissingEntries(entries, additions) {
   }
 
   return result;
+}
+
+function isDuplicateAndroidThemeStringEntry(name, templateEntryNames) {
+  const appStringEntryName = duplicateAndroidThemeStringEntries.get(name);
+  return Boolean(appStringEntryName && templateEntryNames.has(appStringEntryName));
 }
 
 function buildAndroidSelectorXml({ normalDrawable, selectedDrawable }) {
@@ -422,24 +453,36 @@ export function buildIosEntries(templateEntries, { state, uploads = {} }) {
 export function buildAndroidEntries(templateEntries, { state, uploads = {} }) {
   const replacements = buildReplacementMap(uploads, "android", state);
   const generatedSelectors = buildGeneratedAndroidSelectors(uploads);
+  const templateEntryNames = new Set(templateEntries.map((entry) => entry.name));
 
-  const entries = templateEntries.map((entry) => {
+  const entries = templateEntries.flatMap((entry) => {
+    if (isDuplicateAndroidThemeStringEntry(entry.name, templateEntryNames)) {
+      return [];
+    }
+
     if (entry.name === "build.gradle.kts") {
-      return {
+      return [{
         name: entry.name,
         data: encoder.encode(patchAndroidBuildGradle(asText(entry.data), state)),
-      };
+      }];
     }
 
     if (entry.name === "src/main/AndroidManifest.xml") {
-      return {
+      return [{
         name: entry.name,
         data: encoder.encode(patchAndroidManifestXml(asText(entry.data), state)),
-      };
+      }];
+    }
+
+    if (entry.name.endsWith(".kt")) {
+      return [{
+        name: entry.name,
+        data: encoder.encode(patchAndroidKotlinSource(asText(entry.data), state)),
+      }];
     }
 
     if (entry.name === "src/main/theme/values/colors.xml") {
-      return {
+      return [{
         name: entry.name,
         data: encoder.encode(
           patchAndroidColorsXml(asText(entry.data), state, {
@@ -448,7 +491,7 @@ export function buildAndroidEntries(templateEntries, { state, uploads = {} }) {
             transparentTabIconColors: hasTabIconUpload(uploads),
           }),
         ),
-      };
+      }];
     }
 
     if (
@@ -459,23 +502,23 @@ export function buildAndroidEntries(templateEntries, { state, uploads = {} }) {
       entry.name === "src/main/res/values-ko/strings.xml" ||
       entry.name === "src/main/res/values-ja/strings.xml"
     ) {
-      return {
+      return [{
         name: entry.name,
         data: encoder.encode(patchAndroidStringsXml(asText(entry.data), state)),
-      };
+      }];
     }
 
     if (replacements.has(entry.name)) {
-      return {
+      return [{
         name: entry.name,
         data: asBytes(replacements.get(entry.name)),
-      };
+      }];
     }
 
-    return {
+    return [{
       name: entry.name,
       data: asBytes(entry.data),
-    };
+    }];
   });
 
   return appendMissingEntries(appendMissingEntries(entries, replacements), generatedSelectors);

@@ -33,7 +33,7 @@ const IOS_COLOR_BINDINGS = [
   ["BackgroundStyle-Passcode", "background-color", "mainBackground"],
   ["LabelStyle-PasscodeTitle", "-ios-text-color", "passcodeText"],
   ["PasscodeStyle", "-ios-keypad-background-color", "passcodeKeypadBackground"],
-  ["PasscodeStyle", "-ios-keypad-text-normal-color", "passcodeText"],
+  ["PasscodeStyle", "-ios-keypad-text-normal-color", "passcodeKeypadText"],
   ["BackgroundStyle-MessageNotificationBar", "background-color", "mainBackground"],
   ["LabelStyle-MessageNotificationBarName", "-ios-text-color", "notificationText"],
   ["LabelStyle-MessageNotificationBarMessage", "-ios-text-color", "paragraphText"],
@@ -90,7 +90,7 @@ const ANDROID_COLOR_BINDINGS = {
   theme_notification_background_color: "mainBackground",
   theme_notification_background_pressed_color: "mainBackground",
   theme_passcode_color: "passcodeText",
-  theme_passcode_keypad_color: "passcodeText",
+  theme_passcode_keypad_color: "passcodeKeypadText",
   theme_passcode_keypad_pressed_color: "passcodeKeypadPressed",
   theme_passcode_keypad_background_color: "passcodeKeypadBackground",
   theme_passcode_keypad_pressed_background_color: "passcodeKeypadPressedBackground",
@@ -141,6 +141,7 @@ const defaultColors = {
   sendButtonText: "#FFFFFF",
   passcodeBackground: "#FFDEDE",
   passcodeText: "#664242",
+  passcodeKeypadText: "#664242",
   passcodeKeypadBackground: "#FFF2F2",
   passcodeKeypadPressed: "#CCB8B8",
   passcodeKeypadPressedBackground: "#99FFDEDE",
@@ -224,6 +225,14 @@ export const ADDITIONAL_IMAGE_KEYS = [
   "themeIconRound",
 ];
 
+export const PASSCODE_DOT_IMAGE_KEYS = ["passcodeDot", "passcodeDot2", "passcodeDot3", "passcodeDot4"];
+export const PASSCODE_DOT_SELECTED_IMAGE_KEYS = [
+  "passcodeDotSelected",
+  "passcodeDotSelected2",
+  "passcodeDotSelected3",
+  "passcodeDotSelected4",
+];
+
 function bubbleTarget({ label, size, ios2x, ios3x, android = [] }) {
   return {
     label,
@@ -254,6 +263,16 @@ function androidMipmapTargets(name) {
     `src/main/res/mipmap-xxhdpi/${name}`,
     `src/main/res/mipmap-xxxhdpi/${name}`,
   ];
+}
+
+function passcodeDotTarget({ label, index, selected = false }) {
+  const number = String(index + 1).padStart(2, "0");
+  return {
+    label,
+    displaySize: [132, 132],
+    ios: [`Images/passcodeImgCode${number}${selected ? "Selected" : ""}@3x.png`],
+    android: [`src/main/theme/drawable-xxhdpi/theme_passcode_${number}_${selected ? "checked_" : ""}image.png`],
+  };
 }
 
 export const IMAGE_TARGETS = {
@@ -588,6 +607,9 @@ export const IMAGE_TARGETS = {
       "src/main/theme/drawable-xxhdpi/theme_passcode_04_image.png",
     ],
   },
+  passcodeDot2: passcodeDotTarget({ label: "암호 기본 이미지 2", index: 1 }),
+  passcodeDot3: passcodeDotTarget({ label: "암호 기본 이미지 3", index: 2 }),
+  passcodeDot4: passcodeDotTarget({ label: "암호 기본 이미지 4", index: 3 }),
   passcodeDotSelected: {
     label: "암호 입력 이미지",
     displaySize: [132, 132],
@@ -604,6 +626,9 @@ export const IMAGE_TARGETS = {
       "src/main/theme/drawable-xxhdpi/theme_passcode_04_checked_image.png",
     ],
   },
+  passcodeDotSelected2: passcodeDotTarget({ label: "암호 입력 이미지 2", index: 1, selected: true }),
+  passcodeDotSelected3: passcodeDotTarget({ label: "암호 입력 이미지 3", index: 2, selected: true }),
+  passcodeDotSelected4: passcodeDotTarget({ label: "암호 입력 이미지 4", index: 3, selected: true }),
 };
 
 const cssString = (value) => `'${String(value ?? "").replaceAll("'", "")}'`;
@@ -795,11 +820,19 @@ export function patchAndroidBuildGradle(gradle, state) {
   const themeId = getThemeId(state);
   return gradle
     .replace(/namespace\s*=\s*"[^"]*"/, `namespace = "${themeId}"`)
-    .replace(/applicationId\s*=\s*"[^"]*"/, `applicationId = "${themeId}"`);
+    .replace(/applicationId\s*=\s*"[^"]*"/, `applicationId = "${themeId}"`)
+    .replace(/versionName\s*=\s*"[^"]*"/, `versionName = "${state.version || defaultThemeState.version}"`);
 }
 
 export function patchAndroidManifestXml(manifest, state) {
   return manifest.replace(/package="[^"]*"/, `package="${getThemeId(state)}"`);
+}
+
+export function patchAndroidKotlinSource(source, state) {
+  const themeId = getThemeId(state);
+  return source
+    .replace(/^package\s+[a-zA-Z0-9_.]+/m, `package ${themeId}`)
+    .replace(/\bcom\.kakao\.talk\.theme\.apeach\.databinding\b/g, `${themeId}.databinding`);
 }
 
 export function cloneDefaultThemeState() {

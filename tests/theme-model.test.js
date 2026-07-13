@@ -234,6 +234,36 @@ test("theme versions normalize to numeric triplets and validate strictly", () =>
   assert.equal(isValidThemeVersion("1.2.x"), false);
 });
 
+test("passcode title and keypad text colors can differ in downloaded themes", () => {
+  const css = `
+LabelStyle-PasscodeTitle
+{
+    -ios-text-color: #664242;
+}
+PasscodeStyle
+{
+    -ios-keypad-text-normal-color: #664242;
+}`;
+  const androidXml = `<resources>
+    <color name="theme_passcode_color">#664242</color>
+    <color name="theme_passcode_keypad_color">#664242</color>
+</resources>`;
+  const state = {
+    colors: {
+      passcodeText: "#664242",
+      passcodeKeypadText: "#FFF9F9",
+    },
+  };
+
+  const patchedCss = patchIosThemeCss(css, state);
+  const patchedXml = patchAndroidColorsXml(androidXml, state);
+
+  assert.match(patchedCss, /LabelStyle-PasscodeTitle[\s\S]*-ios-text-color: #664242;/);
+  assert.match(patchedCss, /PasscodeStyle[\s\S]*-ios-keypad-text-normal-color: #FFF9F9;/);
+  assert.match(patchedXml, /name="theme_passcode_color">#664242</);
+  assert.match(patchedXml, /name="theme_passcode_keypad_color">#FFF9F9</);
+});
+
 test("Korean theme names are preserved in iOS CSS and Android strings", () => {
   const css = `ManifestStyle
 {
@@ -272,6 +302,16 @@ test("IMAGE_TARGETS maps passcode normal and selected images for preview and out
   ]);
   assert.ok(IMAGE_TARGETS.passcodeDot.android.includes("src/main/theme/drawable-xxhdpi/theme_passcode_01_image.png"));
   assert.ok(IMAGE_TARGETS.passcodeDotSelected.android.includes("src/main/theme/drawable-xxhdpi/theme_passcode_01_checked_image.png"));
+  assert.deepEqual(IMAGE_TARGETS.passcodeDot2.ios, ["Images/passcodeImgCode02@3x.png"]);
+  assert.deepEqual(IMAGE_TARGETS.passcodeDot3.ios, ["Images/passcodeImgCode03@3x.png"]);
+  assert.deepEqual(IMAGE_TARGETS.passcodeDot4.ios, ["Images/passcodeImgCode04@3x.png"]);
+  assert.deepEqual(IMAGE_TARGETS.passcodeDotSelected2.ios, ["Images/passcodeImgCode02Selected@3x.png"]);
+  assert.deepEqual(IMAGE_TARGETS.passcodeDotSelected3.ios, ["Images/passcodeImgCode03Selected@3x.png"]);
+  assert.deepEqual(IMAGE_TARGETS.passcodeDotSelected4.ios, ["Images/passcodeImgCode04Selected@3x.png"]);
+  assert.deepEqual(IMAGE_TARGETS.passcodeDot2.android, ["src/main/theme/drawable-xxhdpi/theme_passcode_02_image.png"]);
+  assert.deepEqual(IMAGE_TARGETS.passcodeDotSelected4.android, [
+    "src/main/theme/drawable-xxhdpi/theme_passcode_04_checked_image.png",
+  ]);
 });
 
 test("IMAGE_TARGETS exposes display sizes for preview upload images", () => {
@@ -704,12 +744,14 @@ test("patchAndroidBuildGradle updates namespace and applicationId from theme seg
   const gradle = `
 namespace = "com.kakao.talk.theme.apeach"
 applicationId = "com.kakao.talk.theme.template"
+versionName = "1.0.0"
 `;
 
-  const patched = patchAndroidBuildGradle(gradle, { themeIdSegment: "reha" });
+  const patched = patchAndroidBuildGradle(gradle, { themeIdSegment: "reha", version: "10.3.5" });
 
   assert.match(patched, /namespace = "com.reha.kakaotalk.theme"/);
   assert.match(patched, /applicationId = "com.reha.kakaotalk.theme"/);
+  assert.match(patched, /versionName = "10.3.5"/);
 });
 
 test("patchAndroidManifestXml updates the package from theme segment", () => {

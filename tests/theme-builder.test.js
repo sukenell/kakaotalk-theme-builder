@@ -357,6 +357,41 @@ test("build entries replace cleared passcode background image uploads with the m
   assert.deepEqual(rgbaAt(androidImage, 0, 0), [0xff, 0xde, 0xde, 0xff]);
 });
 
+test("build entries keep passcode slot images distinct when uploaded separately", () => {
+  const iosNames = [
+    "Images/passcodeImgCode01@3x.png",
+    "Images/passcodeImgCode02@3x.png",
+    "Images/passcodeImgCode03@3x.png",
+    "Images/passcodeImgCode04@3x.png",
+  ];
+  const androidNames = [
+    "src/main/theme/drawable-xxhdpi/theme_passcode_01_image.png",
+    "src/main/theme/drawable-xxhdpi/theme_passcode_02_image.png",
+    "src/main/theme/drawable-xxhdpi/theme_passcode_03_image.png",
+    "src/main/theme/drawable-xxhdpi/theme_passcode_04_image.png",
+  ];
+  const iosEntries = iosNames.map((name, index) => ({ name, data: new Uint8Array([index]) }));
+  const androidEntries = androidNames.map((name, index) => ({ name, data: new Uint8Array([index]) }));
+  const uploads = {
+    passcodeDot: new Uint8Array([1]),
+    passcodeDot2: new Uint8Array([2]),
+    passcodeDot3: new Uint8Array([3]),
+    passcodeDot4: new Uint8Array([4]),
+  };
+
+  const iosResult = buildIosEntries(iosEntries, { state: {}, uploads });
+  const androidResult = buildAndroidEntries(androidEntries, { state: {}, uploads });
+
+  assert.deepEqual(iosResult.find((entry) => entry.name === iosNames[0]).data, new Uint8Array([1]));
+  assert.deepEqual(iosResult.find((entry) => entry.name === iosNames[1]).data, new Uint8Array([2]));
+  assert.deepEqual(iosResult.find((entry) => entry.name === iosNames[2]).data, new Uint8Array([3]));
+  assert.deepEqual(iosResult.find((entry) => entry.name === iosNames[3]).data, new Uint8Array([4]));
+  assert.deepEqual(androidResult.find((entry) => entry.name === androidNames[0]).data, new Uint8Array([1]));
+  assert.deepEqual(androidResult.find((entry) => entry.name === androidNames[1]).data, new Uint8Array([2]));
+  assert.deepEqual(androidResult.find((entry) => entry.name === androidNames[2]).data, new Uint8Array([3]));
+  assert.deepEqual(androidResult.find((entry) => entry.name === androidNames[3]).data, new Uint8Array([4]));
+});
+
 test("cleared color-backed background image uploads export solid user colors", () => {
   const entries = [
     { name: "Images/mainBgImage@3x.png", data: new Uint8Array([1]) },
@@ -437,6 +472,13 @@ test("buildAndroidEntries patches XML and skips raw uploads for 9-patch resource
       data: `<resources><string name="theme_title">Apeach</string></resources>`,
     },
     {
+      name: "src/main/java/com/kakao/talk/theme/apeach/MainActivity.kt",
+      data: `package com.kakao.talk.theme.apeach
+
+import com.kakao.talk.theme.apeach.databinding.MainActivityBinding
+`,
+    },
+    {
       name: "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png",
       data: new Uint8Array([1, 1, 1]),
     },
@@ -457,6 +499,7 @@ test("buildAndroidEntries patches XML and skips raw uploads for 9-patch resource
   const stringsEntry = result.find((entry) => entry.name === "src/main/theme/values/strings.xml");
   const gradleEntry = result.find((entry) => entry.name === "build.gradle.kts");
   const manifestEntry = result.find((entry) => entry.name === "src/main/AndroidManifest.xml");
+  const kotlinEntry = result.find((entry) => entry.name.endsWith("MainActivity.kt"));
   const bubbleEntry = result.find((entry) =>
     entry.name.endsWith("theme_chatroom_bubble_me_01_image.9.png"),
   );
@@ -465,7 +508,41 @@ test("buildAndroidEntries patches XML and skips raw uploads for 9-patch resource
   assert.match(new TextDecoder().decode(stringsEntry.data), /Mint Talk/);
   assert.match(new TextDecoder().decode(gradleEntry.data), /com.mint.kakaotalk.theme/);
   assert.match(new TextDecoder().decode(manifestEntry.data), /com.mint.kakaotalk.theme/);
+  assert.match(new TextDecoder().decode(kotlinEntry.data), /package com\.mint\.kakaotalk\.theme/);
+  assert.match(new TextDecoder().decode(kotlinEntry.data), /import com\.mint\.kakaotalk\.theme\.databinding\.MainActivityBinding/);
   assert.deepEqual(bubbleEntry.data, new Uint8Array([1, 1, 1]));
+});
+
+test("buildAndroidEntries drops duplicate theme string resources when app string resources exist", () => {
+  const result = buildAndroidEntries(
+    [
+      {
+        name: "src/main/res/values/strings.xml",
+        data: `<resources><string name="apply">Apply Now</string><string name="theme_title">Apeach</string></resources>`,
+      },
+      {
+        name: "src/main/res/values-ko/strings.xml",
+        data: `<resources><string name="apply">적용하기</string><string name="theme_title">어피치</string></resources>`,
+      },
+      {
+        name: "src/main/theme/values/strings.xml",
+        data: `<resources><string name="theme_title">Apeach</string></resources>`,
+      },
+      {
+        name: "src/main/theme/values-ko/strings.xml",
+        data: `<resources><string name="theme_title">어피치</string></resources>`,
+      },
+    ],
+    { state: { appName: "Mint Talk" }, uploads: {} },
+  );
+
+  const names = result.map((entry) => entry.name);
+  assert.equal(names.includes("src/main/theme/values/strings.xml"), false);
+  assert.equal(names.includes("src/main/theme/values-ko/strings.xml"), false);
+  assert.match(
+    new TextDecoder().decode(result.find((entry) => entry.name === "src/main/res/values/strings.xml").data),
+    /Mint Talk/,
+  );
 });
 
 test("buildAndroidEntries applies main background color and image across main tab surfaces", () => {

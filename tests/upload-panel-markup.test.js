@@ -1025,6 +1025,7 @@ test("preview color variables use the same color keys as downloadable themes", a
   assert.match(app, /setPreviewColorVariable\("--preview-main-bg", colors\.mainBackground\);/);
   assert.match(app, /setPreviewColorVariable\("--preview-chat-bg", colors\.mainBackground\);/);
   assert.match(app, /setPreviewColorVariable\("--preview-passcode-bg", colors\.mainBackground\);/);
+  assert.match(app, /setPreviewColorVariable\("--preview-passcode-keypad-text", colors\.passcodeKeypadText\);/);
   assert.match(app, /setPreviewColorVariable\("--preview-input-menu-button", colors\.inputMenuButton\);/);
   assert.match(css, /\.input-bar-content > button:first-child\s*\{[\s\S]*background: var\(--preview-input-menu-button, #0a000000\);/);
   assert.match(css, /\.unread-badge\s*\{[\s\S]*background: var\(--preview-unread-count, #ff7f7f\);/);
@@ -1292,6 +1293,7 @@ test("passcode preview follows the reference lock screen copy and keypad actions
   assert.match(css, /\.passcode-intro\s*\{[\s\S]*gap: 14px;/);
   assert.match(css, /\.keypad\s*\{[\s\S]*grid-template-columns: repeat\(3, 64px\);/);
   assert.match(css, /\.keypad button\s*\{[\s\S]*background: transparent;/);
+  assert.match(css, /\.keypad button\s*\{[\s\S]*color: var\(--preview-passcode-keypad-text, var\(--preview-passcode-text, #664242\)\);/);
   assert.doesNotMatch(css, /\.backspace-icon/);
 });
 

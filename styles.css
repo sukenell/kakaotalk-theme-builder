@@ -2838,7 +2838,7 @@ h2 {
   height: 48px;
   border-radius: 0;
   background: transparent;
-  color: currentColor;
+  color: var(--preview-passcode-keypad-text, var(--preview-passcode-text, #664242));
   font-size: 28px;
   font-weight: 500;
   line-height: 1;

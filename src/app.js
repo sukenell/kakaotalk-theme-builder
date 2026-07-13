@@ -5,6 +5,8 @@ import { getNextPreviewIndex, getPreviewColorKeys, getPreviewImageKeys, PREVIEW_
 import {
   ADDITIONAL_IMAGE_KEYS,
   CHAT_BUBBLE_IMAGE_KEYS,
+  PASSCODE_DOT_IMAGE_KEYS,
+  PASSCODE_DOT_SELECTED_IMAGE_KEYS,
   TAB_ICON_IMAGE_KEY_PAIRS,
   TAB_ICON_IMAGE_KEYS,
   VISIBLE_TAB_ICON_IMAGE_KEYS,
@@ -58,6 +60,7 @@ const colorControls = [
   ["sendButton", "전송 버튼"],
   ["sendButtonText", "전송 텍스트"],
   ["passcodeText", "암호 텍스트"],
+  ["passcodeKeypadText", "암호 키패드 텍스트"],
   ["passcodeKeypadBackground", "암호 키패드 배경"],
 ];
 
@@ -80,8 +83,8 @@ const uploadKeys = [
   "splashImage",
   ...CHAT_BUBBLE_IMAGE_KEYS,
   "passcodeBackgroundImage",
-  "passcodeDot",
-  "passcodeDotSelected",
+  ...PASSCODE_DOT_IMAGE_KEYS,
+  ...PASSCODE_DOT_SELECTED_IMAGE_KEYS,
 ];
 
 const previewImageVariables = PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY;
@@ -1713,6 +1716,7 @@ function updatePreview() {
   setPreviewColorVariable("--preview-unread-count", colors.unreadCount);
   setPreviewColorVariable("--preview-passcode-bg", colors.mainBackground);
   setPreviewColorVariable("--preview-passcode-text", colors.passcodeText);
+  setPreviewColorVariable("--preview-passcode-keypad-text", colors.passcodeKeypadText);
   setPreviewColorVariable("--preview-passcode-keypad-bg", colors.passcodeKeypadBackground);
   setPreviewColorVariable("--preview-section-title", colors.sectionTitle);
   setPreviewColorVariable("--preview-paragraph", colors.paragraphText);
@@ -1806,9 +1810,10 @@ function handleSettingsInput(event) {
 function updatePasscodePreview() {
   document.querySelectorAll(".passcode-dot").forEach((dot, index) => {
     const isSelected = index < passcodeCount;
-    const targetKey = isSelected ? "passcodeDotSelected" : "passcodeDot";
-    const fallbackPath = getPreviewDefaultImagePath(targetKey, index);
-    const imageUrl = previews[targetKey] || (fallbackPath ? `./${fallbackPath}` : "");
+    const commonKey = isSelected ? "passcodeDotSelected" : "passcodeDot";
+    const targetKey = isSelected ? PASSCODE_DOT_SELECTED_IMAGE_KEYS[index] : PASSCODE_DOT_IMAGE_KEYS[index];
+    const fallbackPath = getPreviewDefaultImagePath(commonKey, index);
+    const imageUrl = previews[targetKey] || previews[commonKey] || (fallbackPath ? `./${fallbackPath}` : "");
     dot.classList.toggle("is-selected", isSelected);
     dot.style.backgroundImage = imageUrl ? `url("${imageUrl}")` : "";
   });

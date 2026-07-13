@@ -1,6 +1,18 @@
-import { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, VISIBLE_TAB_ICON_IMAGE_KEYS } from "./theme-model.js";
+import {
+  ADDITIONAL_IMAGE_KEYS,
+  CHAT_BUBBLE_IMAGE_KEYS,
+  PASSCODE_DOT_IMAGE_KEYS,
+  PASSCODE_DOT_SELECTED_IMAGE_KEYS,
+  VISIBLE_TAB_ICON_IMAGE_KEYS,
+} from "./theme-model.js";
 
-export { ADDITIONAL_IMAGE_KEYS, CHAT_BUBBLE_IMAGE_KEYS, VISIBLE_TAB_ICON_IMAGE_KEYS };
+export {
+  ADDITIONAL_IMAGE_KEYS,
+  CHAT_BUBBLE_IMAGE_KEYS,
+  PASSCODE_DOT_IMAGE_KEYS,
+  PASSCODE_DOT_SELECTED_IMAGE_KEYS,
+  VISIBLE_TAB_ICON_IMAGE_KEYS,
+};
 
 const mainTabColorKeys = [
   "mainBackground",
@@ -118,8 +130,8 @@ export const PREVIEW_PAGES = [
     id: "passcode",
     label: "잠금화면",
     iconUrl: pageIcon("lock.svg"),
-    colorKeys: ["mainBackground", "passcodeText", "passcodeKeypadBackground"],
-    imageKeys: ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"],
+    colorKeys: ["mainBackground", "passcodeText", "passcodeKeypadText", "passcodeKeypadBackground"],
+    imageKeys: ["passcodeBackgroundImage", ...PASSCODE_DOT_IMAGE_KEYS, ...PASSCODE_DOT_SELECTED_IMAGE_KEYS],
   },
   {
     id: "splash",

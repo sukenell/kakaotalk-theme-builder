@@ -43,12 +43,18 @@ export const PREVIEW_DEFAULT_IMAGE_PATHS = {
     iosImage("passcodeImgCode03@3x.png"),
     iosImage("passcodeImgCode04@3x.png"),
   ],
+  passcodeDot2: iosImage("passcodeImgCode02@3x.png"),
+  passcodeDot3: iosImage("passcodeImgCode03@3x.png"),
+  passcodeDot4: iosImage("passcodeImgCode04@3x.png"),
   passcodeDotSelected: [
     iosImage("passcodeImgCode01Selected@3x.png"),
     iosImage("passcodeImgCode02Selected@3x.png"),
     iosImage("passcodeImgCode03Selected@3x.png"),
     iosImage("passcodeImgCode04Selected@3x.png"),
   ],
+  passcodeDotSelected2: iosImage("passcodeImgCode02Selected@3x.png"),
+  passcodeDotSelected3: iosImage("passcodeImgCode03Selected@3x.png"),
+  passcodeDotSelected4: iosImage("passcodeImgCode04Selected@3x.png"),
 };
 
 const cssUrl = (path) => `url("./${path}")`;

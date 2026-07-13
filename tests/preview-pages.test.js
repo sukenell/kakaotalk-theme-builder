@@ -36,6 +36,7 @@ test("getPreviewColorKeys returns only colors used by the active preview page", 
   assert.deepEqual(getPreviewColorKeys("passcode"), [
     "mainBackground",
     "passcodeText",
+    "passcodeKeypadText",
     "passcodeKeypadBackground",
   ]);
   assert.deepEqual(getPreviewColorKeys("home"), [
@@ -99,7 +100,17 @@ test("getPreviewImageKeys returns only images used by the active preview page", 
   assert.deepEqual(getPreviewImageKeys("chat"), ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS]);
   assert.deepEqual(getPreviewImageKeys("bubble-detail"), ["chatBackground", "profileImage", ...CHAT_BUBBLE_IMAGE_KEYS]);
   assert.deepEqual(getPreviewColorKeys("bubble-detail"), getPreviewColorKeys("chat"));
-  assert.deepEqual(getPreviewImageKeys("passcode"), ["passcodeBackgroundImage", "passcodeDot", "passcodeDotSelected"]);
+  assert.deepEqual(getPreviewImageKeys("passcode"), [
+    "passcodeBackgroundImage",
+    "passcodeDot",
+    "passcodeDot2",
+    "passcodeDot3",
+    "passcodeDot4",
+    "passcodeDotSelected",
+    "passcodeDotSelected2",
+    "passcodeDotSelected3",
+    "passcodeDotSelected4",
+  ]);
   assert.deepEqual(getPreviewColorKeys("splash"), ["mainBackground"]);
   assert.deepEqual(getPreviewImageKeys("splash"), ["splashImage", "themeIcon"]);
   assert.deepEqual(getPreviewImageKeys("theme-list"), [
