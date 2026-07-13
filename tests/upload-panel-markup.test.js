@@ -233,7 +233,7 @@ test("chat preview includes default profile and extra basic/additional bubble sa
   assert.match(app, /previewTimeElements\.forEach/);
 });
 
-test("chat preview keeps mentions, hashtags, links, and typing indicator visibly styled", async () => {
+test("chat preview keeps message tokens on downloadable bubble text colors", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   const chatStart = html.indexOf('class="preview-slide chat-preview"');
@@ -248,7 +248,9 @@ test("chat preview keeps mentions, hashtags, links, and typing indicator visibly
   );
   assert.match(chatMarkup, /<p class="bubble receive-bubble typing-bubble" aria-label="상대방 입력 중">…<\/p>/);
   assert.ok(chatMarkup.indexOf('class="message-group receive typing-group"') > chatMarkup.lastIndexOf('class="message-group send"'));
-  assert.match(css, /\.message-token\s*\{[\s\S]*color: var\(--preview-link-text, #0a7cff\);/);
+  assert.match(css, /\.message-token\s*\{[\s\S]*color: inherit;/);
+  assert.match(css, /\.message-token\s*\{[\s\S]*font-weight: 900;/);
+  assert.doesNotMatch(css, /--preview-link-text/);
   assert.match(css, /\.message-link\s*\{[\s\S]*text-decoration-line: underline;/);
   assert.match(css, /\.typing-group\s*\{[\s\S]*position: absolute;[\s\S]*bottom: 8px;/);
   assert.match(css, /\.typing-bubble\s*\{[\s\S]*color: var\(--preview-receive-text, #4d4d4d\);/);
@@ -320,8 +322,8 @@ test("color controls show hex values on the picker and expose reset buttons", as
     ["headerText", "메인 글자 색"],
     ["titleText", "메뉴 글자 색"],
     ["paragraphText", "서브 글자색"],
-    ["titlePressed", "선택 메뉴 배경 색"],
-    ["bodyPressed", "선택 메뉴 글자 색"],
+    ["titlePressed", "선택 메뉴 글자 색"],
+    ["bodyPressed", "선택 메뉴 배경 색"],
     ["unreadCount", "레드닷 알림 색"],
     ["sendText", "나의 글자 색"],
     ["receiveText", "상대 글자 색"],
@@ -935,10 +937,10 @@ test("preview segment controls use the same pressed color data as downloadable t
   assert.match(themeModel, /theme_title_pressed_color:\s*"titlePressed"/);
   assert.match(app, /setPreviewColorVariable\("--preview-title", colors\.titleText\);/);
   assert.match(app, /setPreviewColorVariable\("--preview-body-border", colors\.bodyBorder\);/);
-  assert.match(colorControls, /\["titlePressed", "선택 메뉴 배경 색"\]/);
-  assert.match(colorControls, /\["bodyPressed", "선택 메뉴 글자 색"\]/);
-  assert.match(app, /setPreviewColorVariable\("--preview-segment-selected-bg", colors\.titlePressed\);/);
-  assert.match(app, /setPreviewColorVariable\("--preview-segment-selected-text", colors\.bodyPressed\);/);
+  assert.match(colorControls, /\["titlePressed", "선택 메뉴 글자 색"\]/);
+  assert.match(colorControls, /\["bodyPressed", "선택 메뉴 배경 색"\]/);
+  assert.match(app, /setPreviewColorVariable\("--preview-segment-selected-bg", colors\.bodyPressed\);/);
+  assert.match(app, /setPreviewColorVariable\("--preview-segment-selected-text", colors\.titlePressed\);/);
 
   for (const segmentCss of [friendSegmentCss, shoppingTabCss, moreSegmentCss]) {
     assert.match(segmentCss, /border: 1px solid var\(--preview-body-border, #26664242\);/);

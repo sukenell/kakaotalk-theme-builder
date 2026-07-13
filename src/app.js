@@ -47,8 +47,8 @@ const colorControls = [
   ["descriptionText", "설명 텍스트"],
   ["paragraphText", "서브 글자색"],
   ["sectionTitle", "섹션 타이틀"],
-  ["titlePressed", "선택 메뉴 배경 색"],
-  ["bodyPressed", "선택 메뉴 글자 색"],
+  ["titlePressed", "선택 메뉴 글자 색"],
+  ["bodyPressed", "선택 메뉴 배경 색"],
   ["sendText", "나의 글자 색"],
   ["receiveText", "상대 글자 색"],
   ["unreadCount", "레드닷 알림 색"],
@@ -1718,8 +1718,8 @@ function updatePreview() {
   setPreviewColorVariable("--preview-paragraph", colors.paragraphText);
   setPreviewColorVariable("--preview-selected-bg", colors.bodyPressed);
   setPreviewColorVariable("--preview-selected-text", colors.titlePressed);
-  setPreviewColorVariable("--preview-segment-selected-bg", colors.titlePressed);
-  setPreviewColorVariable("--preview-segment-selected-text", colors.bodyPressed);
+  setPreviewColorVariable("--preview-segment-selected-bg", colors.bodyPressed);
+  setPreviewColorVariable("--preview-segment-selected-text", colors.titlePressed);
 
   Object.entries(previewImageVariables).forEach(([key, variables]) => {
     variables.forEach((variableName) => setOptionalImage(variableName, key, getPreviewImageUrl(key)));

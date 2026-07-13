@@ -2272,7 +2272,8 @@ h2 {
 }
 
 .message-token {
-  color: var(--preview-link-text, #0a7cff);
+  color: inherit;
+  font-weight: 900;
 }
 
 .message-link {
