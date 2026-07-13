@@ -2,3 +2,8 @@ tmp/
 .DS_Store
 node_modules/
 .env
+
+# Android/Gradle generated files
+.gradle-cache/
+**/.gradle/
+assets/templates/android-source/build/
