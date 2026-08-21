@@ -2,6 +2,7 @@ tmp/
 .DS_Store
 node_modules/
 .env
+.worktrees/
 
 # Android/Gradle generated files
 .gradle-cache/
