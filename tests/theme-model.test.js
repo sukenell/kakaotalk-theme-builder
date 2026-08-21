@@ -5,6 +5,7 @@ import {
   ADDITIONAL_IMAGE_KEYS,
   CHAT_BUBBLE_IMAGE_KEYS,
   cloneDefaultThemeState,
+  createThemeGenerationSnapshot,
   defaultThemeState,
   getAuthorName,
   getActiveColors,
@@ -245,6 +246,40 @@ test("theme id segments accept only one or more raw ASCII letters", () => {
   assert.equal(isValidThemeIdSegment(" theme"), false);
   assert.equal(isValidThemeIdSegment("theme "), false);
   assert.equal(isValidThemeIdSegment(""), false);
+});
+
+test("theme generation snapshots isolate mutable state, upload maps, variants, and bubble layout", () => {
+  const imageBytes = new Uint8Array([1, 2, 3]);
+  const variantBytes = new Uint8Array([4, 5, 6]);
+  const upload = {
+    data: imageBytes,
+    variants: { "Images/bubble.png": variantBytes },
+    bubbleLayout: {
+      stretchX: [10, 20],
+      stretchY: [11, 21],
+      paddingX: [12, 22],
+      paddingY: [13, 23],
+      referenceSize: { width: 120, height: 105 },
+      fit: "contain",
+    },
+  };
+  const originalState = { appName: "Invocation", colors: { mainBackground: "#123456" } };
+  const originalUploads = { sendBubbleNormal: upload, splashImage: { cleared: true } };
+
+  const snapshot = createThemeGenerationSnapshot(originalState, originalUploads);
+  originalState.appName = "Later";
+  originalState.colors.mainBackground = "#654321";
+  originalUploads.sendBubbleNormal = { data: new Uint8Array([9]) };
+  delete originalUploads.splashImage;
+  upload.variants["Images/bubble.png"] = new Uint8Array([8]);
+  upload.bubbleLayout.paddingX[0] = 99;
+
+  assert.equal(snapshot.state.appName, "Invocation");
+  assert.equal(snapshot.state.colors.mainBackground, "#123456");
+  assert.equal(snapshot.uploads.splashImage.cleared, true);
+  assert.strictEqual(snapshot.uploads.sendBubbleNormal.data, imageBytes);
+  assert.strictEqual(snapshot.uploads.sendBubbleNormal.variants["Images/bubble.png"], variantBytes);
+  assert.deepEqual(snapshot.uploads.sendBubbleNormal.bubbleLayout.paddingX, [12, 22]);
 });
 
 test("download patchers normalize raw version values as an export defense", () => {

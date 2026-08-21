@@ -387,7 +387,7 @@ test("tab icon uploads expose optional PNG tinting before theme export", async (
   assert.match(app, /checkbox\.type = "checkbox";/);
   assert.doesNotMatch(app, /text\.textContent = "색";/);
   assert.match(app, /control\.append\(checkboxLabel, input\);/);
-  assert.match(app, /await refreshUploadImage\(key\);/);
+  assert.match(app, /await guardedRefreshUploadImage\(key\);/);
   assert.match(app, /await getDefaultUploadSource\(key\);/);
   assert.match(app, /sourceKind = "default";/);
   assert.match(app, /function clearGeneratedTintUpload/);
@@ -459,7 +459,9 @@ test("upload mutations invalidate stale async work and clear the live native inp
   assert.match(app, /function beginUploadRefreshOperation\(key\)/);
   assert.match(app, /function isUploadSourceOperationCurrent\(key, sourceVersion\)/);
   assert.match(app, /function isUploadRefreshOperationCurrent\(key, operation\)/);
-  assert.match(app, /async function refreshUploadImage\(key\) \{\s*const operation = beginUploadRefreshOperation\(key\);/);
+  assert.match(app, /async function guardedRefreshUploadImage\(key\) \{\s*const operation = beginUploadRefreshOperation\(key\);/);
+  assert.match(app, /async function refreshUploadImage\(key, operation\)/);
+  assert.match(app, /if \(!isUploadRefreshOperationCurrent\(key, operation\)\) \{\s*return;/);
   assert.match(app, /function markBubbleSettingsChanged\(key\)/);
   assert.match(app, /while \(bubbleUploadKeys\.has\(key\) && getBubbleSettingsVersion\(key\) !== bubbleSettingsVersion\)/);
   assert.match(app, /handleClearUpload\(key\)[\s\S]*invalidateUploadOperations\(key\);/);
@@ -1349,13 +1351,13 @@ test("preview includes an Android loading screen layered from color, optional ba
   assert.doesNotMatch(css, /\.splash-apply-button/);
   assert.match(app, /applyPreviewDefaultImages/);
   assert.match(app, /const androidSplashImageSizes = \{/);
-  assert.match(app, /function getSplashBackgroundUploadSource\(\)/);
-  assert.match(app, /function createGeneratedSplashUpload\(\)/);
+  assert.match(app, /function getSplashBackgroundUploadSource\(generationUploads\)/);
+  assert.match(app, /function createGeneratedSplashUpload\(generation\)/);
   assert.match(app, /function renderSplashImageToPngBytes/);
   assert.match(app, /const iconImage = iconBlob \? await loadImage\(iconBlob\) : undefined;/);
   assert.match(app, /if \(iconImage\) \{/);
   assert.match(app, /backgroundImage/);
-  assert.match(app, /const androidUploads = generatedSplashUpload \? \{ \.\.\.uploads, splashImage: generatedSplashUpload \} : uploads;/);
+  assert.match(app, /const androidUploads = generatedSplashUpload[\s\S]*\{ \.\.\.generation\.uploads, splashImage: generatedSplashUpload \}[\s\S]*: generation\.uploads;/);
   assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.splashImage, ["--preview-splash-image"]);
   assert.deepEqual(PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY.themeIcon, ["--preview-theme-icon"]);
   assert.match(model, /label: "로딩 배경"/);
@@ -1519,7 +1521,7 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(app, /function getNinePatchContainPair\(key, field\)/);
   assert.match(app, /function getBubbleNinePatchDefaultMarkers\(key\)/);
   assert.match(app, /containPair,/);
-  assert.match(app, /await refreshUploadImage\(key\);/);
+  assert.match(app, /await guardedRefreshUploadImage\(key\);/);
   assert.match(app, /function getBubbleNinePatchSettings\(key\)/);
   assert.match(app, /bubbleLayout: bubbleLayout \? cloneBubbleNinePatchSettings\(bubbleLayout\) : undefined,/);
   assert.match(app, /const bubbleLayout = getProposedBubbleNinePatchSettings\(key, image\);/);

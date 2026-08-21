@@ -1,5 +1,6 @@
 import { expect, test as base } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { readFile } from "node:fs/promises";
 import { IMAGE_TARGETS } from "../src/theme-model.js";
 
 const onePixelPng = Buffer.from(
@@ -63,18 +64,47 @@ async function nonEmptyLiveMessages(page, channel) {
   );
 }
 
-async function createPngBuffer(page, width, height) {
-  const base64 = await page.evaluate(async ({ width, height }) => {
+async function createPngBuffer(page, width, height, color = "#f78da7") {
+  const base64 = await page.evaluate(async ({ width, height, color }) => {
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext("2d");
-    context.fillStyle = "#f78da7";
+    context.fillStyle = color;
     context.fillRect(0, 0, width, height);
     return canvas.toDataURL("image/png").split(",")[1];
-  }, { width, height });
+  }, { width, height, color });
 
   return Buffer.from(base64, "base64");
+}
+
+async function readStoredZipEntries(download) {
+  const path = await download.path();
+  const bytes = new Uint8Array(await readFile(path));
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const decoder = new TextDecoder();
+  const entries = new Map();
+  let offset = 0;
+
+  while (offset + 30 <= bytes.length && view.getUint32(offset, true) === 0x04034b50) {
+    expect(view.getUint16(offset + 8, true), "download entries use stored ZIP data").toBe(0);
+    const dataLength = view.getUint32(offset + 18, true);
+    const nameLength = view.getUint16(offset + 26, true);
+    const extraLength = view.getUint16(offset + 28, true);
+    const nameStart = offset + 30;
+    const dataStart = nameStart + nameLength + extraLength;
+    const name = decoder.decode(bytes.slice(nameStart, nameStart + nameLength));
+    entries.set(name, bytes.slice(dataStart, dataStart + dataLength));
+    offset = dataStart + dataLength;
+  }
+
+  return entries;
+}
+
+function decodeEntry(entries, name) {
+  const data = entries.get(name);
+  expect(data, `download contains ${name}`).toBeDefined();
+  return new TextDecoder().decode(data);
 }
 
 async function delayImageBitmapForFile(page, fileName) {
@@ -355,6 +385,233 @@ test("@task3 reannounces repeated upload success and decode failure without losi
   await expect(status).toHaveText("메인 배경 삭제");
 });
 
+test("@task3 fallback image decode failure always revokes its object URL", async ({ page }) => {
+  await page.addInitScript(() => {
+    delete window.createImageBitmap;
+    const originalCreateObjectUrl = URL.createObjectURL.bind(URL);
+    const originalRevokeObjectUrl = URL.revokeObjectURL.bind(URL);
+    window.__fallbackObjectUrls = { created: [], revoked: [] };
+    URL.createObjectURL = (value) => {
+      const url = originalCreateObjectUrl(value);
+      window.__fallbackObjectUrls.created.push(url);
+      return url;
+    };
+    URL.revokeObjectURL = (url) => {
+      window.__fallbackObjectUrls.revoked.push(url);
+      originalRevokeObjectUrl(url);
+    };
+    HTMLImageElement.prototype.decode = () => Promise.reject(new Error("forced fallback decode failure"));
+  });
+  await page.goto("/");
+  expect(await page.evaluate(() => "createImageBitmap" in window)).toBe(false);
+
+  const input = page.locator("#upload-input-mainBackground");
+  await input.focus();
+  await input.setInputFiles({ name: "fallback.png", mimeType: "image/png", buffer: onePixelPng });
+
+  await expect(page.locator("#error-status")).toHaveText(
+    `${IMAGE_TARGETS.mainBackground.label} 이미지를 읽을 수 없습니다. PNG, JPEG 또는 WebP 파일을 다시 선택해 주세요.`,
+  );
+  await expect.poll(() => page.evaluate(() => window.__fallbackObjectUrls.created.length)).toBe(1);
+  expect(await page.evaluate(() => window.__fallbackObjectUrls)).toEqual({
+    created: [expect.any(String)],
+    revoked: [expect.any(String)],
+  });
+  const objectUrls = await page.evaluate(() => window.__fallbackObjectUrls);
+  expect(objectUrls.revoked).toEqual(objectUrls.created);
+  expect(await input.evaluate((element) => document.activeElement === element)).toBe(true);
+});
+
+for (const refreshFailureCase of [
+  { fault: "fetch", caller: "tint", label: IMAGE_TARGETS.tabFriendIcon.label },
+  { fault: "decode", caller: "detail", label: IMAGE_TARGETS.sendBubbleNormal.label },
+  { fault: "canvas", caller: "nine-patch", label: IMAGE_TARGETS.sendBubbleNormal.label },
+  { fault: "conversion", caller: "reset", label: IMAGE_TARGETS.sendBubbleNormal.label },
+]) {
+  test(`@task3 guarded ${refreshFailureCase.caller} refresh reports ${refreshFailureCase.fault} failure without losing state or focus`, async ({ page }) => {
+    await page.goto("/");
+
+    let description;
+    let thumb;
+    let trigger;
+    let focusedAfterFailure;
+    if (refreshFailureCase.caller === "tint") {
+      const row = page.locator('[aria-labelledby="upload-title-tabFriendIcon"]');
+      description = page.locator("#upload-description-tabFriendIcon");
+      thumb = row.locator('[data-upload-thumb="tabFriendIcon"]');
+      const checkbox = row.getByRole("checkbox", { name: "친구 탭 아이콘 - 기본 색상 적용", exact: true });
+      trigger = async () => {
+        await checkbox.focus();
+        await checkbox.check();
+      };
+      focusedAfterFailure = checkbox;
+    } else {
+      await page.getByRole("tab", { name: "채팅방", exact: true }).click();
+      const input = page.locator("#upload-input-sendBubbleNormal");
+      await input.setInputFiles({
+        name: "good-bubble.png",
+        mimeType: "image/png",
+        buffer: await createPngBuffer(page, 120, 105),
+      });
+      description = page.locator("#upload-description-sendBubbleNormal");
+      await expect(description).toContainText("good-bubble.png");
+      thumb = page.locator('[data-upload-thumb="sendBubbleNormal"]');
+      await page.getByRole("button", { name: "나의 말풍선 - 기본 상세", exact: true }).click();
+
+      if (refreshFailureCase.caller === "detail") {
+        const fitButton = page.getByRole("button", { name: "채우기", exact: true });
+        trigger = async () => {
+          await fitButton.focus();
+          await fitButton.click();
+        };
+        focusedAfterFailure = page.getByRole("button", { name: "채우기", exact: true });
+      } else {
+        const range = page.locator('input[data-nine-patch-field="stretchX"][data-nine-patch-index="0"]');
+        if (refreshFailureCase.caller === "nine-patch") {
+          trigger = async () => {
+            await range.focus();
+            await range.evaluate((input) => {
+              input.value = String(Math.min(Number(input.max), Number(input.value) + 1));
+              input.dispatchEvent(new Event("input", { bubbles: true }));
+            });
+          };
+          focusedAfterFailure = range;
+        } else {
+          const backgroundBeforeEdit = await thumb.evaluate((element) => getComputedStyle(element).backgroundImage);
+          await range.evaluate((input) => {
+            input.value = String(Math.min(Number(input.max), Number(input.value) + 1));
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+          });
+          await expect.poll(() => thumb.evaluate((element) => getComputedStyle(element).backgroundImage)).not.toBe(backgroundBeforeEdit);
+          const resetButton = page.getByRole("button", { name: "초기화", exact: true });
+          trigger = async () => {
+            await resetButton.focus();
+            await resetButton.click();
+          };
+          focusedAfterFailure = resetButton;
+        }
+      }
+    }
+
+    const goodBackground = await thumb.evaluate((element) => getComputedStyle(element).backgroundImage);
+    const goodDescription = await description.textContent();
+    await page.evaluate((fault) => {
+      if (fault === "fetch") {
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = (input, ...args) => {
+          if (String(input).includes("maintabIcoFriends@3x.png")) {
+            window.fetch = originalFetch;
+            return Promise.resolve(new Response("", { status: 503 }));
+          }
+          return originalFetch(input, ...args);
+        };
+        return;
+      }
+
+      if (fault === "decode") {
+        const originalCreateImageBitmap = window.createImageBitmap.bind(window);
+        window.createImageBitmap = (source, ...args) => {
+          if (source instanceof Blob && !(source instanceof File)) {
+            window.createImageBitmap = originalCreateImageBitmap;
+            return Promise.reject(new Error("forced refresh decode failure"));
+          }
+          return originalCreateImageBitmap(source, ...args);
+        };
+        return;
+      }
+
+      if (fault === "canvas") {
+        const originalDrawImage = CanvasRenderingContext2D.prototype.drawImage;
+        CanvasRenderingContext2D.prototype.drawImage = function (...args) {
+          CanvasRenderingContext2D.prototype.drawImage = originalDrawImage;
+          throw new Error("forced refresh canvas failure");
+        };
+        return;
+      }
+
+      const originalToBlob = HTMLCanvasElement.prototype.toBlob;
+      HTMLCanvasElement.prototype.toBlob = function (callback) {
+        HTMLCanvasElement.prototype.toBlob = originalToBlob;
+        callback(null);
+      };
+    }, refreshFailureCase.fault);
+
+    await trigger();
+
+    const alertMessage = `${refreshFailureCase.label} 이미지를 다시 처리하지 못했습니다. 변경 전 이미지는 유지됩니다. 다시 시도해 주세요.`;
+    await expect(page.locator("#error-status")).toHaveText(alertMessage, { timeout: 2_000 });
+    await expect(page.locator("#status-text")).toHaveText(`${refreshFailureCase.label} 이미지 처리 실패`);
+    await expect(description).toHaveText(goodDescription);
+    await expect(thumb).toHaveCSS("background-image", goodBackground);
+    expect(await focusedAfterFailure.evaluate((element) => document.activeElement === element)).toBe(true);
+  });
+}
+
+test("@task3 stale refresh rejection cannot overwrite a newer tint success", async ({ page }) => {
+  await page.goto("/");
+
+  const row = page.locator('[aria-labelledby="upload-title-tabFriendIcon"]');
+  const input = page.locator("#upload-input-tabFriendIcon");
+  await input.setInputFiles({
+    name: "stable-friend.png",
+    mimeType: "image/png",
+    buffer: await createPngBuffer(page, 114, 114),
+  });
+  await expect(page.locator("#upload-description-tabFriendIcon")).toContainText("stable-friend.png");
+
+  const thumb = row.locator('[data-upload-thumb="tabFriendIcon"]');
+  const backgroundBeforeRefresh = await thumb.evaluate((element) => getComputedStyle(element).backgroundImage);
+  await installLiveRegionRecorder(page);
+  await page.evaluate(() => {
+    const originalCreateImageBitmap = window.createImageBitmap.bind(window);
+    let refreshDecodeCount = 0;
+    window.createImageBitmap = (source, ...args) => {
+      if (!(source instanceof Blob) || source instanceof File) {
+        return originalCreateImageBitmap(source, ...args);
+      }
+
+      refreshDecodeCount += 1;
+      if (refreshDecodeCount !== 1) {
+        return originalCreateImageBitmap(source, ...args);
+      }
+
+      window.__staleRefreshStarted = true;
+      const heldRefresh = new Promise((resolve, reject) => {
+        window.__rejectStaleRefresh = () => reject(new Error("forced stale refresh failure"));
+      });
+      heldRefresh.catch(() => {
+        window.__staleRefreshSettled = true;
+      });
+      return heldRefresh;
+    };
+  });
+
+  const checkbox = row.getByRole("checkbox", { name: "친구 탭 아이콘 - 기본 색상 적용", exact: true });
+  await checkbox.check();
+  await expect.poll(() => page.evaluate(() => window.__staleRefreshStarted)).toBe(true);
+
+  const tintColor = row.locator('input[type="color"]');
+  await tintColor.fill("#123456");
+  await expect.poll(() => thumb.evaluate((element) => getComputedStyle(element).backgroundImage)).not.toBe(
+    backgroundBeforeRefresh,
+  );
+  const newerBackground = await thumb.evaluate((element) => getComputedStyle(element).backgroundImage);
+  expect(await tintColor.evaluate((element) => document.activeElement === element)).toBe(true);
+
+  await page.evaluate(async () => {
+    window.__rejectStaleRefresh();
+    while (!window.__staleRefreshSettled) {
+      await Promise.resolve();
+    }
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
+
+  await expect(page.locator("#error-status")).toBeEmpty();
+  await expect(thumb).toHaveCSS("background-image", newerBackground);
+  expect(await liveMessageCount(page, "status", `${IMAGE_TARGETS.tabFriendIcon.label} 이미지 처리 실패`)).toBe(0);
+  expect(await tintColor.evaluate((element) => document.activeElement === element)).toBe(true);
+});
+
 for (const downloadCase of [
   {
     platform: "iOS",
@@ -424,6 +681,185 @@ for (const downloadCase of [
     await expect(page.locator(".download-actions")).toHaveAttribute("aria-busy", "false");
     await expect(button).toBeEnabled();
     expect(await button.evaluate((element) => document.activeElement === element)).toBe(true);
+  });
+}
+
+for (const snapshotCase of [
+  {
+    platform: "iOS",
+    button: "#download-ios",
+    kind: "ios",
+    fileName: "Invocation-Theme.ktheme",
+    mainEntry: "Images/mainBgImage@3x.png",
+    pendingEntry: "Images/maintabIcoFriends@3x.png",
+    templateEntries: [
+      { name: "KakaoTalkTheme.css", body: "" },
+      { name: "Images/mainBgImage@3x.png", body: "template main background" },
+      { name: "Images/maintabIcoFriends@3x.png", body: "template pending icon" },
+    ],
+  },
+  {
+    platform: "Android",
+    button: "#download-android",
+    kind: "android",
+    fileName: "Invocation-Theme-android-source.zip",
+    mainEntry: "src/main/theme/drawable-xxhdpi/theme_background_image.png",
+    pendingEntry: "src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_image.png",
+    splashEntry: "src/main/theme/drawable-xxhdpi/theme_splash_image.png",
+    templateEntries: [
+      { name: "build.gradle.kts", body: 'namespace = "old"\napplicationId = "old"\nversionName = "0.0.0"' },
+      { name: "src/main/AndroidManifest.xml", body: '<manifest package="old"></manifest>' },
+      { name: "src/main/theme/values/colors.xml", body: "<resources></resources>" },
+      { name: "src/main/res/values/strings.xml", body: "<resources></resources>" },
+      { name: "src/main/theme/drawable-xxhdpi/theme_background_image.png", body: "template main background" },
+      { name: "src/main/theme/drawable-xxhdpi/theme_maintab_ico_friends_image.png", body: "template pending icon" },
+      { name: "src/main/theme/drawable-xxhdpi/theme_splash_image.png", body: "template splash" },
+    ],
+  },
+]) {
+  test(`@task3 ${snapshotCase.platform} generation uses one invocation-time state and upload snapshot`, async ({ page }) => {
+    const pendingFileName = `pending-${snapshotCase.kind}-friend.png`;
+    await delayImageBitmapForFile(page, pendingFileName);
+    await page.addInitScript(() => {
+      const originalToBlob = HTMLCanvasElement.prototype.toBlob;
+      HTMLCanvasElement.prototype.toBlob = function (callback, ...args) {
+        if (!window.__serializeCanvasPixels) {
+          return originalToBlob.call(this, callback, ...args);
+        }
+
+        const context = this.getContext("2d");
+        const pixel = (x, y) => Array.from(context.getImageData(x, y, 1, 1).data);
+        const marker = JSON.stringify({
+          width: this.width,
+          height: this.height,
+          top: pixel(0, 0),
+          center: pixel(Math.floor(this.width / 2), Math.floor(this.height / 2)),
+        });
+        callback(new Blob([marker], { type: "image/png" }));
+        return undefined;
+      };
+    });
+
+    const heldManifests = [];
+    await page.route("**/assets/template-manifest.json", async (route) => {
+      await new Promise((resolve) => heldManifests.push({ route, resolve }));
+    });
+    await page.route("**/snapshot-template/**", async (route) => {
+      const index = Number(new URL(route.request().url()).pathname.split("/").pop());
+      const entry = snapshotCase.templateEntries[index];
+      await route.fulfill({ status: 200, body: entry.body });
+    });
+    await page.route("**/assets/template-images/ios/Images/commonIcoTheme.png", async (route) => {
+      await route.fulfill({ status: 200, contentType: "image/png", body: onePixelPng });
+    });
+    await page.goto("/");
+    await page.evaluate(() => {
+      window.__serializeCanvasPixels = true;
+    });
+
+    const invocationMainImage = await createPngBuffer(page, 4, 4, "#112233");
+    const laterMainImage = await createPngBuffer(page, 4, 4, "#445566");
+    const laterSplashImage = await createPngBuffer(page, 4, 4, "#778899");
+    const pendingIconImage = await createPngBuffer(page, 114, 114, "#f78da7");
+
+    await page.locator("#app-name").fill("Invocation Theme");
+    await page.locator("#theme-id-segment").fill("Snapshot");
+    await page.locator("#version").fill("1.2.3");
+    await page.locator("#additional-author-name").fill("Invocation Author");
+    await page.locator(".color-picker-control").filter({ has: page.locator("#color-value-mainBackground") }).click();
+    await page.locator("#color-hex-mainBackground").fill("#123456");
+
+    const mainInput = page.locator("#upload-input-mainBackground");
+    await mainInput.setInputFiles({ name: "invocation-main.png", mimeType: "image/png", buffer: invocationMainImage });
+    await expect(page.locator("#upload-description-mainBackground")).toContainText("invocation-main.png");
+
+    const pendingInput = page.locator("#upload-input-tabFriendIcon");
+    await pendingInput.setInputFiles({ name: pendingFileName, mimeType: "image/png", buffer: pendingIconImage });
+    await expect.poll(() => page.evaluate(() => window.__delayedImageBitmapStarted)).toBe(true);
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.locator(snapshotCase.button).click();
+    await expect.poll(() => heldManifests.length).toBe(1);
+
+    await page.locator("#app-name").fill("Later Theme");
+    await page.locator("#theme-id-segment").fill("Changed");
+    await page.locator("#version").fill("4.5.6");
+    await page.locator("#additional-author-name").fill("Later Author");
+    await mainInput.setInputFiles({ name: "later-main.png", mimeType: "image/png", buffer: laterMainImage });
+    await expect(page.locator("#upload-description-mainBackground")).toContainText("later-main.png");
+
+    if (snapshotCase.platform === "Android") {
+      await page.getByRole("tab", { name: "로딩화면", exact: true }).click();
+      const splashInput = page.locator("#upload-input-splashImage");
+      await splashInput.setInputFiles({ name: "later-splash.png", mimeType: "image/png", buffer: laterSplashImage });
+      await expect(page.locator("#upload-description-splashImage")).toContainText("later-splash.png");
+    }
+
+    await page.locator(".color-picker-control").filter({ has: page.locator("#color-value-mainBackground") }).click();
+    const focusedColorInput = page.locator("#color-hex-mainBackground");
+    await focusedColorInput.fill("#654321");
+    await page.evaluate(() => window.__releaseDelayedImageBitmap());
+    await expect.poll(() => page.evaluate(() => window.__delayedImageBitmapClosed)).toBe(true);
+    await expect(page.locator("#status-text")).toHaveText(`${IMAGE_TARGETS.tabFriendIcon.label} 반영`);
+
+    const held = heldManifests.shift();
+    await held.route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ios: snapshotCase.kind === "ios"
+          ? snapshotCase.templateEntries.map((entry, index) => ({ name: entry.name, url: `snapshot-template/${index}` }))
+          : [],
+        android: snapshotCase.kind === "android"
+          ? snapshotCase.templateEntries.map((entry, index) => ({ name: entry.name, url: `snapshot-template/${index}` }))
+          : [],
+      }),
+    });
+    held.resolve();
+
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe(snapshotCase.fileName);
+    const entries = await readStoredZipEntries(download);
+    expect(decodeEntry(entries, snapshotCase.pendingEntry)).toBe("template pending icon");
+
+    if (snapshotCase.platform === "iOS") {
+      const css = decodeEntry(entries, "KakaoTalkTheme.css");
+      expect(css).toContain("-kakaotalk-theme-name: 'Invocation Theme'");
+      expect(css).toContain("-kakaotalk-theme-version: '1.2.3'");
+      expect(css).toContain("-kakaotalk-theme-id: 'com.snapshot.kakaotalk.theme'");
+      expect(css).toContain("-kakaotalk-author-name: 'reha, Invocation Author'");
+      expect(css).toContain("background-color: #123456");
+      expect(css).not.toContain("Later Theme");
+      expect(css).not.toContain("4.5.6");
+      expect(css).not.toContain("com.changed.kakaotalk.theme");
+      expect(css).not.toContain("Later Author");
+      expect(css).not.toContain("#654321");
+      expect(Buffer.from(entries.get(snapshotCase.mainEntry))).toEqual(invocationMainImage);
+      expect(Buffer.from(entries.get(snapshotCase.mainEntry))).not.toEqual(laterMainImage);
+    } else {
+      const strings = decodeEntry(entries, "src/main/res/values/strings.xml");
+      const colors = decodeEntry(entries, "src/main/theme/values/colors.xml");
+      const gradle = decodeEntry(entries, "build.gradle.kts");
+      const manifest = decodeEntry(entries, "src/main/AndroidManifest.xml");
+      expect(strings).toContain("Invocation Theme");
+      expect(strings).not.toContain("Later Theme");
+      expect(gradle).toContain('namespace = "com.snapshot.kakaotalk.theme"');
+      expect(gradle).toContain('applicationId = "com.snapshot.kakaotalk.theme"');
+      expect(gradle).toContain('versionName = "1.2.3"');
+      expect(gradle).not.toContain("com.changed.kakaotalk.theme");
+      expect(gradle).not.toContain("4.5.6");
+      expect(manifest).toContain('package="com.snapshot.kakaotalk.theme"');
+      expect(manifest).not.toContain("com.changed.kakaotalk.theme");
+      expect(colors).toContain("#123456");
+      expect(colors).not.toContain("#654321");
+      expect(Buffer.from(entries.get(snapshotCase.mainEntry))).toEqual(invocationMainImage);
+      expect(Buffer.from(entries.get(snapshotCase.mainEntry))).not.toEqual(laterMainImage);
+      const splashMarker = decodeEntry(entries, snapshotCase.splashEntry);
+      expect(splashMarker).toContain('"top":[18,52,86,255]');
+      expect(splashMarker).not.toContain("119,136,153,255");
+    }
+
+    expect(await focusedColorInput.evaluate((element) => document.activeElement === element)).toBe(true);
   });
 }
 

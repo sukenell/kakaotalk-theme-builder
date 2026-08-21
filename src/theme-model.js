@@ -844,6 +844,42 @@ export function patchAndroidKotlinSource(source, state) {
     .replace(/\bcom\.kakao\.talk\.theme\.apeach\.databinding\b/g, `${themeId}.databinding`);
 }
 
+function cloneGenerationBubbleLayout(layout) {
+  if (!layout) {
+    return layout;
+  }
+
+  return {
+    ...layout,
+    stretchX: layout.stretchX ? [...layout.stretchX] : layout.stretchX,
+    stretchY: layout.stretchY ? [...layout.stretchY] : layout.stretchY,
+    paddingX: layout.paddingX ? [...layout.paddingX] : layout.paddingX,
+    paddingY: layout.paddingY ? [...layout.paddingY] : layout.paddingY,
+    referenceSize: layout.referenceSize ? { ...layout.referenceSize } : layout.referenceSize,
+  };
+}
+
+function cloneGenerationUpload(upload) {
+  if (!upload || upload instanceof ArrayBuffer || ArrayBuffer.isView(upload)) {
+    return upload;
+  }
+
+  return {
+    ...upload,
+    variants: upload.variants ? { ...upload.variants } : upload.variants,
+    bubbleLayout: cloneGenerationBubbleLayout(upload.bubbleLayout),
+  };
+}
+
+export function createThemeGenerationSnapshot(state, uploads = {}) {
+  return {
+    state: { ...state, colors: { ...getActiveColors(state) } },
+    uploads: Object.fromEntries(
+      Object.entries(uploads).map(([key, upload]) => [key, cloneGenerationUpload(upload)]),
+    ),
+  };
+}
+
 export function cloneDefaultThemeState() {
   const colors = { ...defaultThemeState.colors };
 

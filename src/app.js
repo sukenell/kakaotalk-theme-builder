@@ -11,6 +11,7 @@ import {
   TAB_ICON_IMAGE_KEYS,
   VISIBLE_TAB_ICON_IMAGE_KEYS,
   cloneDefaultThemeState,
+  createThemeGenerationSnapshot,
   defaultThemeState,
   getActiveColors,
   IMAGE_TARGETS,
@@ -1006,7 +1007,7 @@ function createUploadTintControl(key, target) {
       input.disabled = true;
     }
 
-    await refreshUploadImage(key);
+    await guardedRefreshUploadImage(key);
   });
 
   input.addEventListener("input", async () => {
@@ -1014,7 +1015,7 @@ function createUploadTintControl(key, target) {
     checkbox.checked = true;
     input.disabled = false;
 
-    await refreshUploadImage(key);
+    await guardedRefreshUploadImage(key);
   });
 
   control.append(colorActionLabel);
@@ -1102,13 +1103,18 @@ function renderBubbleDetailControls() {
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = mode === "contain" ? "전체" : "채우기";
+    button.dataset.ninePatchFit = mode;
     button.classList.toggle("is-active", settings.fit === mode);
     button.addEventListener("click", async () => {
+      const shouldRestoreFocus = document.activeElement === button;
       getBubbleNinePatchSettings(key).fit = mode;
       markBubbleSettingsChanged(key);
       renderBubbleDetailControls();
       updateBubbleDetailPreview();
-      await refreshUploadImage(key);
+      if (shouldRestoreFocus) {
+        bubbleDetailPanel.querySelector(`[data-nine-patch-fit="${mode}"]`)?.focus();
+      }
+      await guardedRefreshUploadImage(key);
     });
     fitControl.append(button);
   });
@@ -1148,7 +1154,7 @@ function createNinePatchRangeInput(key, field, index, axis) {
     updateNinePatchPairValue(key, field, index, Number(input.value));
     syncBubbleDetailControlValues();
     updateBubbleDetailPreview();
-    await refreshUploadImage(key);
+    await guardedRefreshUploadImage(key);
   });
   return input;
 }
@@ -1350,7 +1356,7 @@ async function resetActiveBubbleDetail() {
   markBubbleSettingsChanged(key);
   renderBubbleDetailControls();
   updateBubbleDetailPreview();
-  await refreshUploadImage(key);
+  await guardedRefreshUploadImage(key);
 }
 
 function createDefaultBubbleNinePatchSettings(referenceSize = bubbleNinePatchPreviewSize) {
@@ -1468,8 +1474,24 @@ async function handleUpload(key, file, input) {
   setStatus(`${IMAGE_TARGETS[key].label} 반영`);
 }
 
-async function refreshUploadImage(key) {
+async function guardedRefreshUploadImage(key) {
   const operation = beginUploadRefreshOperation(key);
+  setErrorStatus("");
+
+  try {
+    await refreshUploadImage(key, operation);
+  } catch {
+    if (!isUploadRefreshOperationCurrent(key, operation)) {
+      return;
+    }
+
+    const label = IMAGE_TARGETS[key].label;
+    setStatus(`${label} 이미지 처리 실패`);
+    setErrorStatus(`${label} 이미지를 다시 처리하지 못했습니다. 변경 전 이미지는 유지됩니다. 다시 시도해 주세요.`);
+  }
+}
+
+async function refreshUploadImage(key, operation) {
   const requestedTintColor = tintableUploadKeys.has(key) ? normalizeTintColor(uploadTints[key]) : "";
   const upload = uploads[key];
   if (isClearedImageUpload(key) || (!upload && !requestedTintColor)) {
@@ -1625,7 +1647,7 @@ async function getDefaultUploadSource(key) {
 
   const response = await fetch(`./${path}`);
   if (!response.ok) {
-    return undefined;
+    throw new Error(`default upload source fetch failed: ${key}`);
   }
 
   return {
@@ -1774,12 +1796,20 @@ async function loadImage(file) {
   }
 
   const url = URL.createObjectURL(file);
-  const image = new Image();
-  image.decoding = "async";
-  image.src = url;
-  await image.decode();
-  image.dataset.objectUrl = url;
-  return image;
+  let keepObjectUrl = false;
+  try {
+    const image = new Image();
+    image.decoding = "async";
+    image.src = url;
+    await image.decode();
+    image.dataset.objectUrl = url;
+    keepObjectUrl = true;
+    return image;
+  } finally {
+    if (!keepObjectUrl) {
+      URL.revokeObjectURL(url);
+    }
+  }
 }
 
 function releaseLoadedImage(image) {
@@ -2252,6 +2282,7 @@ async function downloadIosTheme() {
     return;
   }
 
+  const generation = createThemeGenerationSnapshot(state, uploads);
   const shouldRestoreFocus = document.activeElement === downloadIosButton;
   setBusy(true);
   setStatus("iOS 생성 중");
@@ -2263,9 +2294,9 @@ async function downloadIosTheme() {
       return;
     }
 
-    const patchedEntries = buildIosEntries(entries, { state, uploads });
+    const patchedEntries = buildIosEntries(entries, generation);
     const zip = createStoredZip(patchedEntries);
-    downloadBytes(zip, `${sanitizeFileName(state.appName)}.ktheme`, "application/zip");
+    downloadBytes(zip, `${sanitizeFileName(generation.state.appName)}.ktheme`, "application/zip");
     setStatus("iOS 다운로드 준비 완료");
   } catch {
     setStatus("iOS 생성 실패");
@@ -2276,8 +2307,8 @@ async function downloadIosTheme() {
   }
 }
 
-async function getThemeIconUploadSource() {
-  const upload = uploads.themeIcon;
+async function getThemeIconUploadSource(generationUploads) {
+  const upload = generationUploads.themeIcon;
   if (upload?.cleared) {
     return undefined;
   }
@@ -2298,8 +2329,8 @@ async function getThemeIconUploadSource() {
   return defaultSource ? { ...defaultSource, sourceKind: "default" } : undefined;
 }
 
-function getSplashBackgroundUploadSource() {
-  const upload = uploads.splashImage;
+function getSplashBackgroundUploadSource(generationUploads) {
+  const upload = generationUploads.splashImage;
   if (!upload || upload.cleared) {
     return undefined;
   }
@@ -2315,9 +2346,9 @@ function getSplashBackgroundUploadSource() {
   };
 }
 
-async function createGeneratedSplashUpload() {
-  const iconSource = await getThemeIconUploadSource();
-  const backgroundSource = getSplashBackgroundUploadSource();
+async function createGeneratedSplashUpload(generation) {
+  const iconSource = await getThemeIconUploadSource(generation.uploads);
+  const backgroundSource = getSplashBackgroundUploadSource(generation.uploads);
   const iconBlob = iconSource?.data ? new Blob([iconSource.data], { type: iconSource.type || "image/png" }) : undefined;
   const backgroundBlob = backgroundSource
     ? new Blob([backgroundSource.data], { type: backgroundSource.type || "image/png" })
@@ -2327,7 +2358,7 @@ async function createGeneratedSplashUpload() {
 
   try {
     const variants = {};
-    const backgroundColor = toPreviewCssColor(getActiveColors(state).mainBackground);
+    const backgroundColor = toPreviewCssColor(getActiveColors(generation.state).mainBackground);
 
     for (const [name, size] of Object.entries(androidSplashImageSizes)) {
       variants[name] = await renderSplashImageToPngBytes(iconImage, size[0], size[1], {
@@ -2362,6 +2393,7 @@ async function downloadAndroidSource() {
     return;
   }
 
+  const generation = createThemeGenerationSnapshot(state, uploads);
   const shouldRestoreFocus = document.activeElement === downloadAndroidButton;
   setBusy(true);
   setStatus("Android 생성 중");
@@ -2373,18 +2405,20 @@ async function downloadAndroidSource() {
       return;
     }
 
-    const generatedSplashUpload = await createGeneratedSplashUpload();
+    const generatedSplashUpload = await createGeneratedSplashUpload(generation);
     if (!canDownloadTheme(getThemeValidation())) {
       setStatus("Android 생성 취소");
       return;
     }
 
-    const androidUploads = generatedSplashUpload ? { ...uploads, splashImage: generatedSplashUpload } : uploads;
-    const patchedEntries = buildAndroidEntries(entries, { state, uploads: androidUploads });
+    const androidUploads = generatedSplashUpload
+      ? { ...generation.uploads, splashImage: generatedSplashUpload }
+      : generation.uploads;
+    const patchedEntries = buildAndroidEntries(entries, { state: generation.state, uploads: androidUploads });
     const zip = createStoredZip(patchedEntries);
-    downloadBytes(zip, `${sanitizeFileName(state.appName)}-android-source.zip`, "application/zip");
+    downloadBytes(zip, `${sanitizeFileName(generation.state.appName)}-android-source.zip`, "application/zip");
 
-    const skipped = getSkippedAndroidUploads(uploads);
+    const skipped = getSkippedAndroidUploads(generation.uploads);
     setStatus(skipped.length ? `Android 생성 완료, 9-patch 제외: ${skipped.join(", ")}` : "Android 다운로드 준비 완료");
   } catch {
     setStatus("Android 생성 실패");
