@@ -66,7 +66,7 @@ button {
   display: grid;
   grid-template-columns: minmax(280px, 0.9fr) minmax(260px, 0.8fr) minmax(360px, 1.15fr);
   min-height: 100vh;
-  padding-bottom: 112px;
+  padding-bottom: var(--download-bar-height, 160px);
 }
 
 .panel {
@@ -3482,7 +3482,7 @@ h2 {
 @media (max-width: 760px) {
   .app-shell {
     display: block;
-    padding-bottom: 156px;
+    padding-bottom: 0;
   }
 
   .panel {
@@ -3507,6 +3507,8 @@ h2 {
   }
 
   .download-bar {
+    position: static;
+    inset: auto;
     align-items: stretch;
     flex-direction: column;
   }

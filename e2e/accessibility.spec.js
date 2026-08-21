@@ -89,6 +89,24 @@ async function contrastAnnouncements(page) {
   return page.evaluate(() => window.__contrastAnnouncements);
 }
 
+async function installAllLiveRegionRecorder(page) {
+  await page.evaluate(() => {
+    window.__allLiveAnnouncements = [];
+    const liveRegions = new Set(document.querySelectorAll('[aria-live], [role="status"], [role="alert"]'));
+    for (const element of liveRegions) {
+      new MutationObserver(() => {
+        if (element.textContent) {
+          window.__allLiveAnnouncements.push({ id: element.id, text: element.textContent });
+        }
+      }).observe(element, { childList: true, characterData: true, subtree: true });
+    }
+  });
+}
+
+async function allLiveAnnouncements(page) {
+  return page.evaluate(() => window.__allLiveAnnouncements);
+}
+
 async function fillThemeHexColor(page, key, value) {
   const row = page.locator(".color-row").filter({ has: page.locator(`#color-label-${key}`) });
   const popover = row.locator(`#color-popover-${key}`);
@@ -1722,12 +1740,14 @@ test("@task4 automatically activates scoped preview tabs with arrows, Home, End,
   await page.locator("#preview-previous").click();
   await expectPreviewInvariant(page, 2);
   await expect(page.locator("#preview-previous")).toBeFocused();
-  await expect(previewStatus).toHaveText("지금 프리뷰, 3/10");
+  await expect(previewStatus).toContainText("지금 프리뷰, 3/10");
+  await expect(previewStatus).toContainText(/통과 \d+개, 미달 \d+개, 자동 확인 불가 \d+개/);
 
   await page.locator("#preview-next").click();
   await expectPreviewInvariant(page, 3);
   await expect(page.locator("#preview-next")).toBeFocused();
-  await expect(previewStatus).toHaveText("쇼핑 프리뷰, 4/10");
+  await expect(previewStatus).toContainText("쇼핑 프리뷰, 4/10");
+  await expect(previewStatus).toContainText(/통과 \d+개, 미달 \d+개, 자동 확인 불가 \d+개/);
 });
 
 test("@task4 removes global arrow navigation and scopes passcode shortcuts to its focused panel", async ({ page }) => {
@@ -2365,7 +2385,8 @@ function resolveDeclaredColor(source) {
   if (typeof source === "string") {
     return parseCssHex(source);
   }
-  return parseThemeArgb(defaultThemeState.colors[source.colorKey]);
+  const color = parseThemeArgb(defaultThemeState.colors[source.colorKey]);
+  return source.alpha === undefined ? color : { ...color, a: color.a * source.alpha };
 }
 
 function declaredForeground(context) {
@@ -2514,6 +2535,111 @@ test("@task8-user shows the default current-page and all-page contrast report wi
   await expect(page.locator("#download-ios")).toBeEnabled();
   await expect(page.locator("#download-android")).toBeEnabled();
 });
+
+test("@task8-user matches token-mixed more and selected-theme surfaces under adversarial colors", async ({ page }) => {
+  await page.goto("/");
+  const colors = {
+    ...defaultThemeState.colors,
+    mainBackground: "#000000",
+    headerText: "#000000",
+    titleText: "#000000",
+    sectionTitle: "#000000",
+  };
+
+  await page.getByRole("tab", { name: "더보기", exact: true }).click();
+  await fillThemeHexColor(page, "mainBackground", colors.mainBackground);
+  await fillThemeHexColor(page, "headerText", colors.headerText);
+  await fillThemeHexColor(page, "titleText", colors.titleText);
+
+  const moreReport = evaluateThemeContrast({ colors, contexts: CONTRAST_CONTEXTS });
+  for (const id of ["more-service-icon", "more-service-title"]) {
+    const context = CONTRAST_CONTEXTS.find(({ id: contextId }) => contextId === id);
+    const modelResult = moreReport.results.find(({ id: contextId }) => contextId === id);
+    const [rendered] = await renderedContextSamples(page.locator(context.selector), context);
+    expect(modelResult.status, `${id} model status`).toBe("fail");
+    expect(rendered.ratio, `${id} rendered/model ratio`).toBeCloseTo(modelResult.ratio, 2);
+    await expect(page.locator(`[data-contrast-context="${id}"]`)).toContainText("미달");
+  }
+
+  await page.getByRole("tab", { name: "테마 목록", exact: true }).click();
+  await fillThemeHexColor(page, "sectionTitle", colors.sectionTitle);
+  const themeReport = evaluateThemeContrast({ colors, contexts: CONTRAST_CONTEXTS });
+  const context = CONTRAST_CONTEXTS.find(({ id }) => id === "theme-list-secondary-selected");
+  const modelResult = themeReport.results.find(({ id }) => id === context.id);
+  const [rendered] = await renderedContextSamples(page.locator(context.selector), context);
+  expect(modelResult.status).toBe("fail");
+  expect(rendered.ratio).toBeCloseTo(modelResult.ratio, 2);
+  await expect(page.locator(`[data-contrast-context="${context.id}"]`)).toContainText("미달");
+});
+
+for (const { width, height } of [
+  { width: 1280, height: 800 },
+  { width: 760, height: 800 },
+  { width: 390, height: 844 },
+  { width: 320, height: 700 },
+]) {
+  test(`@task8-user keeps the final content and contrast footer reachable at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto("/");
+    await expect.poll(() => page.evaluate(() => {
+      const footer = document.querySelector(".download-bar");
+      const main = document.querySelector(".app-shell");
+      if (getComputedStyle(footer).position !== "fixed") {
+        return true;
+      }
+      return Number.parseFloat(getComputedStyle(main).paddingBottom) >= footer.getBoundingClientRect().height - 1;
+    })).toBe(true);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+
+    const geometry = await page.evaluate(() => {
+      const footer = document.querySelector(".download-bar");
+      const main = document.querySelector(".app-shell");
+      const report = document.querySelector("#theme-contrast-report");
+      const footerRect = footer.getBoundingClientRect();
+      const mainRect = main.getBoundingClientRect();
+      const reportRect = report.getBoundingClientRect();
+      const fixed = getComputedStyle(footer).position === "fixed";
+      const lastContent = ["#settings-form", "#upload-controls", "#preview-frame"].map((selector) => {
+        const rect = document.querySelector(selector).getBoundingClientRect();
+        return { selector, bottom: rect.bottom };
+      });
+
+      return {
+        fixed,
+        footerHeight: footerRect.height,
+        footerTop: footerRect.top,
+        footerBottom: footerRect.bottom,
+        mainBottom: mainRect.bottom,
+        paddingBottom: Number.parseFloat(getComputedStyle(main).paddingBottom),
+        reportTop: reportRect.top,
+        reportBottom: reportRect.bottom,
+        lastContent,
+        maxScrollReached: Math.abs(
+          window.scrollY - (document.documentElement.scrollHeight - window.innerHeight),
+        ) <= 1,
+        viewportHeight: window.innerHeight,
+        horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+
+    expect(geometry.maxScrollReached).toBe(true);
+    expect(geometry.horizontalOverflow).toBeLessThanOrEqual(1);
+    expect(geometry.reportTop).toBeGreaterThanOrEqual(-1);
+    expect(geometry.reportBottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
+    if (width > 760) {
+      expect(geometry.fixed).toBe(true);
+      expect(geometry.paddingBottom).toBeGreaterThanOrEqual(geometry.footerHeight - 1);
+      for (const target of geometry.lastContent) {
+        expect(target.bottom, `${target.selector} clears the fixed footer`).toBeLessThanOrEqual(geometry.footerTop + 1);
+      }
+    } else {
+      expect(geometry.fixed).toBe(false);
+      expect(geometry.paddingBottom).toBe(0);
+      expect(geometry.mainBottom).toBeLessThanOrEqual(geometry.footerTop + 1);
+      expect(geometry.footerBottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
+    }
+  });
+}
 
 test("@task8-user retains a low color and reports ratio, threshold, failed screens, and download policy", async ({ page }) => {
   await page.goto("/");
@@ -2670,6 +2796,59 @@ test("@task8-user cancels pending color speech and reannounces identical discret
   expect(announcements[0]).toContain("자동 확인 불가");
   await expect(page.locator("#contrast-current-summary")).toContainText("미달 0개");
   await expect(page.locator("#theme-contrast-summary")).toContainText("미달 화면 0개");
+});
+
+test("@task8-user queues synchronous discrete page and reset announcements in FIFO order", async ({ page }) => {
+  await page.goto("/");
+  await installAllLiveRegionRecorder(page);
+
+  await page.evaluate(() => {
+    document.querySelector("#preview-next").click();
+    document.querySelector("#preview-next").click();
+  });
+  await expect.poll(async () => (await allLiveAnnouncements(page)).filter(({ id }) => id === "preview-status").length).toBe(2);
+  const pageMessages = (await allLiveAnnouncements(page)).filter(({ id }) => id === "preview-status");
+  expect(pageMessages[0].text).toContain("지금 프리뷰, 3/10");
+  expect(pageMessages[1].text).toContain("쇼핑 프리뷰, 4/10");
+
+  await fillThemeHexColor(page, "headerText", "#111111");
+  await fillThemeHexColor(page, "mainBackground", "#222222");
+  await page.waitForTimeout(300);
+  await page.evaluate(() => {
+    window.__allLiveAnnouncements = [];
+    document.querySelector("#color-label-headerText").closest(".color-row").querySelector(".color-reset-button").click();
+    document.querySelector("#color-label-mainBackground").closest(".color-row").querySelector(".color-reset-button").click();
+  });
+
+  await expect.poll(async () => (await allLiveAnnouncements(page)).filter(({ id }) => id === "contrast-status").length).toBe(2);
+  const resetMessages = (await allLiveAnnouncements(page)).filter(({ id }) => id === "contrast-status");
+  expect(resetMessages).toHaveLength(2);
+  expect(resetMessages.every(({ text }) => text.includes("대비") && text.includes("통과"))).toBe(true);
+});
+
+test("@task8-user publishes one combined live message for arrows and none for roving tabs", async ({ page }) => {
+  await page.goto("/");
+  await installAllLiveRegionRecorder(page);
+
+  await page.locator("#preview-next").click();
+  await expect.poll(async () => (await allLiveAnnouncements(page)).length).toBeGreaterThan(0);
+  await page.waitForTimeout(50);
+  let messages = await allLiveAnnouncements(page);
+  expect(messages).toHaveLength(1);
+  expect(messages[0].id).toBe("preview-status");
+  expect(messages[0].text).toContain("지금 프리뷰, 3/10");
+  expect(messages[0].text).toMatch(/통과 \d+개, 미달 \d+개, 자동 확인 불가 \d+개/);
+
+  await page.evaluate(() => { window.__allLiveAnnouncements = []; });
+  const tabs = page.locator('#preview-tabs > button[role="tab"]');
+  await tabs.nth(2).focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Home");
+  await page.keyboard.press("End");
+  await tabs.nth(4).click();
+  await page.waitForTimeout(300);
+  messages = await allLiveAnnouncements(page);
+  expect(messages).toEqual([]);
 });
 
 test("@task8-user keeps existing status channels untouched by color contrast updates", async ({ page }) => {

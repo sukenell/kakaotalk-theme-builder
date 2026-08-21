@@ -557,28 +557,28 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   }),
   contrastContext({
     id: "more-service-icon", pageId: "more", label: "더보기 서비스 아이콘", selector: "#preview-panel-more .more-service-icon",
-    foregroundKey: "headerText", background: "#FFE7E7", imageStates: mainImage, kind: "ui-component", guarantee: "opaque-backing",
-    protectedImageKeys: ["mainBackground"], foregroundProperty: "border-top-color", backgroundSource: "parent", backingSelector: ".more-service-panel",
-    evidence: "main raster 위 불투명 service panel과 headerText 경계",
+    foregroundKey: "headerText", backgroundLayers: ["#FFFFFF", { colorKey: "mainBackground", alpha: 0.72 }, { colorKey: "headerText", alpha: 0.08 }],
+    imageStates: mainImage, kind: "ui-component", guarantee: "opaque-backing", protectedImageKeys: ["mainBackground"],
+    foregroundProperty: "border-top-color", evidence: "mainBackground 72% panel 위 headerText 8% 아이콘 채움과 headerText 경계",
   }),
   contrastContext({
     id: "more-service-title", pageId: "more", label: "더보기 서비스 이름", selector: "#preview-panel-more .more-service-item strong",
-    foregroundKey: "titleText", background: "#FFE7E7", imageStates: mainImage, guarantee: "opaque-backing",
-    protectedImageKeys: ["mainBackground"], backingSelector: ".more-service-panel",
+    foregroundKey: "titleText", backgroundLayers: ["#FFFFFF", { colorKey: "mainBackground", alpha: 0.72 }],
+    imageStates: mainImage, guarantee: "opaque-backing", protectedImageKeys: ["mainBackground"],
     evidence: "main raster를 차단하는 불투명 mainBackground 72% + white color-mix",
   }),
   contrastContext({
     id: "more-page-dot-default", pageId: "more", label: "더보기 기본 페이지 점", selector: "#preview-panel-more .more-page-dots span:not(.active)",
-    foregroundKey: "headerText", foregroundOpacity: 0.65, background: "#FFE7E7", imageStates: mainImage, kind: "ui-component",
+    foregroundKey: "headerText", foregroundOpacity: 0.65, backgroundLayers: ["#FFFFFF", { colorKey: "mainBackground", alpha: 0.72 }], imageStates: mainImage, kind: "ui-component",
     guarantee: "opaque-backing", protectedImageKeys: ["mainBackground"], foregroundProperty: "background-color",
-    backgroundSource: "parent", backingSelector: ".more-service-panel",
+    backgroundSource: "parent",
     evidence: "불투명 service panel 위 65% headerText 페이지 상태",
   }),
   contrastContext({
     id: "more-page-dot-selected", pageId: "more", label: "더보기 선택 페이지 점", selector: "#preview-panel-more .more-page-dots span.active",
-    foregroundKey: "headerText", background: "#FFE7E7", imageStates: mainImage, kind: "ui-component",
+    foregroundKey: "headerText", backgroundLayers: ["#FFFFFF", { colorKey: "mainBackground", alpha: 0.72 }], imageStates: mainImage, kind: "ui-component",
     guarantee: "opaque-backing", protectedImageKeys: ["mainBackground"], foregroundProperty: "background-color",
-    backgroundSource: "parent", backingSelector: ".more-service-panel",
+    backgroundSource: "parent",
     state: "selected", evidence: "불투명 service panel 위 headerText 선택 상태",
   }),
   contrastContext({
@@ -827,11 +827,13 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   }),
   contrastContext({
     id: "theme-list-title-selected", pageId: "theme-list", label: "선택된 테마 이름", selector: "#preview-panel-theme-list .active-theme-row .theme-list-copy strong",
-    foreground: "#202124", background: "#F9F3F4", state: "selected", evidence: "기본 sectionTitle 6%와 흰색의 불투명 선택 배경",
+    foreground: "#202124", backgroundLayers: ["#FFFFFF", { colorKey: "sectionTitle", alpha: 0.06 }], state: "selected",
+    evidence: "현재 sectionTitle 6%와 흰색의 불투명 선택 배경",
   }),
   contrastContext({
     id: "theme-list-secondary-selected", pageId: "theme-list", label: "선택된 테마 설명", selector: "#preview-panel-theme-list .active-theme-row .theme-list-copy > span",
-    foreground: "#687078", background: "#F9F3F4", state: "selected", evidence: "선택 배경에서도 4.5 이상인 불투명 보조 전경",
+    foreground: "#687078", backgroundLayers: ["#FFFFFF", { colorKey: "sectionTitle", alpha: 0.06 }], state: "selected",
+    evidence: "현재 sectionTitle 선택 배경과 불투명 보조 전경",
   }),
   contrastContext({
     id: "theme-list-choice-default", pageId: "theme-list", label: "선택되지 않은 테마 표시", selector: "#preview-panel-theme-list .theme-choice:not(.selected)",
@@ -840,7 +842,7 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   }),
   contrastContext({
     id: "theme-list-choice-selected", pageId: "theme-list", label: "선택 표시", selector: "#preview-panel-theme-list .theme-choice.selected",
-    foregroundKey: "sectionTitle", background: "#F9F3F4", state: "selected", kind: "ui-component", foregroundProperty: "border-top-color",
+    foregroundKey: "sectionTitle", backgroundLayers: ["#FFFFFF", { colorKey: "sectionTitle", alpha: 0.06 }], state: "selected", kind: "ui-component", foregroundProperty: "border-top-color",
     evidence: "선택 원 테두리는 sectionTitle 토큰을 사용",
   }),
   contrastContext({
@@ -849,7 +851,7 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   }),
   contrastContext({
     id: "theme-list-user-icon", pageId: "theme-list", label: "사용자 테마 아이콘", selector: "#preview-panel-theme-list .active-theme-row .theme-icon",
-    foreground: "#000000", background: "#F9F3F4", imageStates: { themeIcon: "bundled" }, kind: "image",
+    foreground: "#000000", backgroundLayers: ["#FFFFFF", { colorKey: "sectionTitle", alpha: 0.06 }], imageStates: { themeIcon: "bundled" }, kind: "image",
     evidence: "수동 이미지 검사 대상: 실제 bundled themeIcon PNG",
   }),
 ]);
@@ -864,7 +866,22 @@ function resolveContextColor(source, colors) {
   }
 
   if (source && typeof source === "object" && typeof source.colorKey === "string") {
-    return parseThemeArgb(colors?.[source.colorKey]);
+    const color = parseThemeArgb(colors?.[source.colorKey]);
+    if (!color) {
+      return null;
+    }
+    if (source.alpha === undefined) {
+      return color;
+    }
+    if (
+      typeof source.alpha !== "number" ||
+      !Number.isFinite(source.alpha) ||
+      source.alpha < 0 ||
+      source.alpha > 1
+    ) {
+      return null;
+    }
+    return { ...color, a: color.a * source.alpha };
   }
 
   return null;

@@ -309,6 +309,7 @@ const themeIdError = document.querySelector("#theme-id-error");
 const downloadTitle = document.querySelector("#download-title");
 const downloadIosButton = document.querySelector("#download-ios");
 const downloadAndroidButton = document.querySelector("#download-android");
+const downloadBar = document.querySelector(".download-bar");
 const versionInput = document.querySelector("#version");
 const versionError = document.querySelector("#version-error");
 const downloadActions = document.querySelector(".download-actions");
@@ -334,8 +335,10 @@ const previewTimeElements = document.querySelectorAll("[data-preview-time]");
 const documentRoot = document.documentElement;
 const announceStatusMessage = createDiscreteLiveAnnouncer(statusText);
 const announceErrorMessage = createDiscreteLiveAnnouncer(errorStatus);
+const announcePreviewMessage = createDiscreteLiveAnnouncer(previewStatus);
 const announceContrastMessage = createContrastLiveAnnouncer(contrastStatus);
 
+setupDownloadBarInset();
 applyPreviewDefaultImages(documentRoot);
 applyShoppingPreviewImages();
 applyGroupAvatarImages();
@@ -388,35 +391,45 @@ function createDiscreteLiveAnnouncer(element) {
 }
 
 function createContrastLiveAnnouncer(element, delay = 250) {
-  let generation = 0;
   let timer;
-
-  const begin = () => {
-    generation += 1;
+  const publish = createDiscreteLiveAnnouncer(element);
+  const cancelDebounce = () => {
     window.clearTimeout(timer);
-    element.textContent = "";
-    return generation;
-  };
-
-  const publish = (message, expectedGeneration) => {
-    if (generation === expectedGeneration) {
-      element.textContent = message;
-    }
+    timer = undefined;
   };
 
   return {
     cancel() {
-      begin();
+      cancelDebounce();
     },
     debounce(message) {
-      const expectedGeneration = begin();
-      timer = window.setTimeout(() => publish(message, expectedGeneration), delay);
+      cancelDebounce();
+      timer = window.setTimeout(() => {
+        timer = undefined;
+        publish(message);
+      }, delay);
     },
     discrete(message) {
-      const expectedGeneration = begin();
-      timer = window.setTimeout(() => publish(message, expectedGeneration), 0);
+      cancelDebounce();
+      publish(message);
     },
   };
+}
+
+function setupDownloadBarInset() {
+  const updateInset = () => {
+    documentRoot.style.setProperty(
+      "--download-bar-height",
+      `${Math.ceil(downloadBar.getBoundingClientRect().height)}px`,
+    );
+  };
+
+  updateInset();
+  if ("ResizeObserver" in window) {
+    new ResizeObserver(updateInset).observe(downloadBar);
+  } else {
+    window.addEventListener("resize", updateInset);
+  }
 }
 
 function getContrastImageStates() {
@@ -1361,7 +1374,7 @@ function renderPreviewTabs() {
       icon.className = "page-icon";
       icon.style.setProperty("--page-icon-mask", `url("${page.iconUrl}")`);
       button.append(icon);
-      button.addEventListener("click", () => setPreviewIndex(index));
+      button.addEventListener("click", () => setPreviewIndex(index, { contrastAnnouncement: "none" }));
       return button;
     }),
   );
@@ -1413,12 +1426,18 @@ function setPreviewIndex(index, { focus = "preserve", announce = false, contrast
   }
 
   if (announce) {
-    previewStatus.textContent = `${page.label} 프리뷰, ${currentPreviewIndex + 1}/${PREVIEW_PAGES.length}`;
+    const pageSummary = currentContrastReport.byPage[page.id];
+    announcePreviewMessage(
+      `${page.label} 프리뷰, ${currentPreviewIndex + 1}/${PREVIEW_PAGES.length}. 대비: ${formatContrastCounts(pageSummary)}.${getContrastPolicyText(pageSummary)}`,
+    );
   }
 }
 
 function movePreview(direction) {
-  setPreviewIndex(getNextPreviewIndex(currentPreviewIndex, direction), { announce: true });
+  setPreviewIndex(getNextPreviewIndex(currentPreviewIndex, direction), {
+    announce: true,
+    contrastAnnouncement: "none",
+  });
 }
 
 function handlePreviewTabKeydown(event) {
@@ -1433,7 +1452,7 @@ function handlePreviewTabKeydown(event) {
   }
 
   event.preventDefault();
-  setPreviewIndex(nextIndex, { focus: "tab" });
+  setPreviewIndex(nextIndex, { focus: "tab", contrastAnnouncement: "none" });
 }
 
 function openBubbleDetail(key) {

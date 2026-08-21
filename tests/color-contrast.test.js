@@ -658,6 +658,79 @@ test("context evaluation composites ordered static layers without rounding", () 
   assert.ok(result.ratio < 10);
 });
 
+test("token color-mix layers composite theme colors at their declared weights", () => {
+  const context = {
+    id: "token-layer",
+    pageId: "more",
+    label: "토큰 레이어",
+    selector: "#token-layer",
+    foreground: "#FFFFFF",
+    backgroundLayers: [
+      "#FFFFFF",
+      { colorKey: "mainBackground", alpha: 0.72 },
+      { colorKey: "headerText", alpha: 0.08 },
+    ],
+    required: 4.5,
+    imageKeys: [],
+    imageStates: {},
+    protectedImageKeys: [],
+  };
+  const colors = { mainBackground: "#000000", headerText: "#FF0000" };
+  const expectedPanel = compositeColors(
+    { ...parseThemeArgb(colors.mainBackground), a: 0.72 },
+    parseCssHex("#FFFFFF"),
+  );
+  const expectedBackground = compositeColors(
+    { ...parseThemeArgb(colors.headerText), a: 0.08 },
+    expectedPanel,
+  );
+
+  const result = evaluateContrastContext(context, colors);
+
+  assert.equal(result.status, "pass");
+  assertClose(result.ratio, contrastRatio(parseCssHex("#FFFFFF"), expectedBackground));
+  assert.deepEqual(
+    evaluateThemeContrast({ colors, contexts: [context] }).results[0].colorKeys,
+    ["mainBackground", "headerText"],
+  );
+});
+
+test("token-derived preview surfaces never freeze their default color-mix values", () => {
+  const byId = Object.fromEntries(CONTRAST_CONTEXTS.map((context) => [context.id, context]));
+  const servicePanel = ["#FFFFFF", { colorKey: "mainBackground", alpha: 0.72 }];
+  const serviceIcon = [...servicePanel, { colorKey: "headerText", alpha: 0.08 }];
+  const selectedThemeRow = ["#FFFFFF", { colorKey: "sectionTitle", alpha: 0.06 }];
+
+  assert.deepEqual(byId["more-service-icon"].backgroundLayers, serviceIcon);
+  for (const id of ["more-service-title", "more-page-dot-default", "more-page-dot-selected"]) {
+    assert.deepEqual(byId[id].backgroundLayers, servicePanel, id);
+  }
+  for (const id of [
+    "theme-list-title-selected",
+    "theme-list-secondary-selected",
+    "theme-list-choice-selected",
+    "theme-list-user-icon",
+  ]) {
+    assert.deepEqual(byId[id].backgroundLayers, selectedThemeRow, id);
+  }
+
+  const colors = {
+    ...defaultThemeState.colors,
+    mainBackground: "#000000",
+    headerText: "#000000",
+    titleText: "#000000",
+    sectionTitle: "#000000",
+  };
+  const report = evaluateThemeContrast({ colors, contexts: CONTRAST_CONTEXTS });
+
+  assert.equal(report.results.find(({ id }) => id === "more-service-title").status, "fail");
+  assert.equal(report.results.find(({ id }) => id === "more-service-icon").status, "fail");
+  assert.equal(report.results.find(({ id }) => id === "theme-list-secondary-selected").status, "fail");
+  assert.ok(report.byColor.mainBackground.some(({ id }) => id === "more-service-title"));
+  assert.ok(report.byColor.headerText.some(({ id }) => id === "more-service-icon"));
+  assert.ok(report.byColor.sectionTitle.some(({ id }) => id === "theme-list-secondary-selected"));
+});
+
 test("image-backed text contexts use a guaranteed backing instead of pretending the raster was computed", () => {
   const protectedContexts = CONTRAST_CONTEXTS.filter(({ id }) =>
     [
