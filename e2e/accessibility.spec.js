@@ -1,6 +1,7 @@
 import { expect, test as base } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
+import { inflateSync } from "node:zlib";
 import {
   CONTRAST_CONTEXTS,
   compositeColors,
@@ -195,6 +196,117 @@ async function focusGeometry(locator) {
       viewport: { height: innerHeight, width: innerWidth },
     };
   });
+}
+
+function decodeScreenshotPng(buffer) {
+  const width = buffer.readUInt32BE(16);
+  const height = buffer.readUInt32BE(20);
+  const bitDepth = buffer[24];
+  const colorType = buffer[25];
+  const channels = colorType === 6 ? 4 : colorType === 2 ? 3 : 0;
+  if (bitDepth !== 8 || channels === 0) {
+    throw new Error(`unsupported screenshot PNG format: depth ${bitDepth}, color type ${colorType}`);
+  }
+
+  const chunks = [];
+  for (let offset = 8; offset < buffer.length;) {
+    const length = buffer.readUInt32BE(offset);
+    const type = buffer.toString("ascii", offset + 4, offset + 8);
+    if (type === "IDAT") {
+      chunks.push(buffer.subarray(offset + 8, offset + 8 + length));
+    }
+    offset += length + 12;
+  }
+
+  const raw = inflateSync(Buffer.concat(chunks));
+  const stride = width * channels;
+  const decoded = Buffer.alloc(height * stride);
+  const paeth = (left, up, upperLeft) => {
+    const estimate = left + up - upperLeft;
+    const leftDistance = Math.abs(estimate - left);
+    const upDistance = Math.abs(estimate - up);
+    const upperLeftDistance = Math.abs(estimate - upperLeft);
+    return leftDistance <= upDistance && leftDistance <= upperLeftDistance
+      ? left
+      : upDistance <= upperLeftDistance
+        ? up
+        : upperLeft;
+  };
+
+  for (let y = 0; y < height; y += 1) {
+    const rawRow = y * (stride + 1);
+    const decodedRow = y * stride;
+    const filter = raw[rawRow];
+    for (let x = 0; x < stride; x += 1) {
+      const source = raw[rawRow + 1 + x];
+      const left = x >= channels ? decoded[decodedRow + x - channels] : 0;
+      const up = y > 0 ? decoded[decodedRow - stride + x] : 0;
+      const upperLeft = y > 0 && x >= channels ? decoded[decodedRow - stride + x - channels] : 0;
+      const prediction = filter === 0
+        ? 0
+        : filter === 1
+          ? left
+          : filter === 2
+            ? up
+            : filter === 3
+              ? Math.floor((left + up) / 2)
+              : filter === 4
+                ? paeth(left, up, upperLeft)
+                : Number.NaN;
+      if (!Number.isFinite(prediction)) {
+        throw new Error(`unsupported screenshot PNG filter: ${filter}`);
+      }
+      decoded[decodedRow + x] = (source + prediction) & 0xff;
+    }
+  }
+
+  const pixels = Buffer.alloc(width * height * 4);
+  for (let index = 0; index < width * height; index += 1) {
+    pixels[index * 4] = decoded[index * channels];
+    pixels[index * 4 + 1] = decoded[index * channels + 1];
+    pixels[index * 4 + 2] = decoded[index * channels + 2];
+    pixels[index * 4 + 3] = channels === 4 ? decoded[index * channels + 3] : 255;
+  }
+
+  return { height, pixels, width };
+}
+
+function countScreenshotPixels(image, color, predicate = () => true) {
+  let count = 0;
+  for (let y = 0; y < image.height; y += 1) {
+    for (let x = 0; x < image.width; x += 1) {
+      if (!predicate(x, y, image.width, image.height)) {
+        continue;
+      }
+      const offset = (y * image.width + x) * 4;
+      if (
+        image.pixels[offset] === color[0] &&
+        image.pixels[offset + 1] === color[1] &&
+        image.pixels[offset + 2] === color[2] &&
+        image.pixels[offset + 3] === (color[3] ?? 255)
+      ) {
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
+function changedScreenshotPixelCount(first, second, predicate = () => true) {
+  expect({ height: first.height, width: first.width }).toEqual({ height: second.height, width: second.width });
+  let count = 0;
+  for (let y = 0; y < first.height; y += 1) {
+    for (let x = 0; x < first.width; x += 1) {
+      if (!predicate(x, y, first.width, first.height)) {
+        continue;
+      }
+      const offset = (y * first.width + x) * 4;
+      if (!first.pixels.subarray(offset, offset + 4).equals(second.pixels.subarray(offset, offset + 4))) {
+        count += 1;
+      }
+    }
+  }
+  return count;
 }
 
 async function expectPreviewInvariant(page, expectedIndex) {
@@ -3197,5 +3309,146 @@ test("@task9-focus uses a bright and dark internal double ring for controls over
   expect(appearance.outlineWidth).toBeGreaterThanOrEqual(3);
   expect(appearance.boxShadow).toContain("rgb(255, 255, 255)");
   expect(appearance.boxShadow).toContain("rgb(11, 107, 95)");
+  expect(appearance.clippedBy).toEqual([]);
+});
+
+for (const previewDevice of ["phone", "tablet"]) {
+  test(`@task9-focus keeps every ${previewDevice} nine-patch control and preview inside its own region`, async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("tab", { name: "말풍선 상세", exact: true }).click();
+    await page.locator(`[data-preview-device="${previewDevice}"]`).click();
+
+    const geometry = await page.locator("#preview-panel-bubble-detail").evaluate((panel) => {
+      const editor = panel.querySelector(".bubble-detail-panel");
+      const stage = panel.querySelector(".nine-patch-stage");
+      const preview = panel.querySelector(".nine-patch-preview");
+      const rect = (element) => {
+        const bounds = element.getBoundingClientRect();
+        return {
+          bottom: bounds.bottom,
+          height: bounds.height,
+          left: bounds.left,
+          right: bounds.right,
+          top: bounds.top,
+          width: bounds.width,
+        };
+      };
+      const editorRect = rect(editor);
+      const targetRects = [
+        ...editor.querySelectorAll(".nine-patch-fit-option label, .nine-patch-control input[type=range]"),
+      ].map((element) => ({
+        id: element.htmlFor || element.id,
+        ...rect(element),
+      }));
+      const rows = [...editor.querySelectorAll(".nine-patch-fit-control, .nine-patch-control")].map((fieldset) => {
+        const legendRect = rect(fieldset.querySelector("legend"));
+        const fieldsRect = rect(fieldset.querySelector(".nine-patch-fit-options, .nine-patch-control-fields"));
+        return {
+          fieldsRect,
+          legend: fieldset.querySelector("legend").textContent,
+          legendRect,
+          verticalOverlap: Math.min(legendRect.bottom, fieldsRect.bottom) - Math.max(legendRect.top, fieldsRect.top),
+        };
+      });
+
+      return {
+        editor: {
+          clientHeight: editor.clientHeight,
+          rect: editorRect,
+          scrollHeight: editor.scrollHeight,
+          scrollTop: editor.scrollTop,
+        },
+        preview: rect(preview),
+        rows,
+        stage: rect(stage),
+        targetRects,
+      };
+    });
+
+    expect(geometry.editor.scrollTop).toBe(0);
+    expect(
+      geometry.editor.scrollHeight,
+      `${previewDevice} controls need no initial scrolling: ${JSON.stringify(geometry.rows)}`,
+    ).toBeLessThanOrEqual(
+      geometry.editor.clientHeight + 1,
+    );
+    expect(geometry.targetRects).toHaveLength(10);
+    for (const target of geometry.targetRects) {
+      expect(target.width, `${previewDevice} ${target.id} width`).toBeGreaterThanOrEqual(24);
+      expect(target.height, `${previewDevice} ${target.id} height`).toBeGreaterThanOrEqual(24);
+      expect(target.top, `${previewDevice} ${target.id} starts in editor`).toBeGreaterThanOrEqual(
+        geometry.editor.rect.top - 1,
+      );
+      expect(target.bottom, `${previewDevice} ${target.id} ends in editor`).toBeLessThanOrEqual(
+        geometry.editor.rect.bottom + 1,
+      );
+    }
+    for (const row of geometry.rows) {
+      expect(row.verticalOverlap, `${previewDevice} ${row.legend} legend aligns with its fields`).toBeGreaterThan(0);
+    }
+
+    expect(geometry.preview.width).toBeGreaterThan(0);
+    expect(geometry.preview.height).toBeGreaterThan(0);
+    expect(geometry.preview.left).toBeGreaterThanOrEqual(geometry.stage.left - 1);
+    expect(geometry.preview.right).toBeLessThanOrEqual(geometry.stage.right + 1);
+    expect(geometry.preview.top).toBeGreaterThanOrEqual(geometry.stage.top - 1);
+    expect(geometry.preview.bottom).toBeLessThanOrEqual(geometry.stage.bottom + 1);
+    expect(geometry.preview.bottom, `${previewDevice} preview clears the editor`).toBeLessThanOrEqual(
+      geometry.editor.rect.top + 1,
+    );
+  });
+}
+
+test("@task9-focus changes stable rendered pixels on the selected tab indicator edge", async ({ page }) => {
+  await page.goto("/");
+  const selectedTab = page.getByRole("tab", { name: "대화 목록", exact: true });
+  const selectedPng = await selectedTab.screenshot({ animations: "disabled" });
+  const selectedRepeatPng = await selectedTab.screenshot({ animations: "disabled" });
+
+  await page.getByRole("tab", { name: "지금", exact: true }).click();
+  const unselectedPng = await selectedTab.screenshot({ animations: "disabled" });
+  const unselectedRepeatPng = await selectedTab.screenshot({ animations: "disabled" });
+
+  const selected = decodeScreenshotPng(selectedPng);
+  const selectedRepeat = decodeScreenshotPng(selectedRepeatPng);
+  const unselected = decodeScreenshotPng(unselectedPng);
+  const unselectedRepeat = decodeScreenshotPng(unselectedRepeatPng);
+  const indicatorColor = [11, 107, 95, 255];
+  const expectedIndicatorEdge = (x, y, width, height) => y >= height - 3 && x >= 8 && x < width - 8;
+  const selectedIndicatorPixels = countScreenshotPixels(selected, indicatorColor, expectedIndicatorEdge);
+  expect(selectedIndicatorPixels).toBeGreaterThanOrEqual((selected.width - 18) * 2);
+  expect(countScreenshotPixels(selectedRepeat, indicatorColor, expectedIndicatorEdge)).toBe(selectedIndicatorPixels);
+  expect(countScreenshotPixels(unselected, indicatorColor, expectedIndicatorEdge)).toBe(0);
+  expect(countScreenshotPixels(unselectedRepeat, indicatorColor, expectedIndicatorEdge)).toBe(0);
+  expect(changedScreenshotPixelCount(selected, unselected, expectedIndicatorEdge)).toBeGreaterThanOrEqual(
+    (selected.width - 18) * 2,
+  );
+});
+
+test("@task9-focus changes stable rendered edge pixels after real Tab focuses an image control", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("tab", { name: "말풍선 상세", exact: true }).click();
+  const imageControl = page.getByRole("button", { name: "다음 말풍선", exact: true });
+  const unfocusedPng = await imageControl.screenshot({ animations: "disabled" });
+
+  await tabTo(page, imageControl);
+  await expect(imageControl).toBeFocused();
+  const focusedPng = await imageControl.screenshot({ animations: "disabled" });
+  const focusedRepeatPng = await imageControl.screenshot({ animations: "disabled" });
+
+  const unfocused = decodeScreenshotPng(unfocusedPng);
+  const focused = decodeScreenshotPng(focusedPng);
+  const focusedRepeat = decodeScreenshotPng(focusedRepeatPng);
+  const focusEdge = (x, y, width, height) => Math.min(x, y, width - 1 - x, height - 1 - y) < 6;
+  expect(countScreenshotPixels(unfocused, [11, 107, 95, 255], focusEdge)).toBe(0);
+  const darkFocusPixels = countScreenshotPixels(focused, [11, 107, 95, 255], focusEdge);
+  const brightFocusPixels = countScreenshotPixels(focused, [255, 255, 255, 255], focusEdge);
+  expect(darkFocusPixels).toBeGreaterThan(40);
+  expect(brightFocusPixels).toBeGreaterThan(40);
+  expect(countScreenshotPixels(focusedRepeat, [11, 107, 95, 255], focusEdge)).toBe(darkFocusPixels);
+  expect(countScreenshotPixels(focusedRepeat, [255, 255, 255, 255], focusEdge)).toBe(brightFocusPixels);
+  expect(changedScreenshotPixelCount(unfocused, focused, focusEdge)).toBeGreaterThan(80);
+
+  const appearance = await focusGeometry(imageControl);
   expect(appearance.clippedBy).toEqual([]);
 });

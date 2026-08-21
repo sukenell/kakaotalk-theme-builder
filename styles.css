@@ -2629,6 +2629,8 @@ h2 {
   --nine-crop-height: 100%;
   position: relative;
   width: min(78%, 248px);
+  max-width: 100%;
+  max-height: 100%;
   aspect-ratio: var(--nine-patch-preview-aspect-ratio, 124 / 114);
   overflow: hidden;
   image-rendering: auto;
@@ -2719,10 +2721,8 @@ h2 {
 }
 
 .nine-patch-fit-control {
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
-  align-items: center;
-  gap: 6px;
+  position: relative;
+  display: block;
   width: 100%;
   min-width: 0;
   margin: 0;
@@ -2735,24 +2735,25 @@ h2 {
 
 .nine-patch-fit-control legend,
 .nine-patch-control legend {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 54px;
   min-width: 0;
   margin: 0;
   padding: 0;
   color: inherit;
   font: inherit;
-}
-
-.nine-patch-fit-control > legend,
-.nine-patch-control > legend {
-  grid-column: 1;
+  transform: translateY(-50%);
 }
 
 .nine-patch-fit-options {
   display: grid;
-  grid-column: 2;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
+  width: calc(100% - 60px);
   min-width: 0;
+  margin-left: 60px;
 }
 
 .nine-patch-fit-option {
@@ -2795,10 +2796,8 @@ h2 {
 }
 
 .nine-patch-control {
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
-  align-items: center;
-  gap: 5px;
+  position: relative;
+  display: block;
   width: 100%;
   min-width: 0;
   margin: 0;
@@ -2811,11 +2810,12 @@ h2 {
 
 .nine-patch-control-fields {
   display: grid;
-  grid-column: 2;
   grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr) 34px;
   align-items: center;
   gap: 5px;
+  width: calc(100% - 59px);
   min-width: 0;
+  margin-left: 59px;
 }
 
 .nine-patch-control input[type="range"] {
