@@ -1974,6 +1974,28 @@ test("@task6 carousel keyboard navigation scrolls without changing the parent pr
   await expectPreviewInvariant(page, 3);
 });
 
+test("@task6 carousel queues three rapid keyboard moves through the fourth product", async ({ page }) => {
+  await openShoppingPreview(page);
+  const carousel = page.getByRole("region", { name: "오늘의 PICK 상품 캐러셀", exact: true });
+  const status = page.locator("#shopping-carousel-status");
+
+  await carousel.focus();
+  const cancelled = await carousel.evaluate((element) => Array.from({ length: 3 }, () => {
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      key: "ArrowRight",
+    });
+    element.dispatchEvent(event);
+    return event.defaultPrevented;
+  }));
+
+  expect(cancelled).toEqual([true, true, true]);
+  await expect(status).toHaveText("4/4, 간단 앱 코딩");
+  await expect(carousel).toBeFocused();
+  await expectPreviewInvariant(page, 3);
+});
+
 test("@task6 carousel buttons keep trigger focus and synchronize both boundary states", async ({ page }) => {
   await openShoppingPreview(page);
   const previous = page.getByRole("button", { name: "이전 상품", exact: true });
@@ -2006,6 +2028,23 @@ test("@task6 carousel buttons keep trigger focus and synchronize both boundary s
   await expectPreviewInvariant(page, 3);
 });
 
+test("@task6 carousel queues three rapid button moves through the fourth product", async ({ page }) => {
+  await openShoppingPreview(page);
+  const next = page.getByRole("button", { name: "다음 상품", exact: true });
+  const status = page.locator("#shopping-carousel-status");
+
+  await next.focus();
+  await next.evaluate((button) => {
+    button.click();
+    button.click();
+    button.click();
+  });
+
+  await expect(status).toHaveText("4/4, 간단 앱 코딩");
+  await expect(next).toBeFocused();
+  await expectPreviewInvariant(page, 3);
+});
+
 test("@task6 carousel pointer drag preserves focus, moves overflow, and releases capture", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 1000 });
   await openShoppingPreview(page);
@@ -2013,18 +2052,33 @@ test("@task6 carousel pointer drag preserves focus, moves overflow, and releases
   const initial = await shoppingCarouselState(page);
   expect(initial.scrollWidth).toBeGreaterThan(initial.clientWidth);
 
-  await expect.poll(() => carousel.evaluate((element) => {
-    const bounds = element.getBoundingClientRect();
-    return bounds.left < window.innerWidth && bounds.right > 0;
-  })).toBe(true);
+  await page.locator("#preview-track").evaluate(async (track) => {
+    await Promise.all(track.getAnimations().map((animation) => animation.finished.catch(() => undefined)));
+  });
 
   await carousel.evaluate((element) => {
     element.addEventListener("pointerdown", (event) => {
       window.__task6PointerId = event.pointerId;
     }, { once: true });
   });
-  const bounds = await carousel.boundingBox();
-  const pointerY = bounds.y + Math.min(30, bounds.height * 0.5);
+  const dragPoints = await carousel.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    const left = Math.max(0, bounds.left);
+    const right = Math.min(window.innerWidth, bounds.right);
+    const top = Math.max(0, bounds.top);
+    const bottom = Math.min(window.innerHeight, bounds.bottom);
+    const width = Math.max(0, right - left);
+    const height = Math.max(0, bottom - top);
+
+    return {
+      end: { x: left + width * 0.2, y: top + height * 0.5 },
+      height,
+      start: { x: left + width * 0.8, y: top + height * 0.5 },
+      width,
+    };
+  });
+  expect(dragPoints.width).toBeGreaterThan(1);
+  expect(dragPoints.height).toBeGreaterThan(1);
   const hitTarget = await page.evaluate(({ x, y }) => {
     const element = document.elementFromPoint(x, y);
     return {
@@ -2034,11 +2088,11 @@ test("@task6 carousel pointer drag preserves focus, moves overflow, and releases
       x,
       y,
     };
-  }, { x: bounds.x + bounds.width * 0.8, y: pointerY });
+  }, dragPoints.start);
   expect(hitTarget.insideCarousel, JSON.stringify(hitTarget)).toBe(true);
-  await page.mouse.move(bounds.x + bounds.width * 0.8, pointerY);
+  await page.mouse.move(dragPoints.start.x, dragPoints.start.y);
   await page.mouse.down();
-  await page.mouse.move(bounds.x + bounds.width * 0.2, pointerY, { steps: 8 });
+  await page.mouse.move(dragPoints.end.x, dragPoints.end.y, { steps: 8 });
   await page.mouse.up();
 
   await expect.poll(async () => (await shoppingCarouselState(page)).scrollLeft).toBeGreaterThan(1);

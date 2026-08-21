@@ -438,6 +438,7 @@ function setupShoppingCarousel() {
   let settleTimer = 0;
   let syncFrame = 0;
   let announcedIndex = 0;
+  let targetIndex = 0;
 
   const getMaxScrollLeft = () => Math.max(0, scroller.scrollWidth - scroller.clientWidth);
   const getItemScrollLeft = (item) => {
@@ -483,6 +484,7 @@ function setupShoppingCarousel() {
   };
   const settle = () => {
     const index = getClosestItemIndex();
+    targetIndex = index;
     syncBoundaryState();
     syncCurrentItem(index, { announce: true });
   };
@@ -502,11 +504,12 @@ function setupShoppingCarousel() {
   };
   const scrollToItem = (index) => {
     const boundedIndex = Math.min(items.length - 1, Math.max(0, index));
+    targetIndex = boundedIndex;
     scroller.scrollTo({ left: getItemScrollLeft(items[boundedIndex]), behavior: "smooth" });
     scheduleSettle();
   };
   const moveBy = (direction) => {
-    scrollToItem(getClosestItemIndex() + direction);
+    scrollToItem(targetIndex + direction);
   };
 
   previousButton.addEventListener("click", () => {
