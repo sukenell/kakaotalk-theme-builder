@@ -5,6 +5,7 @@ import {
   CONTRAST_CONTEXTS,
   compositeColors,
   evaluateContrastContext,
+  evaluateThemeContrast,
   parseCssHex,
   parseThemeArgb,
 } from "../src/color-contrast.js";
@@ -70,6 +71,33 @@ async function nonEmptyLiveMessages(page, channel) {
     (selectedChannel) => window.__liveRegionMutations[selectedChannel].filter(Boolean),
     channel,
   );
+}
+
+async function installContrastLiveRegionRecorder(page) {
+  await page.evaluate(() => {
+    const element = document.querySelector("#contrast-status");
+    window.__contrastAnnouncements = [];
+    new MutationObserver(() => {
+      if (element.textContent) {
+        window.__contrastAnnouncements.push(element.textContent);
+      }
+    }).observe(element, { childList: true, characterData: true, subtree: true });
+  });
+}
+
+async function contrastAnnouncements(page) {
+  return page.evaluate(() => window.__contrastAnnouncements);
+}
+
+async function fillThemeHexColor(page, key, value) {
+  const row = page.locator(".color-row").filter({ has: page.locator(`#color-label-${key}`) });
+  const popover = row.locator(`#color-popover-${key}`);
+  if (await popover.isHidden()) {
+    await row.locator(".color-picker-control").click();
+  }
+  const input = row.locator(`#color-hex-${key}`);
+  await input.fill(value);
+  return { input, row };
 }
 
 async function expectPreviewInvariant(page, expectedIndex) {
@@ -2463,3 +2491,206 @@ async function renderedContextSamples(locator, context) {
     });
   }, context);
 }
+
+test("@task8-user shows the default current-page and all-page contrast report without gating downloads", async ({ page }) => {
+  await page.goto("/");
+
+  const expected = evaluateThemeContrast({ colors: defaultThemeState.colors });
+  const current = expected.byPage["chat-list"];
+  const currentSummary = page.locator("#contrast-current-summary");
+
+  await expect(page.locator("#contrast-current-report")).toBeVisible();
+  await expect(currentSummary).toContainText("대화 목록");
+  await expect(currentSummary).toContainText(`통과 ${current.passCount}개`);
+  await expect(currentSummary).toContainText(`미달 ${current.failCount}개`);
+  await expect(currentSummary).toContainText(`자동 확인 불가 ${current.unknownCount}개`);
+  await expect(page.locator("#contrast-current-results > li")).toHaveCount(current.results.length);
+  await expect(page.locator("#theme-contrast-pages > li")).toHaveCount(PREVIEW_PAGES.length);
+  await expect(page.locator("#theme-contrast-summary")).toContainText("최저");
+  await expect(page.locator("#theme-contrast-summary")).toContainText("다운로드할 수 있습니다");
+  for (const previewPage of PREVIEW_PAGES) {
+    await expect(page.locator(`[data-contrast-page="${previewPage.id}"]`)).toContainText(previewPage.label);
+  }
+  await expect(page.locator("#download-ios")).toBeEnabled();
+  await expect(page.locator("#download-android")).toBeEnabled();
+});
+
+test("@task8-user retains a low color and reports ratio, threshold, failed screens, and download policy", async ({ page }) => {
+  await page.goto("/");
+
+  const { input } = await fillThemeHexColor(page, "headerText", defaultThemeState.colors.mainBackground);
+  const failedContext = page.locator('[data-contrast-context="chat-list-header-title"]');
+
+  await expect(input).toHaveValue(defaultThemeState.colors.mainBackground);
+  await expect(page.locator("#color-value-headerText")).toHaveText(defaultThemeState.colors.mainBackground);
+  await expect(failedContext).toContainText("미달");
+  await expect(failedContext).toContainText("1.00:1");
+  await expect(failedContext).toContainText("기준 4.50:1");
+  await expect(page.locator("#contrast-current-summary")).toContainText("설정은 유지");
+  await expect(page.locator("#contrast-current-summary")).toContainText("다운로드할 수 있습니다");
+  await expect(page.locator("#theme-contrast-summary")).toContainText("미달 화면");
+  await expect(page.locator("#theme-contrast-pages > li")).toHaveCount(PREVIEW_PAGES.length);
+  await expect(input).not.toHaveAttribute("aria-invalid");
+  await expect(page.locator("#download-ios")).toBeEnabled();
+  await expect(page.locator("#download-android")).toBeEnabled();
+});
+
+test("@task8-user changes the current-page report while retaining the global low-color result", async ({ page }) => {
+  await page.goto("/");
+  await fillThemeHexColor(page, "headerText", defaultThemeState.colors.mainBackground);
+  const globalBefore = await page.locator("#theme-contrast-report").innerText();
+
+  await page.getByRole("tab", { name: "잠금화면", exact: true }).click();
+
+  await expect(page.locator("#contrast-current-summary")).toContainText("잠금화면");
+  await expect(page.locator("#contrast-current-results > li")).toHaveCount(
+    CONTRAST_CONTEXTS.filter(({ pageId }) => pageId === "passcode").length,
+  );
+  expect(await page.locator("#theme-contrast-report").innerText()).toBe(globalBefore);
+  await expect(page.locator('[data-contrast-page="chat-list"]')).toContainText("미달");
+});
+
+test("@task8-user makes only relevant unprotected image contexts unknown and delete restores numeric results", async ({ page }) => {
+  await page.goto("/");
+
+  const titleResult = page.locator('[data-contrast-context="chat-list-header-title"]');
+  await expect(titleResult).toContainText("통과");
+  await expect(titleResult).toContainText(/\d+\.\d{2}:1/);
+
+  await page.locator("#upload-input-mainBackground").setInputFiles({
+    name: "unknown-main.png",
+    mimeType: "image/png",
+    buffer: onePixelPng,
+  });
+  await expect(titleResult).toContainText("자동 확인 불가");
+  await expect(page.locator('[data-contrast-context="chat-list-status"]')).toContainText("통과");
+
+  await page.getByRole("button", { name: "메인 배경 삭제", exact: true }).click();
+  await expect(titleResult).toContainText("통과");
+  await expect(titleResult).toContainText(/\d+\.\d{2}:1/);
+  await expect(titleResult).not.toContainText("자동 확인 불가");
+});
+
+test("@task8-user restores an uploaded bubble to the bundled default without clear semantics", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("tab", { name: "채팅방", exact: true }).click();
+
+  const restore = page.getByRole("button", { name: "나의 말풍선 - 기본 기본 이미지 복원", exact: true });
+  const state = page.locator('[data-upload-state="sendBubbleNormal"]');
+  await expect(restore).toBeDisabled();
+  await expect(state).toHaveText("기본 이미지");
+
+  await page.locator("#upload-input-sendBubbleNormal").setInputFiles({
+    name: "custom-bubble.png",
+    mimeType: "image/png",
+    buffer: await createPngBuffer(page, 120, 105),
+  });
+  await expect(restore).toBeEnabled();
+  await expect(state).toContainText("custom-bubble.png");
+  await expect(page.locator("html")).toHaveCSS("--preview-send-image", /blob:/);
+
+  await restore.click();
+  await expect(restore).toBeDisabled();
+  await expect(state).toHaveText("기본 이미지");
+  await expect(page.locator('[data-upload-thumb="sendBubbleNormal"]')).not.toHaveCSS("background-image", /blob:/);
+  await expect(page.locator("html")).not.toHaveCSS("--preview-send-image", /blob:/);
+  await expect(page.locator('[data-upload-clear="sendBubbleNormal"]')).toHaveCount(0);
+  await expect(page.locator('[data-contrast-context="chat-send-bubble-normal"]')).toContainText(/통과|자동 확인 불가/);
+});
+
+test("@task8-user links picker, HEX, and native color controls to one active-page result description", async ({ page }) => {
+  await page.goto("/");
+
+  const row = page.locator(".color-row").filter({ has: page.locator("#color-label-mainBackground") });
+  const description = row.locator("#color-contrast-description-mainBackground");
+  await expect(description).toBeVisible();
+  await expect(description).toContainText("대비");
+  for (const control of [
+    row.locator(".color-picker-control"),
+    row.locator("#color-hex-mainBackground"),
+    row.locator("#color-mainBackground"),
+  ]) {
+    await expect(control).toHaveAttribute("aria-describedby", "color-contrast-description-mainBackground");
+    await expect(control).toHaveAccessibleDescription(await description.innerText());
+  }
+  await expect(row.locator("#color-hex-mainBackground")).not.toHaveAttribute("aria-errormessage");
+});
+
+test("@task8-user leaves contrast output and announcements unchanged for an invalid HEX draft", async ({ page }) => {
+  await page.goto("/");
+  await installContrastLiveRegionRecorder(page);
+  const currentBefore = await page.locator("#contrast-current-report").innerText();
+  const globalBefore = await page.locator("#theme-contrast-report").innerText();
+
+  const { input } = await fillThemeHexColor(page, "mainBackground", "#12GG");
+  await input.press("Enter");
+  await page.waitForTimeout(350);
+
+  await expect(input).toHaveValue("#12GG");
+  await expect(input).toHaveAttribute("aria-invalid", "true");
+  await expect(input).toHaveAttribute("aria-errormessage", "color-hex-error-mainBackground");
+  expect(await page.locator("#contrast-current-report").innerText()).toBe(currentBefore);
+  expect(await page.locator("#theme-contrast-report").innerText()).toBe(globalBefore);
+  expect(await contrastAnnouncements(page)).toEqual([]);
+});
+
+test("@task8-user updates visual results immediately but merges rapid color speech into one debounce", async ({ page }) => {
+  await page.goto("/");
+  await installContrastLiveRegionRecorder(page);
+  const { input } = await fillThemeHexColor(page, "headerText", "#111111");
+  await expect(page.locator("#color-value-headerText")).toHaveText("#111111");
+  await input.fill("#222222");
+  await expect(page.locator("#color-value-headerText")).toHaveText("#222222");
+  await input.fill("#333333");
+  await expect(page.locator("#color-value-headerText")).toHaveText("#333333");
+  await expect(input).toBeFocused();
+
+  await page.waitForTimeout(180);
+  expect(await contrastAnnouncements(page)).toEqual([]);
+  await expect.poll(async () => (await contrastAnnouncements(page)).length).toBe(1);
+  expect((await contrastAnnouncements(page))[0]).toContain("대비");
+});
+
+test("@task8-user cancels pending color speech and reannounces identical discrete resets", async ({ page }) => {
+  await page.goto("/");
+  await installContrastLiveRegionRecorder(page);
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    await fillThemeHexColor(page, "headerText", defaultThemeState.colors.mainBackground);
+    const reset = page.getByRole("button", { name: "메인 글자 색 초기화", exact: true });
+    await reset.click();
+    await expect.poll(async () => (await contrastAnnouncements(page)).length).toBe(attempt);
+  }
+
+  const announcements = await contrastAnnouncements(page);
+  expect(announcements).toHaveLength(2);
+  expect(announcements[0]).toBe(announcements[1]);
+  expect(announcements[0]).toContain("통과");
+  expect(announcements[0]).toContain("미달");
+  expect(announcements[0]).toContain("자동 확인 불가");
+  await expect(page.locator("#contrast-current-summary")).toContainText("미달 0개");
+  await expect(page.locator("#theme-contrast-summary")).toContainText("미달 화면 0개");
+});
+
+test("@task8-user keeps existing status channels untouched by color contrast updates", async ({ page }) => {
+  await page.goto("/");
+  const before = await page.locator("#status-text, #error-status, #preview-status").allTextContents();
+
+  await fillThemeHexColor(page, "headerText", defaultThemeState.colors.mainBackground);
+  await page.waitForTimeout(300);
+
+  expect(await page.locator("#status-text, #error-status, #preview-status").allTextContents()).toEqual(before);
+  await expect(page.locator("#contrast-status")).not.toBeEmpty();
+});
+
+test("@task8-user low-contrast content leaves app chrome and warning UI axe-clean", async ({ page }) => {
+  await page.goto("/");
+  await fillThemeHexColor(page, "headerText", defaultThemeState.colors.mainBackground);
+
+  const results = await new AxeBuilder({ page })
+    .exclude("#preview-frame")
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+    .analyze();
+
+  expect(results.violations).toEqual([]);
+});

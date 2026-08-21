@@ -1718,3 +1718,56 @@ test("chat upload panel exposes 3x bubble uploads and generates 2x automatically
   assert.doesNotMatch(model, /receiveBubbleNormal3x/);
   assert.match(model, /previewScale:\s*3/);
 });
+
+test("contrast reports have stable current-page, live, and global containers outside download busy state", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const colorLegendIndex = html.indexOf("<legend>컬러</legend>");
+  const colorFieldsetEnd = html.indexOf("</fieldset>", colorLegendIndex);
+  const currentReportIndex = html.indexOf('id="contrast-current-report"');
+  const liveStatusIndex = html.indexOf('id="contrast-status"');
+  const globalReportIndex = html.indexOf('id="theme-contrast-report"');
+  const busyActionsIndex = html.indexOf('<div class="download-actions" aria-busy="false">');
+
+  assert.ok(colorLegendIndex > -1);
+  assert.ok(currentReportIndex > colorLegendIndex && currentReportIndex < colorFieldsetEnd);
+  assert.ok(liveStatusIndex > currentReportIndex && liveStatusIndex < colorFieldsetEnd);
+  assert.match(html, /id="contrast-current-summary"/);
+  assert.match(html, /id="contrast-current-results"/);
+  assert.match(html, /id="contrast-status"[^>]*role="status"[^>]*aria-live="polite"[^>]*aria-atomic="true"/);
+  assert.ok(globalReportIndex > -1 && globalReportIndex < busyActionsIndex);
+  assert.match(html, /id="theme-contrast-summary"/);
+  assert.match(html, /id="theme-contrast-pages"/);
+});
+
+test("color controls share stable contrast descriptions without using contrast as validation", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const updateDownloadButtons = app.slice(
+    app.indexOf("function updateDownloadButtons"),
+    app.indexOf("function canDownloadTheme"),
+  );
+
+  assert.match(app, /const descriptionId = `color-contrast-description-\$\{key\}`;/);
+  assert.match(app, /contrastDescription\.id = descriptionId;/);
+  assert.match(app, /picker\.setAttribute\("aria-describedby", descriptionId\);/);
+  assert.match(app, /hexInput\.setAttribute\("aria-describedby", descriptionId\);/);
+  assert.match(app, /input\.setAttribute\("aria-describedby", descriptionId\);/);
+  assert.match(app, /hexInput\.setAttribute\("aria-errormessage", hexError\.id\);/);
+  assert.doesNotMatch(updateDownloadButtons, /contrast|미달|unknown/i);
+  assert.match(updateDownloadButtons, /isDownloadBusy \|\| !validation\.isValid/);
+});
+
+test("bubble uploads expose a bundled-default restore that never writes cleared semantics", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+  const restoreStart = app.indexOf("function handleRestoreDefaultUpload(key)");
+  const restoreEnd = app.indexOf("function handleClearUpload(key)", restoreStart);
+  const restoreBody = app.slice(restoreStart, restoreEnd);
+
+  assert.match(app, /const restorableDefaultImageKeys = new Set\(CHAT_BUBBLE_IMAGE_KEYS\);/);
+  assert.match(app, /restoreButton\.dataset\.uploadRestore = key;/);
+  assert.match(app, /handleRestoreDefaultUpload\(key\)/);
+  assert.ok(restoreStart > -1 && restoreEnd > restoreStart);
+  assert.match(restoreBody, /delete previews\[key\];/);
+  assert.match(restoreBody, /delete uploads\[key\];/);
+  assert.match(restoreBody, /delete uploadUiState\[key\];/);
+  assert.doesNotMatch(restoreBody, /cleared\s*:\s*true/);
+});

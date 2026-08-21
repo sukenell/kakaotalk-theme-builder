@@ -37,6 +37,7 @@ import { createStoredZip } from "./zip-utils.js";
 import { formatKoreanDate, formatKoreanTime } from "./date-format.js";
 import { normalizeTintColor, tintImageDataPixels } from "./image-tint.js";
 import { getDefaultGroupAvatarItemIndexes } from "./group-avatar-profiles.js";
+import { CONTRAST_CONTEXTS, evaluateThemeContrast } from "./color-contrast.js";
 import {
   MINIMUM_NINE_PATCH_CONTENT_SIZE,
   getDefaultNinePatchMarkersForReferenceSize,
@@ -96,6 +97,7 @@ const uploadKeys = [
 const previewImageVariables = PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY;
 
 const bubbleUploadKeys = new Set(CHAT_BUBBLE_IMAGE_KEYS);
+const restorableDefaultImageKeys = new Set(CHAT_BUBBLE_IMAGE_KEYS);
 const tabIconUploadKeys = new Set(TAB_ICON_IMAGE_KEYS);
 const tintableUploadKeys = new Set(VISIBLE_TAB_ICON_IMAGE_KEYS);
 const clearableBackgroundImageKeys = new Set([
@@ -292,9 +294,13 @@ let currentPreviewDevice = "phone";
 let activeBubbleDetailKey = "sendBubbleNormal";
 let passcodeCount = 0;
 let isDownloadBusy = false;
+let currentContrastReport;
 
 const settingsForm = document.querySelector("#settings-form");
 const colorControlRoot = document.querySelector("#color-controls");
+const contrastCurrentSummary = document.querySelector("#contrast-current-summary");
+const contrastCurrentResults = document.querySelector("#contrast-current-results");
+const contrastStatus = document.querySelector("#contrast-status");
 const uploadControlRoot = document.querySelector("#upload-controls");
 const statusText = document.querySelector("#status-text");
 const errorStatus = document.querySelector("#error-status");
@@ -306,6 +312,8 @@ const downloadAndroidButton = document.querySelector("#download-android");
 const versionInput = document.querySelector("#version");
 const versionError = document.querySelector("#version-error");
 const downloadActions = document.querySelector(".download-actions");
+const themeContrastSummary = document.querySelector("#theme-contrast-summary");
+const themeContrastPages = document.querySelector("#theme-contrast-pages");
 const chatScreen = document.querySelector("#chat-screen");
 const previewTrack = document.querySelector("#preview-track");
 const previewTabs = document.querySelector("#preview-tabs");
@@ -326,6 +334,7 @@ const previewTimeElements = document.querySelectorAll("[data-preview-time]");
 const documentRoot = document.documentElement;
 const announceStatusMessage = createDiscreteLiveAnnouncer(statusText);
 const announceErrorMessage = createDiscreteLiveAnnouncer(errorStatus);
+const announceContrastMessage = createContrastLiveAnnouncer(contrastStatus);
 
 applyPreviewDefaultImages(documentRoot);
 applyShoppingPreviewImages();
@@ -376,6 +385,152 @@ function createDiscreteLiveAnnouncer(element) {
     messages.push({ message, generation });
     drain();
   };
+}
+
+function createContrastLiveAnnouncer(element, delay = 250) {
+  let generation = 0;
+  let timer;
+
+  const begin = () => {
+    generation += 1;
+    window.clearTimeout(timer);
+    element.textContent = "";
+    return generation;
+  };
+
+  const publish = (message, expectedGeneration) => {
+    if (generation === expectedGeneration) {
+      element.textContent = message;
+    }
+  };
+
+  return {
+    cancel() {
+      begin();
+    },
+    debounce(message) {
+      const expectedGeneration = begin();
+      timer = window.setTimeout(() => publish(message, expectedGeneration), delay);
+    },
+    discrete(message) {
+      const expectedGeneration = begin();
+      timer = window.setTimeout(() => publish(message, expectedGeneration), 0);
+    },
+  };
+}
+
+function getContrastImageStates() {
+  const imageKeys = new Set(CONTRAST_CONTEXTS.flatMap(({ imageKeys: keys = [] }) => keys));
+  const imageStates = {};
+
+  for (const key of imageKeys) {
+    const upload = uploads[key];
+    if (upload?.cleared) {
+      imageStates[key] = "cleared";
+    } else if (upload) {
+      imageStates[key] = getUploadSourceKind(upload) === "default" ? "bundled" : "user";
+    }
+  }
+
+  return imageStates;
+}
+
+function formatContrastRatio(ratio) {
+  return typeof ratio === "number" && Number.isFinite(ratio)
+    ? `${ratio.toFixed(2)}:1`
+    : "수치 없음";
+}
+
+function formatContrastCounts(summary) {
+  return `통과 ${summary.passCount}개, 미달 ${summary.failCount}개, 자동 확인 불가 ${summary.unknownCount}개`;
+}
+
+function formatContrastResult(result) {
+  if (result.status === "unknown") {
+    return `${result.label}: 자동 확인 불가 — 이미지 또는 렌더링 문맥을 수동 확인해 주세요. 기준 ${result.required.toFixed(2)}:1`;
+  }
+
+  const outcome = result.status === "pass" ? "통과" : "미달";
+  return `${result.label}: ${outcome} — ${formatContrastRatio(result.ratio)}, 기준 ${result.required.toFixed(2)}:1`;
+}
+
+function createContrastResultItem(result) {
+  const item = document.createElement("li");
+  item.dataset.contrastContext = result.id;
+  item.dataset.contrastStatus = result.status;
+  item.className = `contrast-result is-${result.status}`;
+  item.textContent = formatContrastResult(result);
+  return item;
+}
+
+function getContrastPolicyText(summary) {
+  return summary.failCount > 0 || summary.unknownCount > 0
+    ? " 설정은 유지되며 다운로드할 수 있습니다."
+    : " 모든 계산 가능한 문맥이 AA 기준을 통과했습니다.";
+}
+
+function syncColorContrastDescriptions(report, pageId) {
+  const page = PREVIEW_PAGES.find(({ id }) => id === pageId);
+  const pageResults = report.byPage[pageId]?.results ?? [];
+
+  document.querySelectorAll("[data-color-contrast-description]").forEach((description) => {
+    const key = description.dataset.colorContrastDescription;
+    const dependencies = pageResults.filter(({ colorKeys }) => colorKeys.includes(key));
+    if (dependencies.length === 0) {
+      description.textContent = `${page.label} 화면에서 자동 계산하는 대비 문맥이 없습니다.`;
+      return;
+    }
+
+    const summary = {
+      passCount: dependencies.filter(({ status }) => status === "pass").length,
+      failCount: dependencies.filter(({ status }) => status === "fail").length,
+      unknownCount: dependencies.filter(({ status }) => status === "unknown").length,
+    };
+    const numericRatios = dependencies.flatMap(({ ratio }) => ratio === null ? [] : [ratio]);
+    const worst = numericRatios.length ? Math.min(...numericRatios) : null;
+    const labels = dependencies.map(({ label }) => label).join(", ");
+    description.textContent = `${page.label} 대비: ${formatContrastCounts(summary)}. 최저 ${formatContrastRatio(worst)}. 관련 항목: ${labels}.`;
+  });
+}
+
+function renderCurrentContrastReport(report, pageId) {
+  const pageSummary = report.byPage[pageId];
+  contrastCurrentSummary.textContent = `${pageSummary.label}: ${formatContrastCounts(pageSummary)}.${getContrastPolicyText(pageSummary)}`;
+  contrastCurrentResults.replaceChildren(...pageSummary.results.map(createContrastResultItem));
+  syncColorContrastDescriptions(report, pageId);
+}
+
+function renderGlobalContrastReport(report) {
+  const summary = report.summary;
+  themeContrastSummary.textContent = `전체 테마 최저 ${formatContrastRatio(summary.worst)}. 미달 화면 ${summary.failedPageIds.length}개, 자동 확인 불가 화면 ${summary.unknownPageIds.length}개.${getContrastPolicyText(summary)}`;
+  themeContrastPages.replaceChildren(...PREVIEW_PAGES.map((page) => {
+    const pageSummary = report.byPage[page.id];
+    const item = document.createElement("li");
+    item.dataset.contrastPage = page.id;
+    item.dataset.contrastStatus = pageSummary.status;
+    item.textContent = `${page.label}: ${formatContrastCounts(pageSummary)}, 최저 ${formatContrastRatio(pageSummary.worst)}`;
+    return item;
+  }));
+}
+
+function updateContrastReport({ announcement = "none" } = {}) {
+  const page = PREVIEW_PAGES[currentPreviewIndex];
+  currentContrastReport = evaluateThemeContrast({
+    colors: getActiveColors(state),
+    imageStates: getContrastImageStates(),
+    contexts: CONTRAST_CONTEXTS,
+  });
+  renderCurrentContrastReport(currentContrastReport, page.id);
+  renderGlobalContrastReport(currentContrastReport);
+
+  const message = `${page.label} 대비: ${formatContrastCounts(currentContrastReport.byPage[page.id])}.${getContrastPolicyText(currentContrastReport.byPage[page.id])}`;
+  if (announcement === "debounced") {
+    announceContrastMessage.debounce(message);
+  } else if (announcement === "discrete") {
+    announceContrastMessage.discrete(message);
+  } else {
+    announceContrastMessage.cancel();
+  }
 }
 
 function setStatus(message) {
@@ -715,11 +870,18 @@ function renderColorControls() {
       text.className = "color-label";
       text.textContent = label;
 
+      const descriptionId = `color-contrast-description-${key}`;
+      const contrastDescription = document.createElement("p");
+      contrastDescription.id = descriptionId;
+      contrastDescription.className = "color-contrast-description";
+      contrastDescription.dataset.colorContrastDescription = key;
+
       const input = document.createElement("input");
       input.id = `color-${key}`;
       input.type = "color";
       input.className = "color-native-input";
       input.ariaLabel = `${label} 색상 선택`;
+      input.setAttribute("aria-describedby", descriptionId);
       input.value = normalizeColorPickerValue(colors[key]);
 
       const picker = document.createElement("button");
@@ -727,6 +889,7 @@ function renderColorControls() {
       picker.className = "color-picker-control";
       picker.setAttribute("aria-expanded", "false");
       picker.setAttribute("aria-controls", `color-popover-${key}`);
+      picker.setAttribute("aria-describedby", descriptionId);
 
       const swatch = document.createElement("span");
       swatch.className = "color-picker-swatch";
@@ -755,6 +918,7 @@ function renderColorControls() {
       hexInput.spellcheck = false;
       hexInput.autocapitalize = "characters";
       hexInput.ariaLabel = `${label} HEX 컬러 코드`;
+      hexInput.setAttribute("aria-describedby", descriptionId);
       hexInput.placeholder = "#RRGGBB";
 
       const hexError = document.createElement("p");
@@ -793,7 +957,7 @@ function renderColorControls() {
         }
       };
 
-      const applyColorValue = (value) => {
+      const applyColorValue = (value, { announcement = "debounced" } = {}) => {
         const normalizedValue = normalizeHexColorInput(value);
         if (!normalizedValue) {
           colorInputDrafts[key] = String(value);
@@ -803,6 +967,7 @@ function renderColorControls() {
         setActiveColor(state, key, normalizedValue);
         syncPickerState(normalizedValue);
         updatePreview();
+        updateContrastReport({ announcement });
         return true;
       };
 
@@ -870,7 +1035,7 @@ function renderColorControls() {
         applyColorValue(input.value);
       });
       resetButton.addEventListener("click", () => {
-        applyColorValue(defaultThemeState.colors[key]);
+        applyColorValue(defaultThemeState.colors[key], { announcement: "discrete" });
       });
 
       syncPickerState(colors[key], { clearDraft: false });
@@ -885,7 +1050,7 @@ function renderColorControls() {
       inputs.className = "color-inputs";
       inputs.append(picker, resetButton, colorPopover);
 
-      row.append(text, inputs, hexError);
+      row.append(text, inputs, contrastDescription, hexError);
       return row;
     }),
   );
@@ -961,6 +1126,18 @@ function renderUploadControls() {
         detailButton.addEventListener("click", () => openBubbleDetail(key));
         detailButton.append(detailActionLabel);
         actions.append(detailButton);
+      }
+      if (restorableDefaultImageKeys.has(key)) {
+        const restoreButton = document.createElement("button");
+        restoreButton.className = "restore-upload-button";
+        restoreButton.type = "button";
+        restoreButton.dataset.uploadRestore = key;
+        const restoreActionLabel = createUploadActionLabel(key, "restore", "기본 이미지 복원");
+        restoreButton.setAttribute("aria-labelledby", `upload-title-${key} ${restoreActionLabel.id}`);
+        restoreButton.disabled = !hasCustomImageUpload(key);
+        restoreButton.addEventListener("click", () => handleRestoreDefaultUpload(key));
+        restoreButton.append(restoreActionLabel);
+        actions.append(restoreButton);
       }
       if (clearableImageKeys.has(key)) {
         const clearButton = document.createElement("button");
@@ -1211,7 +1388,7 @@ function syncPreviewPanelAccessibility(activeIndex) {
   });
 }
 
-function setPreviewIndex(index, { focus = "preserve", announce = false } = {}) {
+function setPreviewIndex(index, { focus = "preserve", announce = false, contrastAnnouncement = "discrete" } = {}) {
   currentPreviewIndex = (index + PREVIEW_PAGES.length) % PREVIEW_PAGES.length;
   const page = PREVIEW_PAGES[currentPreviewIndex];
 
@@ -1227,6 +1404,7 @@ function setPreviewIndex(index, { focus = "preserve", announce = false } = {}) {
   renderUploadControls();
   renderBubbleDetailControls();
   updateBubbleDetailPreview();
+  updateContrastReport({ announcement: contrastAnnouncement });
 
   if (focus === "tab") {
     document.querySelector(`#preview-tab-${page.id}`).focus();
@@ -1706,6 +1884,7 @@ async function handleUpload(key, file, input) {
 
   updatePreview();
   updateUploadControlsState();
+  updateContrastReport({ announcement: "discrete" });
   setStatus(`${IMAGE_TARGETS[key].label} 반영`);
 }
 
@@ -1790,6 +1969,37 @@ function clearGeneratedTintUpload(key) {
   updateUploadControlsState();
 }
 
+function hasCustomImageUpload(key) {
+  return Boolean(uploads[key] && !uploads[key].cleared);
+}
+
+function handleRestoreDefaultUpload(key) {
+  if (!restorableDefaultImageKeys.has(key)) {
+    return;
+  }
+
+  invalidateUploadOperations(key);
+  if (previews[key]) {
+    URL.revokeObjectURL(previews[key]);
+  }
+  delete previews[key];
+  delete uploads[key];
+  delete uploadUiState[key];
+  delete bubbleNinePatchSettings[key];
+  markBubbleSettingsChanged(key);
+  const input = document.querySelector(`#upload-input-${key}`);
+  if (input) {
+    input.value = "";
+  }
+
+  updatePreview();
+  updateUploadControlsState();
+  updateContrastReport({ announcement: "discrete" });
+  setErrorStatus("");
+  setStatus(`${IMAGE_TARGETS[key].label} 기본 이미지 복원`);
+  input?.focus();
+}
+
 function handleClearUpload(key) {
   if (!clearableImageKeys.has(key)) {
     return;
@@ -1809,6 +2019,7 @@ function handleClearUpload(key) {
 
   updatePreview();
   updateUploadControlsState();
+  updateContrastReport({ announcement: "discrete" });
   setErrorStatus("");
   setStatus(`${IMAGE_TARGETS[key].label} 삭제`);
   input?.focus();
@@ -1824,6 +2035,9 @@ function updateUploadControlsState() {
   });
   document.querySelectorAll("[data-upload-clear]").forEach((button) => {
     button.disabled = isClearedImageUpload(button.dataset.uploadClear);
+  });
+  document.querySelectorAll("[data-upload-restore]").forEach((button) => {
+    button.disabled = !hasCustomImageUpload(button.dataset.uploadRestore);
   });
   document.querySelectorAll("[data-upload-state]").forEach((element) => {
     element.textContent = getUploadStateText(element.dataset.uploadState);
@@ -2672,5 +2886,5 @@ downloadAndroidButton.addEventListener("click", downloadAndroidSource);
 renderUploadControls();
 renderPreviewTabs();
 setPreviewDevice(currentPreviewDevice);
-setPreviewIndex(currentPreviewIndex);
+setPreviewIndex(currentPreviewIndex, { contrastAnnouncement: "none" });
 updatePreview();

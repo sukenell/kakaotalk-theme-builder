@@ -1,3 +1,5 @@
+import { PREVIEW_PAGES } from "./preview-pages.js";
+
 /**
  * A normalized color. RGB channels use the 0–255 range and alpha uses 0–1.
  *
@@ -931,4 +933,124 @@ export function evaluateContrastContext(context, colors, options = {}) {
   }
   const background = resolveContextBackground(context, colors);
   return evaluateContrastPair(foreground, background, context.required);
+}
+
+function getContextColorKeys(context) {
+  const keys = [];
+  const addKey = (key) => {
+    if (typeof key === "string" && !keys.includes(key)) {
+      keys.push(key);
+    }
+  };
+
+  addKey(context.foregroundKey);
+  addKey(context.backgroundKey);
+  for (const layer of context.backgroundLayers ?? []) {
+    addKey(layer?.colorKey);
+  }
+
+  return keys;
+}
+
+function getEffectiveImageStates(context, imageStates) {
+  return Object.fromEntries((context.imageKeys ?? []).map((key) => [
+    key,
+    imageStates?.[key] ?? context.imageStates?.[key] ?? context.imageState,
+  ]));
+}
+
+function summarizeContrastResults(results) {
+  const passCount = results.filter(({ status }) => status === "pass").length;
+  const failCount = results.filter(({ status }) => status === "fail").length;
+  const unknownCount = results.filter(({ status }) => status === "unknown").length;
+  const numericRatios = results.flatMap(({ ratio }) => ratio === null ? [] : [ratio]);
+
+  return {
+    total: results.length,
+    passCount,
+    failCount,
+    unknownCount,
+    worst: numericRatios.length ? Math.min(...numericRatios) : null,
+  };
+}
+
+/**
+ * Evaluates an entire theme against the existing preview ledger without DOM
+ * access. Results, page summaries, and dependency indexes follow PREVIEW_PAGES
+ * order. Ratios remain unrounded so display formatting cannot affect AA gates.
+ *
+ * @param {object} input
+ * @param {Record<string, string>} input.colors
+ * @param {Record<string, "cleared" | "bundled" | "user">} [input.imageStates]
+ * @param {ReadonlyArray<object>} [input.contexts]
+ */
+export function evaluateThemeContrast({
+  colors = {},
+  imageStates = {},
+  contexts = CONTRAST_CONTEXTS,
+} = {}) {
+  const pageOrder = new Map(PREVIEW_PAGES.map(({ id }, index) => [id, index]));
+  const orderedContexts = contexts
+    .map((context, sourceIndex) => ({ context, sourceIndex }))
+    .sort((left, right) => {
+      const leftPage = pageOrder.get(left.context.pageId) ?? Number.MAX_SAFE_INTEGER;
+      const rightPage = pageOrder.get(right.context.pageId) ?? Number.MAX_SAFE_INTEGER;
+      return leftPage - rightPage || left.sourceIndex - right.sourceIndex;
+    })
+    .map(({ context }) => context);
+
+  const results = orderedContexts.map((context) => {
+    const evaluation = evaluateContrastContext(context, colors, { imageStates });
+    return {
+      ...context,
+      imageKeys: [...(context.imageKeys ?? [])],
+      protectedImageKeys: [...(context.protectedImageKeys ?? [])],
+      colorKeys: getContextColorKeys(context),
+      effectiveImageStates: getEffectiveImageStates(context, imageStates),
+      ...evaluation,
+    };
+  });
+
+  const byPage = {};
+  for (const page of PREVIEW_PAGES) {
+    const pageResults = results.filter(({ pageId }) => pageId === page.id);
+    const pageSummary = summarizeContrastResults(pageResults);
+    byPage[page.id] = {
+      pageId: page.id,
+      label: page.label,
+      results: pageResults,
+      ...pageSummary,
+      status: pageSummary.failCount > 0
+        ? "fail"
+        : pageSummary.unknownCount > 0
+          ? "unknown"
+          : "pass",
+    };
+  }
+
+  const byColor = {};
+  for (const result of results) {
+    for (const colorKey of result.colorKeys) {
+      (byColor[colorKey] ??= []).push(result);
+    }
+  }
+
+  const summary = summarizeContrastResults(results);
+  const failedPageIds = PREVIEW_PAGES
+    .filter(({ id }) => byPage[id].failCount > 0)
+    .map(({ id }) => id);
+  const unknownPageIds = PREVIEW_PAGES
+    .filter(({ id }) => byPage[id].unknownCount > 0)
+    .map(({ id }) => id);
+  summary.failedPageIds = failedPageIds;
+  summary.unknownPageIds = unknownPageIds;
+
+  return {
+    results,
+    byPage,
+    byColor,
+    summary,
+    failedPageIds,
+    unknownPageIds,
+  };
 }

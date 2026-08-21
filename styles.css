@@ -371,6 +371,58 @@ h2 {
   opacity: 0.45;
 }
 
+.color-contrast-description {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.contrast-current-report {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.contrast-current-report h3,
+.contrast-current-report p {
+  margin: 0;
+}
+
+.contrast-current-report h3 {
+  font-size: 14px;
+}
+
+#contrast-current-summary {
+  color: #3f454d;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.contrast-result-list {
+  display: grid;
+  gap: 6px;
+  max-height: 220px;
+  margin: 0;
+  padding: 0 0 0 18px;
+  overflow: auto;
+  color: #3f454d;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.contrast-result.is-fail {
+  color: #8c2f39;
+  font-weight: 800;
+}
+
+.contrast-result.is-unknown {
+  color: #555c65;
+}
+
 .upload-controls {
   width: 100%;
   max-width: 420px;
@@ -465,6 +517,7 @@ h2 {
 
 .file-button,
 .detail-upload-button,
+.restore-upload-button,
 .clear-upload-button {
   display: inline-flex;
   align-items: center;
@@ -494,12 +547,19 @@ h2 {
   background: #ffffff;
 }
 
+.restore-upload-button {
+  border: 1px solid #ded8c6;
+  background: #fff9e8;
+  color: #5b4a17;
+}
+
 .clear-upload-button {
   border: 1px solid #ead6d6;
   background: #fff3f1;
   color: #a24f49;
 }
 
+.restore-upload-button:disabled,
 .clear-upload-button:disabled {
   cursor: default;
   opacity: 0.45;
@@ -3310,6 +3370,40 @@ h2 {
   display: grid;
   gap: 6px;
   min-width: 0;
+}
+
+.theme-contrast-report {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.theme-contrast-report p,
+.theme-contrast-report ul {
+  margin: 0;
+}
+
+#theme-contrast-summary {
+  color: #3f454d;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+#theme-contrast-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+  padding: 0;
+  list-style: none;
+  color: #555c65;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+#theme-contrast-pages [data-contrast-status="fail"] {
+  color: #8c2f39;
+  font-weight: 800;
 }
 
 .download-copy > div:first-child {

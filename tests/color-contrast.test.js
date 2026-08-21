@@ -8,6 +8,7 @@ import {
   contrastRatio,
   evaluateContrastContext,
   evaluateContrastPair,
+  evaluateThemeContrast,
   parseCssHex,
   parseThemeArgb,
   relativeLuminance,
@@ -716,4 +717,160 @@ test("the human-readable contrast ledger records every selector, state, threshol
       assert.match(row, new RegExp(`보호 키: ${context.protectedImageKeys.join(", ")}`));
     }
   }
+});
+
+test("evaluateThemeContrast orders rich context and page results by PREVIEW_PAGES", () => {
+  const contexts = [
+    {
+      id: "theme-list-pass",
+      pageId: "theme-list",
+      label: "테마 목록 통과",
+      selector: "#theme-list-pass",
+      foreground: "#000000",
+      background: "#FFFFFF",
+      required: 4.5,
+      imageKeys: [],
+      imageStates: {},
+      protectedImageKeys: [],
+    },
+    {
+      id: "chat-unknown",
+      pageId: "chat",
+      label: "채팅 이미지",
+      selector: "#chat-unknown",
+      foreground: "#000000",
+      background: "#FFFFFF",
+      required: 4.5,
+      imageKeys: ["chatBackground"],
+      imageStates: { chatBackground: "cleared" },
+      protectedImageKeys: [],
+    },
+    {
+      id: "home-fail",
+      pageId: "home",
+      label: "홈 미달",
+      selector: "#home-fail",
+      foregroundKey: "headerText",
+      backgroundKey: "mainBackground",
+      required: 4.5,
+      imageKeys: [],
+      imageStates: {},
+      protectedImageKeys: [],
+    },
+  ];
+
+  const report = evaluateThemeContrast({
+    colors: { headerText: "#FFFFFF", mainBackground: "#FFFFFF" },
+    imageStates: { chatBackground: "user" },
+    contexts,
+  });
+
+  assert.deepEqual(report.results.map(({ id }) => id), ["home-fail", "chat-unknown", "theme-list-pass"]);
+  assert.deepEqual(Object.keys(report.byPage), PREVIEW_PAGES.map(({ id }) => id));
+  assert.deepEqual(report.byPage.home.results.map(({ id }) => id), ["home-fail"]);
+  assert.equal(report.byPage.home.status, "fail");
+  assert.equal(report.byPage.chat.status, "unknown");
+  assert.equal(report.byPage["theme-list"].status, "pass");
+  assert.equal(report.results[0].label, "홈 미달");
+  assert.equal(report.results[0].selector, "#home-fail");
+  assert.deepEqual(report.results[0].colorKeys, ["headerText", "mainBackground"]);
+  assert.deepEqual(report.results[1].effectiveImageStates, { chatBackground: "user" });
+  assert.equal(report.summary.total, 3);
+  assert.equal(report.summary.passCount, 1);
+  assert.equal(report.summary.failCount, 1);
+  assert.equal(report.summary.unknownCount, 1);
+  assert.equal(report.summary.worst, 1);
+  assert.deepEqual(report.summary.failedPageIds, ["home"]);
+  assert.deepEqual(report.summary.unknownPageIds, ["chat"]);
+  assert.deepEqual(report.failedPageIds, ["home"]);
+  assert.deepEqual(report.unknownPageIds, ["chat"]);
+});
+
+test("evaluateThemeContrast keeps the unrounded ratio at the AA boundary", () => {
+  const contexts = [
+    {
+      id: "raw-boundary",
+      pageId: "home",
+      label: "반올림 전 경계",
+      selector: "#raw-boundary",
+      foreground: "#777777",
+      background: "#FFFFFF",
+      required: 4.5,
+      imageKeys: [],
+      imageStates: {},
+      protectedImageKeys: [],
+    },
+  ];
+
+  const report = evaluateThemeContrast({ colors: {}, contexts });
+  const rawRatio = contrastRatio(parseCssHex("#777777"), parseCssHex("#FFFFFF"));
+
+  assert.equal(report.results[0].status, "fail");
+  assert.equal(report.results[0].ratio, rawRatio);
+  assert.equal(report.summary.worst, rawRatio);
+  assert.ok(report.summary.worst > 4.47 && report.summary.worst < 4.5);
+  assert.notEqual(report.summary.worst, Number(report.summary.worst.toFixed(2)));
+});
+
+test("evaluateThemeContrast fans every token dependency out to all affected contexts", () => {
+  const report = evaluateThemeContrast({
+    colors: defaultThemeState.colors,
+    contexts: CONTRAST_CONTEXTS,
+  });
+  const expectedMainBackgroundIds = CONTRAST_CONTEXTS.filter((context) =>
+    context.foregroundKey === "mainBackground" ||
+    context.backgroundKey === "mainBackground" ||
+    context.backgroundLayers?.some((layer) => layer?.colorKey === "mainBackground"),
+  ).map(({ id }) => id);
+
+  assert.deepEqual(report.byColor.mainBackground.map(({ id }) => id), expectedMainBackgroundIds);
+  assert.ok(report.byColor.headerText.some(({ pageId }) => pageId === "home"));
+  assert.ok(report.byColor.headerText.some(({ pageId }) => pageId === "chat-list"));
+  assert.ok(report.byColor.headerText.some(({ pageId }) => pageId === "theme-list"));
+});
+
+test("evaluateThemeContrast changes only contexts with the relevant unprotected image dependency", () => {
+  const baseline = evaluateThemeContrast({
+    colors: defaultThemeState.colors,
+    contexts: CONTRAST_CONTEXTS,
+  });
+  const unrelated = evaluateThemeContrast({
+    colors: defaultThemeState.colors,
+    imageStates: { notAThemeImage: "user" },
+    contexts: CONTRAST_CONTEXTS,
+  });
+  const userMainImage = evaluateThemeContrast({
+    colors: defaultThemeState.colors,
+    imageStates: { mainBackground: "user" },
+    contexts: CONTRAST_CONTEXTS,
+  });
+
+  assert.deepEqual(unrelated, baseline);
+  const changed = userMainImage.results.filter((result, index) =>
+    result.status !== baseline.results[index].status || result.ratio !== baseline.results[index].ratio,
+  );
+  assert.ok(changed.length > 0);
+  assert.equal(changed.every(({ imageKeys, protectedImageKeys }) =>
+    imageKeys.includes("mainBackground") && !protectedImageKeys.includes("mainBackground")), true);
+  assert.equal(changed.every(({ status }) => status === "unknown"), true);
+});
+
+test("evaluateThemeContrast keeps failed and unknown pages in preview order", () => {
+  const colors = {
+    ...defaultThemeState.colors,
+    headerText: defaultThemeState.colors.mainBackground,
+    titleText: defaultThemeState.colors.mainBackground,
+  };
+  const report = evaluateThemeContrast({
+    colors,
+    imageStates: { mainBackground: "user", chatBackground: "user" },
+    contexts: CONTRAST_CONTEXTS,
+  });
+  const previewOrder = new Map(PREVIEW_PAGES.map(({ id }, index) => [id, index]));
+
+  for (const pageIds of [report.summary.failedPageIds, report.summary.unknownPageIds]) {
+    assert.deepEqual(pageIds, [...pageIds].sort((left, right) => previewOrder.get(left) - previewOrder.get(right)));
+  }
+  assert.ok(report.summary.failedPageIds.length > 1);
+  assert.ok(report.summary.unknownPageIds.length > 1);
 });
