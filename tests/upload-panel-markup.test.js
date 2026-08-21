@@ -219,7 +219,7 @@ test("chat input bar reserves the bottom safe area like tab bars", async () => {
     css,
     /\.input-bar-content\s*\{[\s\S]*display: flex;[\s\S]*align-items: center;[\s\S]*gap: 10px;[\s\S]*height: var\(--preview-input-content-height\);/,
   );
-  assert.match(css, /\.input-bar-content > button:first-child\s*\{[\s\S]*width: 34px;/);
+  assert.match(css, /\.input-bar-content > \.preview-mock-control:first-child\s*\{[\s\S]*width: 34px;/);
   assert.doesNotMatch(css, /\.input-bar > button:first-child/);
 });
 
@@ -258,7 +258,7 @@ test("chat preview keeps message tokens on downloadable bubble text colors", asy
   assert.match(chatMarkup, /<span class="message-token hashtag">#마라탕<\/span>/);
   assert.match(
     chatMarkup,
-    /<a class="message-token message-link" href="https:\/\/talk\.kakao\.com" target="_blank" rel="noopener noreferrer">https:\/\/talk\.kakao\.com<\/a>/,
+    /<span class="message-token message-link preview-mock-control">https:\/\/talk\.kakao\.com<\/span>/,
   );
   assert.match(chatMarkup, /<p class="bubble receive-bubble typing-bubble" aria-label="상대방 입력 중">…<\/p>/);
   assert.ok(chatMarkup.indexOf('class="message-group receive typing-group"') > chatMarkup.lastIndexOf('class="message-group send"'));
@@ -569,13 +569,11 @@ test("chat list headers use local default action icons tinted by the active head
     assert.match(css, new RegExp(`\\.${className}\\s*\\{[\\s\\S]*--header-action-mask: url\\("${url.replaceAll("/", "\\/")}"\\);`));
   }
 
-  assert.equal((homeActions.match(/<button /g) ?? []).length, 3);
-  assert.match(homeActions, /aria-label="검색"/);
-  assert.match(homeActions, /aria-label="친구"/);
+  assert.equal((homeActions.match(/<span class="preview-mock-control" aria-hidden="true">/g) ?? []).length, 3);
   assert.match(homeActions, /class="friend-action-icon friend-tab-action"/);
-  assert.match(homeActions, /aria-label="설정"/);
+  assert.doesNotMatch(homeActions, /<button|aria-label=/);
   assert.doesNotMatch(homeActions, /aria-label="친구 추가"|aria-label="음악"|add-action|music-action/);
-  assert.match(css, /\.friend-header-actions button\s*\{[\s\S]*width: 28px;[\s\S]*height: 28px;/);
+  assert.match(css, /\.friend-header-actions \.preview-mock-control\s*\{[\s\S]*width: 28px;[\s\S]*height: 28px;/);
   assert.match(
     css,
     /\.friend-action-icon,\s*\.chat-compose-icon,\s*\.shopping-action-icon,\s*\.scan-action-icon\s*\{[\s\S]*width: 20px;[\s\S]*height: 20px;[\s\S]*background-color: currentColor;[\s\S]*mask: var\(--header-action-mask\) center \/ contain no-repeat;/,
@@ -585,7 +583,7 @@ test("chat list headers use local default action icons tinted by the active head
   assert.match(css, /\.main-header \.friend-header-actions\s*\{[\s\S]*grid-template-columns: repeat\(3, 28px\);[\s\S]*gap: 12px;/);
   assert.match(css, /\.chat-list-actions\s*\{[\s\S]*grid-template-columns: repeat\(3, 28px\);[\s\S]*gap: 12px;/);
   assert.match(css, /\.phone-header \.chat-list-actions\s*\{[\s\S]*grid-template-columns: repeat\(3, 28px\);[\s\S]*gap: 12px;/);
-  assert.match(css, /\.chat-list-actions button\s*\{[\s\S]*width: 28px;[\s\S]*height: 28px;/);
+  assert.match(css, /\.chat-list-actions \.preview-mock-control\s*\{[\s\S]*width: 28px;[\s\S]*height: 28px;/);
   assert.doesNotMatch(css, /cdn-icons-png\.flaticon\.com/);
   assert.doesNotMatch(css, /\.add-action\s*\{|\.music-action\s*\{/);
   assert.doesNotMatch(css, /\.search-action::before/);
@@ -610,17 +608,15 @@ test("bottom tab preview removes text labels and centers icons in the downloaded
   const bottomTabsMarkup = html.slice(bottomTabsStart, homeEnd);
   const tabIconBlock = css.match(/\.tab-icon\s*\{[^}]*\}/)?.[0] ?? "";
 
-  assert.match(bottomTabsMarkup, /aria-label="친구"/);
-  assert.match(bottomTabsMarkup, /aria-label="대화"/);
-  assert.match(bottomTabsMarkup, /aria-label="오픈채팅"/);
-  assert.match(bottomTabsMarkup, /aria-label="쇼핑"/);
-  assert.match(bottomTabsMarkup, /aria-label="더보기"/);
+  assert.match(bottomTabsMarkup, /aria-hidden="true"/);
+  assert.equal((bottomTabsMarkup.match(/preview-mock-control/g) ?? []).length, 5);
+  assert.doesNotMatch(bottomTabsMarkup, /<button|aria-label=/);
   for (const label of ["친구", "대화", "오픈채팅", "쇼핑", "더보기"]) {
     assert.doesNotMatch(bottomTabsMarkup, new RegExp(`>${label}<\\/span>`));
   }
-  assert.match(bottomTabsMarkup, /class="tab-friends is-selected"/);
+  assert.match(bottomTabsMarkup, /class="tab-friends is-selected preview-mock-control"/);
   assert.match(css, /\.bottom-tabs\s*\{[\s\S]*--preview-tab-content-height: 49px;[\s\S]*align-items: flex-start;/);
-  assert.match(css, /\.bottom-tabs button\s*\{[\s\S]*height: var\(--preview-tab-content-height\);/);
+  assert.match(css, /\.bottom-tabs \.preview-mock-control\s*\{[\s\S]*height: var\(--preview-tab-content-height\);/);
   assert.match(css, /\.tab-icon\s*\{[\s\S]*width: 38px;[\s\S]*height: 38px;/);
   assert.doesNotMatch(tabIconBlock, /transform:/);
   assert.match(app, /PREVIEW_IMAGE_CSS_VARIABLES_BY_KEY/);
@@ -751,7 +747,7 @@ test("preview includes a chat list screen before the chat room", async () => {
     assert.doesNotMatch(chatListRowByTitle(chatListMarkup, name), /room-member-count/);
   }
   assert.doesNotMatch(chatListMarkup, /<strong>친구<\/strong>|<strong>슈슈님<\/strong>|오늘 테마 분위기 좋다\.|나와의 채팅|이미지와 컬러를 확인해봐\.|테마 미리보기|채팅방 화면으로 들어가기 전 목록\./);
-  assert.match(chatListMarkup, /class="tab-chat is-selected"/);
+  assert.match(chatListMarkup, /class="tab-chat is-selected preview-mock-control"/);
   assert.doesNotMatch(chatListMarkup, /class="tab-friends is-selected"/);
   assert.match(css, /\.chat-list-preview\s*\{[\s\S]*grid-template-rows: 30px 68px 1fr 68px;/);
   assert.match(css, /\.chat-list-screen\s*\{[\s\S]*overflow-y: auto;/);
@@ -839,12 +835,12 @@ test("preview includes open chat, shopping, and more tab screens", async () => {
   assert.doesNotMatch(openChatMarkup, /지금 뜨는 오픈채팅/);
   assert.doesNotMatch(openChatMarkup, /테마 제작자 모임|새 말풍선과 탭 아이콘을 함께 확인해요\.|오늘의 감성 채팅|배경 이미지와 컬러 조합 공유\.|반려견 단톡방 @강아지정보 @친목|\(사진\)|아이콘 테스트방|책덕후들의 아지트|선택된 지금 탭을 확인해 보세요\.|초보 헬스인 모임|요새 안 보이시던데, 헬스장 언제 오시나요\./);
   assert.doesNotMatch(openChatMarkup, /open-room-card|room-count|tab-section-title/);
-  assert.match(openChatMarkup, /class="tab-openchat is-selected"/);
+  assert.match(openChatMarkup, /class="tab-openchat is-selected preview-mock-control"/);
   assert.doesNotMatch(openChatMarkup, /class="tab-chat is-selected"/);
   assert.match(shoppingMarkup, /aria-label="쇼핑 프리뷰"/);
-  assert.match(shoppingMarkup, /class="tab-shopping is-selected"/);
+  assert.match(shoppingMarkup, /class="tab-shopping is-selected preview-mock-control"/);
   assert.match(moreMarkup, /aria-label="더보기 프리뷰"/);
-  assert.match(moreMarkup, /class="more-segment is-active"[^>]*>홈<\/button>[\s\S]*class="more-segment"[^>]*>지갑<\/button>/);
+  assert.match(moreMarkup, /class="more-segment is-active preview-mock-control"[^>]*><span class="visually-hidden">선택됨: <\/span>홈<\/span>[\s\S]*class="more-segment preview-mock-control"[^>]*>지갑<\/span>/);
   for (const label of [
     "선물하기",
     "받은선물",
@@ -864,13 +860,13 @@ test("preview includes open chat, shopping, and more tab screens", async () => {
   assert.match(moreMarkup, /class="more-ad-card"[\s\S]*리딩로그[\s\S]*TTS로 당신의 플레이 로그를 읽어보세요\.[\s\S]*리딩로그ReadingLog[\s\S]*다운로드/);
   assert.match(
     moreMarkup,
-    /<a href="https:\/\/play\.google\.com\/store\/apps\/details\?id=com\.reha\.readinglog" target="_blank" rel="noopener noreferrer">다운로드<\/a>/,
+    /<a href="https:\/\/play\.google\.com\/store\/apps\/details\?id=com\.reha\.readinglog" target="_blank" rel="noopener noreferrer" aria-label="리딩로그 Google Play 다운로드 \(새 창\)">다운로드<\/a>/,
   );
   assert.doesNotMatch(moreMarkup, /<button type="button">다운로드<\/button>/);
   assert.doesNotMatch(moreMarkup, /메이플 키우기|테마 프리뷰 광고 영역/);
   assert.match(moreMarkup, /class="more-section-heading">게임플레이<\/div>/);
   assert.doesNotMatch(moreMarkup, /pay|페이|0원|송금|자산|결제/);
-  assert.match(moreMarkup, /class="tab-more is-selected"/);
+  assert.match(moreMarkup, /class="tab-more is-selected preview-mock-control"/);
   assert.match(css, /\.open-chat-preview,\s*\.shopping-preview,\s*\.more-preview\s*\{[\s\S]*grid-template-rows: 30px 68px 1fr 68px;/);
   assert.match(css, /\.tab-preview-screen\s*\{[\s\S]*background:[\s\S]*var\(--preview-main-image, none\)/);
   assert.match(css, /\.more-service-panel\s*\{[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
@@ -964,14 +960,17 @@ test("shopping preview uses home ranking tabs, summary cards, and today pick pro
   const moreStart = html.indexOf('class="preview-slide more-preview"');
   const shoppingMarkup = html.slice(shoppingStart, moreStart);
 
-  assert.match(shoppingMarkup, /class="shopping-tab is-active"[^>]*>홈<\/button>/);
-  assert.match(shoppingMarkup, /class="shopping-tab"[^>]*>랭킹<\/button>/);
+  assert.match(shoppingMarkup, /class="shopping-tab is-active preview-mock-control"[^>]*><span class="visually-hidden">선택됨: <\/span>홈<\/span>/);
+  assert.match(shoppingMarkup, /class="shopping-tab preview-mock-control"[^>]*>랭킹<\/span>/);
   assert.doesNotMatch(shoppingMarkup, /쟁쟁한특가|더블할인/);
   for (const label of ["최근 본 상품", "찜한 상품", "더보기", "주문내역"]) {
     assert.match(shoppingMarkup, new RegExp(escapeRegExp(label)));
   }
   assert.match(shoppingMarkup, /class="shopping-pick-title"[\s\S]*오늘의 PICK/);
-  assert.match(shoppingMarkup, /class="shopping-pick-carousel"[\s\S]*class="shop-card"/);
+  assert.match(
+    shoppingMarkup,
+    /id="shopping-pick-carousel" class="shopping-pick-carousel" role="region" aria-label="오늘의 PICK 상품 캐러셀" tabindex="0"[\s\S]*class="shop-card"/,
+  );
   assert.match(shoppingMarkup, /class="shopping-summary-track"/);
   assert.doesNotMatch(shoppingMarkup, /shopping-service|선물하기|톡딜|라이브쇼핑|브랜드딜|FOR ME/);
 
@@ -997,8 +996,89 @@ test("shopping preview uses home ranking tabs, summary cards, and today pick pro
   assert.match(css, /\.shop-card-content\s*\{[\s\S]*position: absolute;[\s\S]*bottom: 14px;[\s\S]*z-index: 2;[\s\S]*gap: 4px;/);
   assert.match(css, /\.shop-card \.shop-badge\s*\{[\s\S]*position: relative;[\s\S]*display: inline-flex;[\s\S]*align-items: center;[\s\S]*justify-content: center;[\s\S]*height: 28px;[\s\S]*padding: 1px 12px 0;[\s\S]*border-radius: 999px;[\s\S]*line-height: 1;[\s\S]*transform: translateY\(2px\);/);
   assert.match(css, /\.shop-card \.shop-badge::after\s*\{/);
-  assert.match(app, /enableHorizontalDragScroll\("\.shopping-pick-carousel"\);/);
+  assert.match(app, /setupShoppingCarousel\(\);/);
   assert.match(app, /scroller\.scrollLeft = startScrollLeft - deltaX;/);
+});
+
+test("preview mock controls are static while useful sample structure remains exposed", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+  const panelMarkup = (pageId, nextPageId) => {
+    const start = html.indexOf(`id="preview-panel-${pageId}"`);
+    const end = nextPageId ? html.indexOf(`id="preview-panel-${nextPageId}"`) : html.indexOf('id="status-text"');
+    assert.ok(start > -1, `${pageId} preview exists`);
+    assert.ok(end > start, `${pageId} preview has an end boundary`);
+    return html.slice(start, end);
+  };
+
+  assert.equal((html.match(/class="[^"]*preview-mock-control[^"]*"/g) ?? []).length, 55);
+
+  for (const [pageId, nextPageId, expectedButtons, expectedLinks] of [
+    ["home", "chat-list", 0, 0],
+    ["chat-list", "open-chat", 0, 0],
+    ["open-chat", "shopping", 0, 0],
+    ["shopping", "more", 2, 0],
+    ["more", "chat", 0, 1],
+    ["chat", "bubble-detail", 0, 0],
+    ["bubble-detail", "passcode", 2, 0],
+    ["theme-list", null, 0, 0],
+  ]) {
+    const panel = panelMarkup(pageId, nextPageId);
+    assert.equal((panel.match(/<button\b/g) ?? []).length, expectedButtons, `${pageId} real button count`);
+    assert.equal((panel.match(/<a\b/g) ?? []).length, expectedLinks, `${pageId} real link count`);
+  }
+
+  for (const [pageId, nextPageId, summary] of [
+    ["home", "chat-list", "친구 목록과 선택된 친구 탭"],
+    ["chat-list", "open-chat", "대화 목록과 선택된 대화 탭"],
+    ["open-chat", "shopping", "오픈채팅 목록과 선택된 오픈채팅 탭"],
+    ["shopping", "more", "쇼핑 요약과 상품 캐러셀"],
+    ["more", "chat", "서비스 목록과 선택된 더보기 탭"],
+    ["chat", "bubble-detail", "메시지 대화와 입력창"],
+    ["theme-list", null, "기본, 공식, 사용자 테마 목록과 선택된 사용자 테마"],
+  ]) {
+    const panel = panelMarkup(pageId, nextPageId);
+    assert.match(panel, new RegExp(`aria-describedby="preview-summary-${pageId}"`));
+    assert.match(panel, new RegExp(`id="preview-summary-${pageId}" class="preview-panel-summary visually-hidden">${summary}`));
+    assert.match(panel, /<h3 class="visually-hidden">/);
+  }
+
+  assert.match(panelMarkup("chat-list", "open-chat"), /class="chat-list-screen" role="list"[^>]*>[\s\S]*class="chat-list-row[^"]*" role="listitem"/);
+  assert.match(panelMarkup("open-chat", "shopping"), /class="chat-list-screen open-chat-screen" role="list"[^>]*>[\s\S]*class="chat-list-row[^"]*" role="listitem"/);
+  assert.match(panelMarkup("more", "chat"), /class="more-service-panel" role="list"[^>]*>[\s\S]*class="more-service-item" role="listitem"/);
+  assert.match(panelMarkup("chat", "bubble-detail"), /id="chat-screen" class="chat-screen" role="list"[^>]*>[\s\S]*class="message-group receive" role="listitem"/);
+  assert.match(panelMarkup("theme-list", null), /class="theme-choice selected" aria-hidden="true"><\/span>\s*<span class="visually-hidden">선택됨<\/span>/);
+
+  const shopping = panelMarkup("shopping", "more");
+  assert.match(shopping, /class="shopping-summary-thumb[^"]*"[^>]*aria-hidden="true"/);
+  assert.match(shopping, /class="shop-thumb"[^>]*aria-hidden="true"/);
+  assert.match(
+    panelMarkup("more", "chat"),
+    /<a[^>]+aria-label="리딩로그 Google Play 다운로드 \(새 창\)"[^>]*>다운로드<\/a>/,
+  );
+  assert.match(
+    panelMarkup("chat", "bubble-detail"),
+    /<span class="message-token message-link preview-mock-control">https:\/\/talk\.kakao\.com<\/span>/,
+  );
+  assert.doesNotMatch(css, /\.friend-header-actions button|\.chat-list-actions button|\.bottom-tabs button|\.input-bar button|\.theme-list-header button:last-child/);
+  assert.match(css, /\.preview-mock-control\s*\{/);
+});
+
+test("shopping carousel exposes stable controls, item positions, and a settled live status", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(html, /<button[^>]+data-shopping-carousel-previous[^>]+aria-controls="shopping-pick-carousel"[^>]+aria-label="이전 상품"/);
+  assert.match(html, /<button[^>]+data-shopping-carousel-next[^>]+aria-controls="shopping-pick-carousel"[^>]+aria-label="다음 상품"/);
+  assert.equal((html.match(/class="shop-card" role="group" aria-label="\d\/4, [^"]+"/g) ?? []).length, 4);
+  assert.match(html, /id="shopping-carousel-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">1\/4, 손 커미션\(2인\)<\/span>/);
+
+  assert.doesNotMatch(app, /function enableHorizontalDragScroll/);
+  assert.match(app, /function setupShoppingCarousel\(\)/);
+  assert.match(app, /Math\.abs\(scroller\.scrollLeft - maxScrollLeft\) <= 1/);
+  assert.match(app, /scroller\.setPointerCapture\(event\.pointerId\)/);
+  assert.match(app, /scroller\.releasePointerCapture\(event\.pointerId\)/);
+  assert.match(app, /new ResizeObserver\(/);
 });
 
 test("preview segment controls use the same pressed color data as downloadable themes", async () => {
@@ -1115,7 +1195,7 @@ test("preview color variables use the same color keys as downloadable themes", a
   assert.match(app, /setPreviewColorVariable\("--preview-passcode-bg", colors\.mainBackground\);/);
   assert.match(app, /setPreviewColorVariable\("--preview-passcode-keypad-text", colors\.passcodeKeypadText\);/);
   assert.match(app, /setPreviewColorVariable\("--preview-input-menu-button", colors\.inputMenuButton\);/);
-  assert.match(css, /\.input-bar-content > button:first-child\s*\{[\s\S]*background: var\(--preview-input-menu-button, #0a000000\);/);
+  assert.match(css, /\.input-bar-content > \.preview-mock-control:first-child\s*\{[\s\S]*background: var\(--preview-input-menu-button, #0a000000\);/);
   assert.match(css, /\.unread-badge\s*\{[\s\S]*background: var\(--preview-unread-count, #ff7f7f\);/);
   assert.match(themeModel, /\["MessageCellStyle-Send", "-ios-unread-text-color", "unreadCount"\]/);
   assert.match(themeModel, /\["BackgroundStyle-ChatRoom", "background-color", "mainBackground"\]/);
@@ -1257,7 +1337,8 @@ test("chat preview title is chat room and its trailing action is a menu", async 
   assert.ok(chatStart > -1);
   assert.ok(chatScreenStart > chatStart);
   assert.match(headerMarkup, /<strong>채팅방<\/strong>/);
-  assert.match(headerMarkup, /title="메뉴" aria-label="메뉴">☰<\/button>/);
+  assert.match(headerMarkup, /<span class="preview-mock-control" aria-hidden="true">☰<\/span>/);
+  assert.doesNotMatch(headerMarkup, /<button/);
   assert.doesNotMatch(headerMarkup, /테마 미리보기/);
   assert.doesNotMatch(headerMarkup, /title="검색"/);
 });
@@ -1270,11 +1351,11 @@ test("theme list uses one-line rows for basic, official, and user themes", async
   const tabletThemeListCss = css.match(/\.phone-preview\.is-tablet \.theme-list-screen\s*\{[\s\S]*?\}/)?.[0] ?? "";
   const headerEnd = previewMarkup.indexOf('class="theme-list-screen"');
   const headerMarkup = previewMarkup.slice(0, headerEnd);
-  const basicIndex = previewMarkup.indexOf("<div class=\"section-title theme-basic-section\">기본</div>");
-  const officialIndex = previewMarkup.indexOf("공식 테마");
+  const basicIndex = previewMarkup.indexOf("<h4 class=\"section-title theme-basic-section\">기본</h4>");
+  const officialIndex = previewMarkup.indexOf('<h4 class="section-title">공식 테마</h4>');
   const officialRowIndex = previewMarkup.indexOf("<strong>공식 테마</strong>");
   const systemIndex = previewMarkup.indexOf("<strong>시스템 설정 모드</strong>");
-  const userSectionIndex = previewMarkup.indexOf("사용자 테마");
+  const userSectionIndex = previewMarkup.indexOf('<h4 class="section-title">사용자 테마</h4>');
   const activeIndex = previewMarkup.indexOf("data-preview-theme-name");
   const activeVersionIndex = previewMarkup.indexOf("data-preview-theme-version");
   const userThemeIndex = previewMarkup.indexOf("<strong>사용자테마</strong>");
@@ -1286,7 +1367,8 @@ test("theme list uses one-line rows for basic, official, and user themes", async
 
   assert.ok(previewStart > -1);
   assert.doesNotMatch(headerMarkup, /내 테마/);
-  assert.match(headerMarkup, />관리<\/button>/);
+  assert.match(headerMarkup, /<span class="preview-mock-control" aria-hidden="true">관리<\/span>/);
+  assert.doesNotMatch(headerMarkup, /<button/);
   assert.ok(basicIndex > -1);
   assert.ok(systemIndex > basicIndex);
   assert.ok(officialIndex > -1);
@@ -1301,7 +1383,7 @@ test("theme list uses one-line rows for basic, official, and user themes", async
   assert.doesNotMatch(systemRowMarkup, /class="theme-choice selected"/);
   assert.match(systemRowMarkup, /<strong>시스템 설정 모드<\/strong>[\s\S]*class="theme-choice" aria-hidden="true"/);
   assert.equal(officialSectionMarkup.match(/class="theme-list-row"/g)?.length, 1);
-  assert.match(officialSectionMarkup, /class="theme-list-row"[\s\S]*<strong>공식 테마<\/strong>[\s\S]*class="theme-download"/);
+  assert.match(officialSectionMarkup, /class="theme-list-row"[\s\S]*<strong>공식 테마<\/strong>[\s\S]*class="theme-download preview-mock-control"/);
   assert.doesNotMatch(officialSectionMarkup, /앱 아이콘 변경/);
   assert.doesNotMatch(officialSectionMarkup, /여름이야기/);
   assert.doesNotMatch(officialSectionMarkup, /비밀의 숲/);

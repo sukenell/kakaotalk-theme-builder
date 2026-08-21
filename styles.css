@@ -40,6 +40,11 @@ button {
   cursor: pointer;
 }
 
+.preview-mock-control {
+  cursor: default;
+  pointer-events: none;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -830,7 +835,7 @@ h2 {
   gap: 12px;
 }
 
-.friend-header-actions button {
+.friend-header-actions .preview-mock-control {
   display: grid;
   place-items: center;
   width: 28px;
@@ -865,7 +870,9 @@ h2 {
   --header-action-mask: url("./assets/preview/header-icons/headerSettings.png");
 }
 
-.phone-header button {
+.phone-header > .preview-mock-control {
+  display: grid;
+  place-items: center;
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -901,7 +908,7 @@ h2 {
   gap: 12px;
 }
 
-.main-header .friend-header-actions button {
+.main-header .friend-header-actions .preview-mock-control {
   width: 28px;
   height: 28px;
   border-radius: 0;
@@ -934,7 +941,7 @@ h2 {
   gap: 12px;
 }
 
-.chat-list-actions button {
+.chat-list-actions .preview-mock-control {
   display: grid;
   place-items: center;
   width: 28px;
@@ -1137,11 +1144,11 @@ h2 {
     var(--preview-main-bg, #ffdddd);
 }
 
-.shopping-preview .bottom-tabs button {
+.shopping-preview .bottom-tabs .preview-mock-control {
   color: var(--preview-description, #805959);
 }
 
-.shopping-preview .bottom-tabs button.is-selected {
+.shopping-preview .bottom-tabs .preview-mock-control.is-selected {
   color: var(--preview-header, #664242);
 }
 
@@ -1165,6 +1172,8 @@ h2 {
 }
 
 .shopping-tab {
+  display: inline-grid;
+  place-items: center;
   min-width: 66px;
   height: 42px;
   padding: 0 18px;
@@ -1319,6 +1328,32 @@ h2 {
   margin-bottom: 10px;
 }
 
+.shopping-carousel-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.shopping-carousel-control {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--preview-body-border, #26664242);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--preview-title, #664242);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.shopping-carousel-control[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.45;
+}
+
 .shopping-pick-title strong {
   color: var(--preview-section-title, #f66c6c);
   font-size: 19px;
@@ -1346,6 +1381,7 @@ h2 {
   grid-auto-columns: minmax(214px, 86%);
   gap: 12px;
   overflow-x: auto;
+  scroll-behavior: smooth;
   touch-action: pan-x;
   user-select: none;
   margin: 0 -16px;
@@ -1541,6 +1577,8 @@ h2 {
 }
 
 .more-segment {
+  display: inline-grid;
+  place-items: center;
   min-width: 56px;
   height: 38px;
   padding: 0 18px;
@@ -1723,6 +1761,8 @@ h2 {
 }
 
 .friend-segment {
+  display: inline-grid;
+  place-items: center;
   min-width: 50px;
   height: 31px;
   padding: 0 14px;
@@ -2724,14 +2764,16 @@ h2 {
   height: var(--preview-input-content-height);
 }
 
-.input-bar button {
+.input-bar .preview-mock-control {
+  display: grid;
+  place-items: center;
   flex: 0 0 auto;
   height: 34px;
   border-radius: 17px;
   font-weight: 900;
 }
 
-.input-bar-content > button:first-child {
+.input-bar-content > .preview-mock-control:first-child {
   width: 34px;
   background: var(--preview-input-menu-button, #0a000000);
   color: var(--preview-input-menu, #e86464);
@@ -2767,7 +2809,7 @@ h2 {
   border-top: 1px solid rgba(0, 0, 0, 0.07);
 }
 
-.bottom-tabs button {
+.bottom-tabs .preview-mock-control {
   display: grid;
   place-items: center;
   min-width: 52px;
@@ -2822,7 +2864,7 @@ h2 {
   background-image: var(--preview-tab-more-icon-selected, none);
 }
 
-.bottom-tabs button.is-selected {
+.bottom-tabs .preview-mock-control.is-selected {
   color: var(--preview-header, #664242);
 }
 
@@ -2999,7 +3041,7 @@ h2 {
   background: #ffffff;
 }
 
-.theme-list-header button:last-child {
+.theme-list-header > .preview-mock-control:last-child {
   width: auto;
   padding: 0 4px;
   border-radius: 0;
@@ -3020,6 +3062,7 @@ h2 {
 }
 
 .theme-list-screen .section-title {
+  margin: 0;
   margin: 18px 0 10px;
   color: var(--preview-section-title, #f66c6c);
   font-size: 13px;
@@ -3398,7 +3441,7 @@ h2 {
     padding: 0 4px;
   }
 
-  .bottom-tabs button {
+  .bottom-tabs .preview-mock-control {
     min-width: 0;
     font-size: 11px;
   }

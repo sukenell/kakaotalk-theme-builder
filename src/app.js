@@ -330,7 +330,7 @@ const announceErrorMessage = createDiscreteLiveAnnouncer(errorStatus);
 applyPreviewDefaultImages(documentRoot);
 applyShoppingPreviewImages();
 applyGroupAvatarImages();
-enableHorizontalDragScroll(".shopping-pick-carousel");
+setupShoppingCarousel();
 renderPhoneStatusWidgets();
 applyFriendAdCaptionVisibility();
 
@@ -421,49 +421,177 @@ function applyShoppingPreviewImages() {
   });
 }
 
-function enableHorizontalDragScroll(selector) {
-  document.querySelectorAll(selector).forEach((scroller) => {
-    let startX = 0;
-    let startScrollLeft = 0;
-    let activePointerId = null;
+function setupShoppingCarousel() {
+  const scroller = document.querySelector("#shopping-pick-carousel");
+  const previousButton = document.querySelector("[data-shopping-carousel-previous]");
+  const nextButton = document.querySelector("[data-shopping-carousel-next]");
+  const status = document.querySelector("#shopping-carousel-status");
+  const items = scroller ? Array.from(scroller.querySelectorAll(".shop-card")) : [];
 
-    scroller.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0) {
-        return;
+  if (!scroller || !previousButton || !nextButton || !status || items.length === 0) {
+    return;
+  }
+
+  let activePointerId = null;
+  let startX = 0;
+  let startScrollLeft = 0;
+  let settleTimer = 0;
+  let syncFrame = 0;
+  let announcedIndex = 0;
+
+  const getMaxScrollLeft = () => Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+  const getItemScrollLeft = (item) => {
+    const styles = window.getComputedStyle(scroller);
+    const startPadding = Number.parseFloat(styles.paddingInlineStart || styles.paddingLeft) || 0;
+    const itemOffset = scroller.scrollLeft + item.getBoundingClientRect().left - scroller.getBoundingClientRect().left;
+    return Math.min(getMaxScrollLeft(), Math.max(0, itemOffset - startPadding));
+  };
+  const getClosestItemIndex = () => {
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    items.forEach((item, index) => {
+      const distance = Math.abs(scroller.scrollLeft - getItemScrollLeft(item));
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
       }
-
-      activePointerId = event.pointerId;
-      startX = event.clientX;
-      startScrollLeft = scroller.scrollLeft;
-      scroller.classList.add("is-dragging");
-      scroller.setPointerCapture(event.pointerId);
     });
 
-    scroller.addEventListener("pointermove", (event) => {
-      if (activePointerId !== event.pointerId) {
-        return;
+    return closestIndex;
+  };
+  const syncBoundaryState = () => {
+    const maxScrollLeft = getMaxScrollLeft();
+    const isAtStart = scroller.scrollLeft <= 1;
+    const isAtEnd = Math.abs(scroller.scrollLeft - maxScrollLeft) <= 1;
+    previousButton.setAttribute("aria-disabled", String(isAtStart));
+    nextButton.setAttribute("aria-disabled", String(isAtEnd));
+  };
+  const syncCurrentItem = (index, { announce = false } = {}) => {
+    items.forEach((item, itemIndex) => {
+      if (itemIndex === index) {
+        item.setAttribute("aria-current", "true");
+      } else {
+        item.removeAttribute("aria-current");
       }
-
-      const deltaX = event.clientX - startX;
-      scroller.scrollLeft = startScrollLeft - deltaX;
-      event.preventDefault();
     });
 
-    const stopDrag = (event) => {
-      if (activePointerId !== event.pointerId) {
-        return;
-      }
+    if (announce && index !== announcedIndex) {
+      status.textContent = items[index].getAttribute("aria-label") || "";
+      announcedIndex = index;
+    }
+  };
+  const settle = () => {
+    const index = getClosestItemIndex();
+    syncBoundaryState();
+    syncCurrentItem(index, { announce: true });
+  };
+  const scheduleSettle = () => {
+    window.clearTimeout(settleTimer);
+    settleTimer = window.setTimeout(settle, 140);
+  };
+  const scheduleBoundarySync = () => {
+    if (syncFrame) {
+      return;
+    }
 
-      activePointerId = null;
-      scroller.classList.remove("is-dragging");
-      if (scroller.hasPointerCapture(event.pointerId)) {
-        scroller.releasePointerCapture(event.pointerId);
-      }
-    };
+    syncFrame = window.requestAnimationFrame(() => {
+      syncFrame = 0;
+      syncBoundaryState();
+    });
+  };
+  const scrollToItem = (index) => {
+    const boundedIndex = Math.min(items.length - 1, Math.max(0, index));
+    scroller.scrollTo({ left: getItemScrollLeft(items[boundedIndex]), behavior: "smooth" });
+    scheduleSettle();
+  };
+  const moveBy = (direction) => {
+    scrollToItem(getClosestItemIndex() + direction);
+  };
 
-    scroller.addEventListener("pointerup", stopDrag);
-    scroller.addEventListener("pointercancel", stopDrag);
+  previousButton.addEventListener("click", () => {
+    if (previousButton.getAttribute("aria-disabled") !== "true") {
+      moveBy(-1);
+    }
   });
+  nextButton.addEventListener("click", () => {
+    if (nextButton.getAttribute("aria-disabled") !== "true") {
+      moveBy(1);
+    }
+  });
+
+  scroller.addEventListener("keydown", (event) => {
+    const keyActions = {
+      ArrowLeft: () => moveBy(-1),
+      ArrowRight: () => moveBy(1),
+      End: () => scrollToItem(items.length - 1),
+      Home: () => scrollToItem(0),
+    };
+    const action = keyActions[event.key];
+
+    if (!action) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    action();
+  });
+
+  scroller.addEventListener("scroll", () => {
+    scheduleBoundarySync();
+    scheduleSettle();
+  }, { passive: true });
+
+  scroller.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    activePointerId = event.pointerId;
+    startX = event.clientX;
+    startScrollLeft = scroller.scrollLeft;
+    scroller.focus({ preventScroll: true });
+    event.preventDefault();
+    scroller.classList.add("is-dragging");
+    scroller.setPointerCapture(event.pointerId);
+  });
+
+  scroller.addEventListener("pointermove", (event) => {
+    if (activePointerId !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - startX;
+    scroller.scrollLeft = startScrollLeft - deltaX;
+    event.preventDefault();
+  });
+
+  const stopDrag = (event) => {
+    if (activePointerId !== event.pointerId) {
+      return;
+    }
+
+    activePointerId = null;
+    scroller.classList.remove("is-dragging");
+    if (scroller.hasPointerCapture(event.pointerId)) {
+      scroller.releasePointerCapture(event.pointerId);
+    }
+    scheduleSettle();
+  };
+
+  scroller.addEventListener("pointerup", stopDrag);
+  scroller.addEventListener("pointercancel", stopDrag);
+  scroller.addEventListener("lostpointercapture", stopDrag);
+
+  const resizeObserver = new ResizeObserver(() => {
+    scheduleBoundarySync();
+    scheduleSettle();
+  });
+  resizeObserver.observe(scroller);
+
+  syncBoundaryState();
+  syncCurrentItem(0);
 }
 
 function applyGroupAvatarImages() {

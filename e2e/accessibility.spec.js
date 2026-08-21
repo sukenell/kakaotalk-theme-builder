@@ -1874,3 +1874,201 @@ test("@task5 next preview navigation preserves its trigger focus", async ({ page
   await expect(next).toBeFocused();
   expect(await page.evaluate(() => document.activeElement === document.body)).toBe(false);
 });
+
+async function openShoppingPreview(page) {
+  await page.goto("/");
+  await page.getByRole("tab", { name: "쇼핑", exact: true }).click();
+  await expectPreviewInvariant(page, 3);
+}
+
+async function shoppingCarouselState(page) {
+  return page.locator("#shopping-pick-carousel").evaluate((scroller) => ({
+    activePreview: document.querySelector('#preview-tabs > [role="tab"][aria-selected="true"]')?.dataset.previewIndex,
+    clientWidth: scroller.clientWidth,
+    maxScrollLeft: scroller.scrollWidth - scroller.clientWidth,
+    scrollLeft: scroller.scrollLeft,
+    scrollWidth: scroller.scrollWidth,
+  }));
+}
+
+test("@task6 removes false preview controls and keeps deliberate sample semantics", async ({ page }) => {
+  await page.goto("/");
+
+  const mockControlCount = await page.locator(".preview-slide .preview-mock-control").count();
+  expect(mockControlCount).toBe(55);
+  await expect(page.locator('.preview-slide .preview-mock-control[role="button"], .preview-slide .preview-mock-control[role="tab"], .preview-slide .preview-mock-control[role="link"]')).toHaveCount(0);
+
+  const cases = [
+    { tab: "메인", summary: "친구 목록과 선택된 친구 탭", forbidden: /button "(?:검색|친구|설정)"|tab "(?:친구|소식)"/ },
+    { tab: "대화 목록", summary: "대화 목록과 선택된 대화 탭", forbidden: /button "(?:검색|새 대화|설정|친구|대화|오픈채팅|쇼핑|더보기)"/ },
+    { tab: "지금", summary: "오픈채팅 목록과 선택된 오픈채팅 탭", forbidden: /button "(?:검색|새 오픈채팅|설정|친구|대화|오픈채팅|쇼핑|더보기)"/ },
+    { tab: "쇼핑", summary: "쇼핑 요약과 상품 캐러셀", forbidden: /button "(?:검색|장바구니|설정|친구|대화|오픈채팅|쇼핑|더보기)"|tab "(?:홈|랭킹)"/ },
+    { tab: "더보기", summary: "서비스 목록과 선택된 더보기 탭", forbidden: /button "(?:검색|스캔|설정|친구|대화|오픈채팅|쇼핑|더보기)"|tab "(?:홈|지갑)"/ },
+    { tab: "채팅방", summary: "메시지 대화와 입력창", forbidden: /button "(?:뒤로|메뉴|전송)"|link "https:\/\/talk\.kakao\.com"/ },
+    { tab: "말풍선 상세", summary: "말풍선 이미지를 조정하는 실제 편집 화면", forbidden: /button "뒤로"/ },
+    { tab: "잠금화면", summary: "숫자 키패드로 네 자리 암호 입력", forbidden: /link / },
+    { tab: "로딩화면", summary: "테마 아이콘과 배경을 보여 주는 로딩화면", forbidden: /button |link / },
+    { tab: "테마 목록", summary: "기본, 공식, 사용자 테마 목록과 선택된 사용자 테마", forbidden: /button "(?:뒤로|관리|공식 테마 다운로드)"/ },
+  ];
+
+  for (const { tab, summary, forbidden } of cases) {
+    await page.getByRole("tab", { name: tab, exact: true }).click();
+    const panel = page.locator('.preview-slide:not([aria-hidden="true"])');
+    const snapshot = await panel.ariaSnapshot();
+    expect(snapshot).toContain(summary);
+    expect(snapshot).toContain("heading");
+    expect(snapshot).not.toMatch(forbidden);
+  }
+
+  await page.getByRole("tab", { name: "쇼핑", exact: true }).click();
+  const shoppingPanel = page.locator("#preview-panel-shopping");
+  await expect(shoppingPanel.getByRole("button", { name: "이전 상품", exact: true })).toHaveCount(1);
+  await expect(shoppingPanel.getByRole("button", { name: "다음 상품", exact: true })).toHaveCount(1);
+  await expect(shoppingPanel.getByRole("region", { name: "오늘의 PICK 상품 캐러셀", exact: true })).toHaveCount(1);
+
+  await page.getByRole("tab", { name: "더보기", exact: true }).click();
+  await expect(page.getByRole("link", { name: "리딩로그 Google Play 다운로드 (새 창)", exact: true })).toHaveCount(1);
+  await page.getByRole("tab", { name: "말풍선 상세", exact: true }).click();
+  await expect(page.getByRole("button", { name: "다음 말풍선", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "초기화", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "뒤로", exact: true })).toHaveCount(0);
+  await page.getByRole("tab", { name: "잠금화면", exact: true }).click();
+  await expect(page.locator(".keypad").getByRole("button")).toHaveCount(12);
+});
+
+test("@task6 carousel keyboard navigation scrolls without changing the parent preview or focus", async ({ page }) => {
+  await openShoppingPreview(page);
+  const carousel = page.getByRole("region", { name: "오늘의 PICK 상품 캐러셀", exact: true });
+  const previous = page.getByRole("button", { name: "이전 상품", exact: true });
+  const next = page.getByRole("button", { name: "다음 상품", exact: true });
+
+  const initial = await shoppingCarouselState(page);
+  expect(initial.scrollWidth).toBeGreaterThan(initial.clientWidth);
+  expect(initial.activePreview).toBe("3");
+  await expect(previous).toHaveAttribute("aria-disabled", "true");
+  await expect(next).toHaveAttribute("aria-disabled", "false");
+
+  await carousel.focus();
+  for (const [key, direction] of [["ArrowRight", "increase"], ["ArrowLeft", "decrease"]]) {
+    const before = (await shoppingCarouselState(page)).scrollLeft;
+    await page.keyboard.press(key);
+    if (direction === "increase") {
+      await expect.poll(async () => (await shoppingCarouselState(page)).scrollLeft).toBeGreaterThan(before);
+    } else {
+      await expect.poll(async () => (await shoppingCarouselState(page)).scrollLeft).toBeLessThan(before);
+    }
+    await expect(carousel).toBeFocused();
+    await expectPreviewInvariant(page, 3);
+  }
+
+  await page.keyboard.press("End");
+  await expect.poll(async () => {
+    const state = await shoppingCarouselState(page);
+    return Math.abs(state.scrollLeft - state.maxScrollLeft);
+  }).toBeLessThanOrEqual(1);
+  await expect(next).toHaveAttribute("aria-disabled", "true");
+  await page.keyboard.press("Home");
+  await expect.poll(async () => (await shoppingCarouselState(page)).scrollLeft).toBeLessThanOrEqual(1);
+  await expect(previous).toHaveAttribute("aria-disabled", "true");
+  await expect(carousel).toBeFocused();
+  await expectPreviewInvariant(page, 3);
+});
+
+test("@task6 carousel buttons keep trigger focus and synchronize both boundary states", async ({ page }) => {
+  await openShoppingPreview(page);
+  const previous = page.getByRole("button", { name: "이전 상품", exact: true });
+  const next = page.getByRole("button", { name: "다음 상품", exact: true });
+
+  await next.focus();
+  await next.click();
+  await expect.poll(async () => (await shoppingCarouselState(page)).scrollLeft).toBeGreaterThan(1);
+  await expect(next).toBeFocused();
+  await expectPreviewInvariant(page, 3);
+
+  await page.locator("#shopping-pick-carousel").evaluate((scroller) => {
+    scroller.scrollLeft = scroller.scrollWidth;
+  });
+  await expect(next).toHaveAttribute("aria-disabled", "true");
+  await page.setViewportSize({ width: 940, height: 900 });
+  await expect.poll(async () => {
+    const state = await shoppingCarouselState(page);
+    return Math.abs(state.scrollLeft - state.maxScrollLeft);
+  }).toBeLessThanOrEqual(1);
+  await expect(next).toHaveAttribute("aria-disabled", "true");
+
+  await previous.focus();
+  await previous.click();
+  await expect.poll(async () => {
+    const state = await shoppingCarouselState(page);
+    return state.maxScrollLeft - state.scrollLeft;
+  }).toBeGreaterThan(1);
+  await expect(previous).toBeFocused();
+  await expectPreviewInvariant(page, 3);
+});
+
+test("@task6 carousel pointer drag preserves focus, moves overflow, and releases capture", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await openShoppingPreview(page);
+  const carousel = page.getByRole("region", { name: "오늘의 PICK 상품 캐러셀", exact: true });
+  const initial = await shoppingCarouselState(page);
+  expect(initial.scrollWidth).toBeGreaterThan(initial.clientWidth);
+
+  await expect.poll(() => carousel.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return bounds.left < window.innerWidth && bounds.right > 0;
+  })).toBe(true);
+
+  await carousel.evaluate((element) => {
+    element.addEventListener("pointerdown", (event) => {
+      window.__task6PointerId = event.pointerId;
+    }, { once: true });
+  });
+  const bounds = await carousel.boundingBox();
+  const pointerY = bounds.y + Math.min(30, bounds.height * 0.5);
+  const hitTarget = await page.evaluate(({ x, y }) => {
+    const element = document.elementFromPoint(x, y);
+    return {
+      className: element?.className ?? null,
+      insideCarousel: Boolean(element?.closest("#shopping-pick-carousel")),
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      x,
+      y,
+    };
+  }, { x: bounds.x + bounds.width * 0.8, y: pointerY });
+  expect(hitTarget.insideCarousel, JSON.stringify(hitTarget)).toBe(true);
+  await page.mouse.move(bounds.x + bounds.width * 0.8, pointerY);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width * 0.2, pointerY, { steps: 8 });
+  await page.mouse.up();
+
+  await expect.poll(async () => (await shoppingCarouselState(page)).scrollLeft).toBeGreaterThan(1);
+  await expect(carousel).toBeFocused();
+  await expect(carousel).not.toHaveClass(/is-dragging/);
+  expect(await carousel.evaluate((element) => element.hasPointerCapture(window.__task6PointerId))).toBe(false);
+  await expectPreviewInvariant(page, 3);
+});
+
+test("@task6 carousel announces only a newly settled product position", async ({ page }) => {
+  await openShoppingPreview(page);
+  await page.evaluate(() => {
+    const status = document.querySelector("#shopping-carousel-status");
+    window.__task6CarouselAnnouncements = [];
+    new MutationObserver(() => {
+      if (status.textContent) {
+        window.__task6CarouselAnnouncements.push(status.textContent);
+      }
+    }).observe(status, { childList: true, characterData: true, subtree: true });
+  });
+
+  const carousel = page.getByRole("region", { name: "오늘의 PICK 상품 캐러셀", exact: true });
+  await carousel.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#shopping-carousel-status")).toHaveText("2/4, 스탠딩 이미지 작업");
+  await expect.poll(() => page.evaluate(() => window.__task6CarouselAnnouncements.length)).toBe(1);
+
+  await carousel.evaluate((element) => {
+    element.dispatchEvent(new Event("scroll"));
+  });
+  await page.waitForTimeout(250);
+  expect(await page.evaluate(() => window.__task6CarouselAnnouncements)).toEqual(["2/4, 스탠딩 이미지 작업"]);
+});

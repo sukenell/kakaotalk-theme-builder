@@ -121,9 +121,12 @@
               data-preview-page="home"
               role="tabpanel"
               aria-labelledby="preview-tab-home"
+              aria-describedby="preview-summary-home"
               aria-hidden="true"
               inert
             >
+              <p id="preview-summary-home" class="preview-panel-summary visually-hidden">친구 목록과 선택된 친구 탭을 보여 주는 예시입니다.</p>
+              <h3 class="visually-hidden">친구 홈 화면</h3>
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header main-header">
                 <div class="home-owner-title">
@@ -131,21 +134,21 @@
                   <strong>나</strong>
                 </div>
                 <div class="friend-header-actions">
-                  <button type="button" title="검색" aria-label="검색">
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="friend-action-icon search-action" aria-hidden="true"></span>
-                  </button>
-                  <button type="button" title="친구" aria-label="친구">
+                  </span>
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="friend-action-icon friend-tab-action" aria-hidden="true"></span>
-                  </button>
-                  <button type="button" title="설정" aria-label="설정">
+                  </span>
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="friend-action-icon settings-action" aria-hidden="true"></span>
-                  </button>
+                  </span>
                 </div>
               </div>
               <div class="main-screen">
-                <div class="friend-segment-tabs" role="tablist" aria-label="친구 홈 필터">
-                  <button class="friend-segment is-active" type="button" role="tab" aria-selected="true">친구</button>
-                  <button class="friend-segment" type="button" role="tab" aria-selected="false">소식</button>
+                <div class="friend-segment-tabs" role="group" aria-label="친구 홈 필터">
+                  <span class="friend-segment is-active preview-mock-control"><span class="visually-hidden">선택됨: </span>친구</span>
+                  <span class="friend-segment preview-mock-control">소식</span>
                 </div>
                 <div class="friends-promo-card" data-friend-ad-caption>
                   <div>
@@ -237,22 +240,22 @@
                   </div>
                 </section>
               </div>
-              <div class="bottom-tabs">
-                <button class="tab-friends is-selected" type="button" aria-label="친구">
+              <div class="bottom-tabs" aria-hidden="true">
+                <span class="tab-friends is-selected preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-chat" type="button" aria-label="대화">
+                </span>
+                <span class="tab-chat preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-openchat" type="button" aria-label="오픈채팅">
+                </span>
+                <span class="tab-openchat preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-shopping" type="button" aria-label="쇼핑">
+                </span>
+                <span class="tab-shopping preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-more" type="button" aria-label="더보기">
+                </span>
+                <span class="tab-more preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
+                </span>
               </div>
             </article>
 
@@ -262,24 +265,27 @@
               data-preview-page="chat-list"
               role="tabpanel"
               aria-labelledby="preview-tab-chat-list"
+              aria-describedby="preview-summary-chat-list"
             >
+              <p id="preview-summary-chat-list" class="preview-panel-summary visually-hidden">대화 목록과 선택된 대화 탭을 보여 주는 예시입니다.</p>
+              <h3 class="visually-hidden">대화 목록 화면</h3>
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header chat-list-header">
                 <strong>대화</strong>
                 <div class="chat-list-actions">
-                  <button type="button" title="검색" aria-label="검색">
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="friend-action-icon search-action" aria-hidden="true"></span>
-                  </button>
-                  <button type="button" title="새 대화" aria-label="새 대화">
+                  </span>
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="chat-compose-icon" aria-hidden="true"></span>
-                  </button>
-                  <button type="button" title="설정" aria-label="설정">
+                  </span>
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="friend-action-icon settings-action" aria-hidden="true"></span>
-                  </button>
+                  </span>
                 </div>
               </div>
-              <div class="chat-list-screen">
-                <div class="chat-list-row is-pinned">
+              <div class="chat-list-screen" role="list" aria-label="대화 목록 예시">
+                <div class="chat-list-row is-pinned" role="listitem">
                   <div class="avatar"></div>
                   <div class="chat-list-copy">
                     <strong>수매</strong>
@@ -290,7 +296,7 @@
                     <span class="unread-badge">1</span>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar soft"></div>
                   <div class="chat-list-copy">
                     <strong>수기람</strong>
@@ -301,7 +307,7 @@
                     <span class="unread-badge">5</span>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -320,7 +326,7 @@
                     <span class="unread-badge">38</span>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar"></div>
                   <div class="chat-list-copy">
                     <strong>대표님</strong>
@@ -330,7 +336,7 @@
                     <time data-preview-time>00:00</time>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -348,7 +354,7 @@
                     <time data-preview-time>00:00</time>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar default-profile"></div>
                   <div class="chat-list-copy">
                     <strong>엄마</strong>
@@ -358,7 +364,7 @@
                     <time data-preview-time>00:00</time>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar"></div>
                   <div class="chat-list-copy">
                     <strong>선배</strong>
@@ -368,7 +374,7 @@
                     <time data-preview-time>00:00</time>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-2">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -385,7 +391,7 @@
                     <span class="unread-badge">3</span>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -405,22 +411,22 @@
                   </div>
                 </div>
               </div>
-              <div class="bottom-tabs">
-                <button class="tab-friends" type="button" aria-label="친구">
+              <div class="bottom-tabs" aria-hidden="true">
+                <span class="tab-friends preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-chat is-selected" type="button" aria-label="대화">
+                </span>
+                <span class="tab-chat is-selected preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-openchat" type="button" aria-label="오픈채팅">
+                </span>
+                <span class="tab-openchat preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-shopping" type="button" aria-label="쇼핑">
+                </span>
+                <span class="tab-shopping preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-more" type="button" aria-label="더보기">
+                </span>
+                <span class="tab-more preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
+                </span>
               </div>
             </article>
 
@@ -430,26 +436,29 @@
               data-preview-page="open-chat"
               role="tabpanel"
               aria-labelledby="preview-tab-open-chat"
+              aria-describedby="preview-summary-open-chat"
               aria-hidden="true"
               inert
             >
+              <p id="preview-summary-open-chat" class="preview-panel-summary visually-hidden">오픈채팅 목록과 선택된 오픈채팅 탭을 보여 주는 예시입니다.</p>
+              <h3 class="visually-hidden">오픈채팅 목록 화면</h3>
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header chat-list-header">
                 <strong>지금</strong>
                 <div class="chat-list-actions">
-                  <button type="button" title="검색" aria-label="검색">
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="friend-action-icon search-action" aria-hidden="true"></span>
-                  </button>
-                  <button type="button" title="새 오픈채팅" aria-label="새 오픈채팅">
+                  </span>
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="chat-compose-icon" aria-hidden="true"></span>
-                  </button>
-                  <button type="button" title="설정" aria-label="설정">
+                  </span>
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="friend-action-icon settings-action" aria-hidden="true"></span>
-                  </button>
+                  </span>
                 </div>
               </div>
-              <div class="chat-list-screen open-chat-screen">
-                <div class="chat-list-row is-pinned">
+              <div class="chat-list-screen open-chat-screen" role="list" aria-label="오픈채팅 목록 예시">
+                <div class="chat-list-row is-pinned" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -468,7 +477,7 @@
                     <span class="unread-badge">3</span>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -487,7 +496,7 @@
                     <span class="unread-badge">48</span>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -506,7 +515,7 @@
                     <span class="unread-badge">8</span>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -525,7 +534,7 @@
                     <span class="unread-badge">1</span>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -544,7 +553,7 @@
                     <span class="unread-badge">4</span>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -562,7 +571,7 @@
                     <time data-preview-time>00:00</time>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -580,7 +589,7 @@
                     <time data-preview-time>00:00</time>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -598,7 +607,7 @@
                     <time data-preview-time>00:00</time>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -616,7 +625,7 @@
                     <time data-preview-time>00:00</time>
                   </div>
                 </div>
-                <div class="chat-list-row">
+                <div class="chat-list-row" role="listitem">
                   <div class="avatar group-avatar group-4">
                     <span class="group-avatar-item"></span>
                     <span class="group-avatar-item"></span>
@@ -636,22 +645,22 @@
                   </div>
                 </div>
               </div>
-              <div class="bottom-tabs">
-                <button class="tab-friends" type="button" aria-label="친구">
+              <div class="bottom-tabs" aria-hidden="true">
+                <span class="tab-friends preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-chat" type="button" aria-label="대화">
+                </span>
+                <span class="tab-chat preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-openchat is-selected" type="button" aria-label="오픈채팅">
+                </span>
+                <span class="tab-openchat is-selected preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-shopping" type="button" aria-label="쇼핑">
+                </span>
+                <span class="tab-shopping preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-more" type="button" aria-label="더보기">
+                </span>
+                <span class="tab-more preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
+                </span>
               </div>
             </article>
 
@@ -661,49 +670,52 @@
               data-preview-page="shopping"
               role="tabpanel"
               aria-labelledby="preview-tab-shopping"
+              aria-describedby="preview-summary-shopping"
               aria-hidden="true"
               inert
             >
+              <p id="preview-summary-shopping" class="preview-panel-summary visually-hidden">쇼핑 요약과 상품 캐러셀을 보여 주는 예시입니다.</p>
+              <h3 class="visually-hidden">쇼핑 화면</h3>
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header chat-list-header">
                 <strong>쇼핑</strong>
                 <div class="chat-list-actions">
-                  <button type="button" title="검색" aria-label="검색">
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="friend-action-icon search-action" aria-hidden="true"></span>
-                  </button>
-                  <button type="button" title="장바구니" aria-label="장바구니">
+                  </span>
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="shopping-action-icon" aria-hidden="true"></span>
-                  </button>
-                  <button type="button" title="설정" aria-label="설정">
+                  </span>
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="friend-action-icon settings-action" aria-hidden="true"></span>
-                  </button>
+                  </span>
                 </div>
               </div>
               <div class="tab-preview-screen shopping-screen">
-                <div class="shopping-tabs" role="tablist" aria-label="쇼핑 홈 필터">
-                  <button class="shopping-tab is-active" type="button" role="tab" aria-selected="true">홈</button>
-                  <button class="shopping-tab" type="button" role="tab" aria-selected="false">랭킹</button>
+                <div class="shopping-tabs" role="group" aria-label="쇼핑 홈 필터">
+                  <span class="shopping-tab is-active preview-mock-control"><span class="visually-hidden">선택됨: </span>홈</span>
+                  <span class="shopping-tab preview-mock-control">랭킹</span>
                 </div>
-                <div class="shopping-summary-track" aria-label="쇼핑 요약">
-                  <section class="shopping-summary-card" aria-label="최근 본 상품">
+                <div class="shopping-summary-track" role="list" aria-label="쇼핑 요약">
+                  <section class="shopping-summary-card" role="listitem" aria-label="최근 본 상품">
                     <strong>최근 본 상품</strong>
                     <div class="shopping-summary-thumbs">
-                      <span class="shopping-summary-thumb" data-shopping-image-index="0"></span>
-                      <span class="shopping-summary-thumb" data-shopping-image-index="1"></span>
+                      <span class="shopping-summary-thumb" data-shopping-image-index="0" aria-hidden="true"></span>
+                      <span class="shopping-summary-thumb" data-shopping-image-index="1" aria-hidden="true"></span>
                     </div>
                   </section>
-                  <section class="shopping-summary-card is-wide" aria-label="찜한 상품">
+                  <section class="shopping-summary-card is-wide" role="listitem" aria-label="찜한 상품">
                     <div class="shopping-summary-heading">
                       <strong>찜한 상품</strong>
                       <span>더보기</span>
                     </div>
                     <div class="shopping-summary-thumbs">
-                      <span class="shopping-summary-thumb has-heart" data-shopping-image-index="0"></span>
-                      <span class="shopping-summary-thumb has-heart" data-shopping-image-index="2"></span>
-                      <span class="shopping-summary-thumb has-heart" data-shopping-image-index="3"></span>
+                      <span class="shopping-summary-thumb has-heart" data-shopping-image-index="0" aria-hidden="true"></span>
+                      <span class="shopping-summary-thumb has-heart" data-shopping-image-index="2" aria-hidden="true"></span>
+                      <span class="shopping-summary-thumb has-heart" data-shopping-image-index="3" aria-hidden="true"></span>
                     </div>
                   </section>
-                  <section class="shopping-summary-card is-order" aria-label="주문내역">
+                  <section class="shopping-summary-card is-order" role="listitem" aria-label="주문내역">
                     <strong>주문내역</strong>
                     <span class="shopping-order-icon" aria-hidden="true"></span>
                   </section>
@@ -712,34 +724,38 @@
                   <div class="shopping-pick-title">
                     <strong>오늘의 PICK</strong>
                     <span aria-hidden="true">i</span>
+                    <div class="shopping-carousel-controls" role="group" aria-label="상품 캐러셀 조작">
+                      <button class="shopping-carousel-control previous" type="button" data-shopping-carousel-previous aria-controls="shopping-pick-carousel" aria-label="이전 상품" aria-disabled="true">←</button>
+                      <button class="shopping-carousel-control next" type="button" data-shopping-carousel-next aria-controls="shopping-pick-carousel" aria-label="다음 상품" aria-disabled="false">→</button>
+                    </div>
                   </div>
-                  <div class="shopping-pick-carousel" aria-label="오늘의 PICK 상품">
-                    <div class="shop-card">
-                      <div class="shop-thumb" data-shopping-image-index="0"></div>
+                  <div id="shopping-pick-carousel" class="shopping-pick-carousel" role="region" aria-label="오늘의 PICK 상품 캐러셀" tabindex="0" aria-describedby="shopping-carousel-status">
+                    <div class="shop-card" role="group" aria-label="1/4, 손 커미션(2인)">
+                      <div class="shop-thumb" data-shopping-image-index="0" aria-hidden="true"></div>
                       <div class="shop-card-content">
                         <span class="shop-badge">단독</span>
                         <strong>손 커미션(2인)</strong>
                         <span class="shop-price">40,000원~</span>
                       </div>
                     </div>
-                    <div class="shop-card">
-                      <div class="shop-thumb" data-shopping-image-index="1"></div>
+                    <div class="shop-card" role="group" aria-label="2/4, 스탠딩 이미지 작업">
+                      <div class="shop-thumb" data-shopping-image-index="1" aria-hidden="true"></div>
                       <div class="shop-card-content">
                         <span class="shop-badge">요즘인기</span>
                         <strong>스탠딩 이미지 작업</strong>
                         <span class="shop-price">80,000원~</span>
                       </div>
                     </div>
-                    <div class="shop-card">
-                      <div class="shop-thumb" data-shopping-image-index="2"></div>
+                    <div class="shop-card" role="group" aria-label="3/4, 게임 만들어드려요!">
+                      <div class="shop-thumb" data-shopping-image-index="2" aria-hidden="true"></div>
                       <div class="shop-card-content">
                         <span class="shop-badge">베스트</span>
                         <strong>게임 만들어드려요!</strong>
                         <span class="shop-price">150,000원</span>
                       </div>
                     </div>
-                    <div class="shop-card">
-                      <div class="shop-thumb" data-shopping-image-index="3"></div>
+                    <div class="shop-card" role="group" aria-label="4/4, 간단 앱 코딩">
+                      <div class="shop-thumb" data-shopping-image-index="3" aria-hidden="true"></div>
                       <div class="shop-card-content">
                         <span class="shop-badge">특가</span>
                         <strong>간단 앱 코딩</strong>
@@ -747,24 +763,25 @@
                       </div>
                     </div>
                   </div>
+                  <span id="shopping-carousel-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">1/4, 손 커미션(2인)</span>
                 </section>
               </div>
-              <div class="bottom-tabs">
-                <button class="tab-friends" type="button" aria-label="친구">
+              <div class="bottom-tabs" aria-hidden="true">
+                <span class="tab-friends preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-chat" type="button" aria-label="대화">
+                </span>
+                <span class="tab-chat preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-openchat" type="button" aria-label="오픈채팅">
+                </span>
+                <span class="tab-openchat preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-shopping is-selected" type="button" aria-label="쇼핑">
+                </span>
+                <span class="tab-shopping is-selected preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-more" type="button" aria-label="더보기">
+                </span>
+                <span class="tab-more preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
+                </span>
               </div>
             </article>
 
@@ -774,75 +791,78 @@
               data-preview-page="more"
               role="tabpanel"
               aria-labelledby="preview-tab-more"
+              aria-describedby="preview-summary-more"
               aria-hidden="true"
               inert
             >
+              <p id="preview-summary-more" class="preview-panel-summary visually-hidden">서비스 목록과 선택된 더보기 탭을 보여 주는 예시입니다.</p>
+              <h3 class="visually-hidden">더보기 화면</h3>
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header chat-list-header">
                 <strong>더보기</strong>
                 <div class="chat-list-actions">
-                  <button type="button" title="검색" aria-label="검색">
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="friend-action-icon search-action" aria-hidden="true"></span>
-                  </button>
-                  <button type="button" title="스캔" aria-label="스캔">
+                  </span>
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="scan-action-icon" aria-hidden="true"></span>
-                  </button>
-                  <button type="button" title="설정" aria-label="설정">
+                  </span>
+                  <span class="preview-mock-control" aria-hidden="true">
                     <span class="friend-action-icon settings-action" aria-hidden="true"></span>
-                  </button>
+                  </span>
                 </div>
               </div>
               <div class="tab-preview-screen more-screen">
-                <div class="more-segment-tabs" role="tablist" aria-label="더보기 필터">
-                  <button class="more-segment is-active" type="button" role="tab" aria-selected="true">홈</button>
-                  <button class="more-segment" type="button" role="tab" aria-selected="false">지갑</button>
+                <div class="more-segment-tabs" role="group" aria-label="더보기 필터">
+                  <span class="more-segment is-active preview-mock-control"><span class="visually-hidden">선택됨: </span>홈</span>
+                  <span class="more-segment preview-mock-control">지갑</span>
                 </div>
-                <div class="more-service-panel">
-                  <div class="more-service-item">
+                <div class="more-service-panel" role="list" aria-label="서비스 목록">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon gift"></span>
                     <strong>선물하기</strong>
                   </div>
-                  <div class="more-service-item">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon giftbox"></span>
                     <strong>받은선물</strong>
                   </div>
-                  <div class="more-service-item">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon deal"></span>
                     <strong>톡딜</strong>
                   </div>
-                  <div class="more-service-item">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon emoticon"></span>
                     <strong>이모티콘</strong>
                   </div>
-                  <div class="more-service-item">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon live"></span>
                     <strong>라이브쇼핑</strong>
                   </div>
-                  <div class="more-service-item">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon makers"></span>
                     <strong>메이커스</strong>
                   </div>
-                  <div class="more-service-item">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon friends"></span>
                     <strong>프렌즈</strong>
                   </div>
-                  <div class="more-service-item">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon game"></span>
                     <strong>게임</strong>
                   </div>
-                  <div class="more-service-item">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon idcard"></span>
                     <strong>모바일신분증</strong>
                   </div>
-                  <div class="more-service-item">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon cloud"></span>
                     <strong>톡클라우드</strong>
                   </div>
-                  <div class="more-service-item">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon calendar"></span>
                     <strong>캘린더</strong>
                   </div>
-                  <div class="more-service-item">
+                  <div class="more-service-item" role="listitem">
                     <span class="more-service-icon reservation"></span>
                     <strong>예약하기</strong>
                   </div>
@@ -860,27 +880,27 @@
                   </div>
                   <div class="more-ad-footer">
                     <strong>리딩로그ReadingLog</strong>
-                    <a href="https://play.google.com/store/apps/details?id=com.reha.readinglog" target="_blank" rel="noopener noreferrer">다운로드</a>
+                    <a href="https://play.google.com/store/apps/details?id=com.reha.readinglog" target="_blank" rel="noopener noreferrer" aria-label="리딩로그 Google Play 다운로드 (새 창)">다운로드</a>
                   </div>
                 </div>
                 <div class="more-section-heading">게임플레이</div>
               </div>
-              <div class="bottom-tabs">
-                <button class="tab-friends" type="button" aria-label="친구">
+              <div class="bottom-tabs" aria-hidden="true">
+                <span class="tab-friends preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-chat" type="button" aria-label="대화">
+                </span>
+                <span class="tab-chat preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-openchat" type="button" aria-label="오픈채팅">
+                </span>
+                <span class="tab-openchat preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-shopping" type="button" aria-label="쇼핑">
+                </span>
+                <span class="tab-shopping preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
-                <button class="tab-more is-selected" type="button" aria-label="더보기">
+                </span>
+                <span class="tab-more is-selected preview-mock-control">
                   <span class="tab-icon" aria-hidden="true"></span>
-                </button>
+                </span>
               </div>
             </article>
 
@@ -890,22 +910,25 @@
               data-preview-page="chat"
               role="tabpanel"
               aria-labelledby="preview-tab-chat"
+              aria-describedby="preview-summary-chat"
               aria-hidden="true"
               inert
             >
+              <p id="preview-summary-chat" class="preview-panel-summary visually-hidden">메시지 대화와 입력창을 보여 주는 예시입니다.</p>
+              <h3 class="visually-hidden">채팅방 화면</h3>
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header">
-                <button type="button" title="뒤로" aria-label="뒤로">
+                <span class="preview-mock-control" aria-hidden="true">
                   <span class="arrow-icon arrow-left" aria-hidden="true"></span>
-                </button>
+                </span>
                 <div>
                   <strong>채팅방</strong>
                 </div>
-                <button type="button" title="메뉴" aria-label="메뉴">☰</button>
+                <span class="preview-mock-control" aria-hidden="true">☰</span>
               </div>
-              <div id="chat-screen" class="chat-screen">
-                <div class="date-chip" data-preview-date>2026년 6월 18일 목요일 &gt;</div>
-                <div class="message-group receive">
+              <div id="chat-screen" class="chat-screen" role="list" aria-label="메시지 대화 예시">
+                <div class="date-chip" data-preview-date role="listitem">2026년 6월 18일 목요일 &gt;</div>
+                <div class="message-group receive" role="listitem">
                   <div class="avatar"></div>
                   <div class="message-stack">
                     <span class="sender">가야</span>
@@ -919,7 +942,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="message-group send">
+                <div class="message-group send" role="listitem">
                   <div class="message-stack">
                     <div class="bubble-line">
                       <time class="message-time" data-preview-time>00:00</time>
@@ -931,7 +954,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="message-group receive">
+                <div class="message-group receive" role="listitem">
                   <div class="avatar default-profile"></div>
                   <div class="message-stack">
                     <span class="sender">가야</span>
@@ -948,13 +971,13 @@
                     <div class="bubble-line">
                       <p class="bubble receive-bubble additional-bubble">
                         <span class="message-token mention">@가야</span> 이거 봐
-                        <a class="message-token message-link" href="https://talk.kakao.com" target="_blank" rel="noopener noreferrer">https://talk.kakao.com</a>
+                        <span class="message-token message-link preview-mock-control">https://talk.kakao.com</span>
                       </p>
                       <time class="message-time" data-preview-time>00:00</time>
                     </div>
                   </div>
                 </div>
-                <div class="message-group send">
+                <div class="message-group send" role="listitem">
                   <div class="message-stack">
                     <div class="bubble-line">
                       <time class="message-time" data-preview-time>00:00</time>
@@ -966,7 +989,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="message-group receive typing-group">
+                <div class="message-group receive typing-group" role="listitem">
                   <div class="avatar small"></div>
                   <div class="message-stack">
                     <div class="bubble-line">
@@ -977,9 +1000,9 @@
               </div>
               <div class="input-bar">
                 <div class="input-bar-content">
-                  <button type="button" title="메뉴" aria-label="메뉴">＋</button>
+                  <span class="preview-mock-control" aria-hidden="true">＋</span>
                   <div class="input-pill">메시지 입력</div>
-                  <button class="send-button" type="button">전송</button>
+                  <span class="send-button preview-mock-control" aria-hidden="true">전송</span>
                 </div>
               </div>
             </article>
@@ -990,14 +1013,16 @@
               data-preview-page="bubble-detail"
               role="tabpanel"
               aria-labelledby="preview-tab-bubble-detail"
+              aria-describedby="preview-summary-bubble-detail"
               aria-hidden="true"
               inert
             >
+              <p id="preview-summary-bubble-detail" class="preview-panel-summary visually-hidden">말풍선 이미지를 조정하는 실제 편집 화면입니다.</p>
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header bubble-detail-header">
-                <button type="button" title="뒤로" aria-label="뒤로">
+                <span class="preview-mock-control" aria-hidden="true">
                   <span class="arrow-icon arrow-left" aria-hidden="true"></span>
-                </button>
+                </span>
                 <div>
                   <h3 data-bubble-detail-title data-preview-panel-heading tabindex="-1">말풍선 상세</h3>
                 </div>
@@ -1031,9 +1056,12 @@
               data-preview-page="passcode"
               role="tabpanel"
               aria-labelledby="preview-tab-passcode"
+              aria-describedby="preview-summary-passcode"
               aria-hidden="true"
               inert
             >
+              <p id="preview-summary-passcode" class="preview-panel-summary visually-hidden">숫자 키패드로 네 자리 암호 입력을 시험하는 화면입니다.</p>
+              <h3 class="visually-hidden">잠금화면</h3>
               <div class="phone-status" data-phone-status></div>
               <div class="passcode-screen">
                 <div class="passcode-intro">
@@ -1071,9 +1099,12 @@
               data-preview-page="splash"
               role="tabpanel"
               aria-labelledby="preview-tab-splash"
+              aria-describedby="preview-summary-splash"
               aria-hidden="true"
               inert
             >
+              <p id="preview-summary-splash" class="preview-panel-summary visually-hidden">테마 아이콘과 배경을 보여 주는 로딩화면 예시입니다.</p>
+              <h3 class="visually-hidden">로딩화면</h3>
               <div class="phone-status" data-phone-status></div>
               <div class="splash-screen">
                 <div class="splash-icon" aria-hidden="true"></div>
@@ -1086,21 +1117,24 @@
               data-preview-page="theme-list"
               role="tabpanel"
               aria-labelledby="preview-tab-theme-list"
+              aria-describedby="preview-summary-theme-list"
               aria-hidden="true"
               inert
             >
+              <p id="preview-summary-theme-list" class="preview-panel-summary visually-hidden">기본, 공식, 사용자 테마 목록과 선택된 사용자 테마를 보여 주는 예시입니다.</p>
+              <h3 class="visually-hidden">테마 목록 화면</h3>
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header theme-list-header">
-                <button type="button" title="뒤로" aria-label="뒤로">
+                <span class="preview-mock-control" aria-hidden="true">
                   <span class="arrow-icon arrow-left" aria-hidden="true"></span>
-                </button>
+                </span>
                 <div>
                   <strong>테마</strong>
                 </div>
-                <button type="button" title="관리" aria-label="관리">관리</button>
+                <span class="preview-mock-control" aria-hidden="true">관리</span>
               </div>
-              <div class="theme-list-screen">
-                <div class="section-title theme-basic-section">기본</div>
+              <div class="theme-list-screen" role="group" aria-label="테마 목록">
+                <h4 class="section-title theme-basic-section">기본</h4>
                 <div class="theme-list-row theme-mode-row">
                   <div class="theme-preview-card system-mode-preview" aria-hidden="true">
                     <span></span>
@@ -1143,26 +1177,27 @@
                   </div>
                   <span class="theme-choice" aria-hidden="true"></span>
                 </div>
-                <div class="section-title">공식 테마</div>
+                <h4 class="section-title">공식 테마</h4>
                 <div class="theme-list-row">
-                  <div class="theme-icon official-theme"></div>
+                  <div class="theme-icon official-theme" aria-hidden="true"></div>
                   <div class="theme-list-copy">
                     <strong>공식 테마</strong>
                     <span>25.6.0</span>
                   </div>
-                  <button class="theme-download" type="button" title="다운로드" aria-label="공식 테마 다운로드">↓</button>
+                  <span class="theme-download preview-mock-control" aria-hidden="true">↓</span>
                 </div>
-                <div class="section-title">사용자 테마</div>
+                <h4 class="section-title">사용자 테마</h4>
                 <div class="theme-list-row active-theme-row">
-                  <div class="theme-icon"></div>
+                  <div class="theme-icon" aria-hidden="true"></div>
                   <div class="theme-list-copy">
                     <strong data-preview-theme-name>나의 테마</strong>
                     <span data-preview-theme-version>1.0.0</span>
                   </div>
-                  <span class="theme-choice selected" aria-label="선택됨"></span>
+                  <span class="theme-choice selected" aria-hidden="true"></span>
+                  <span class="visually-hidden">선택됨</span>
                 </div>
                 <div class="theme-list-row">
-                  <div class="theme-icon pale"></div>
+                  <div class="theme-icon pale" aria-hidden="true"></div>
                   <div class="theme-list-copy">
                     <strong>사용자테마</strong>
                     <span>11.4.0</span>
