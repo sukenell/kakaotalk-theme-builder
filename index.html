@@ -110,11 +110,20 @@
           <button id="preview-next" class="preview-arrow" type="button" aria-label="다음 프리뷰">
             <span class="arrow-icon arrow-right" aria-hidden="true"></span>
           </button>
+          <span id="preview-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></span>
         </div>
 
         <div id="preview-frame" class="phone-preview" aria-label="카카오톡 테마 미리보기">
           <div id="preview-track" class="preview-track">
-            <article class="preview-slide home-preview" aria-label="메인 화면 프리뷰">
+            <article
+              id="preview-panel-home"
+              class="preview-slide home-preview" aria-label="메인 화면 프리뷰"
+              data-preview-page="home"
+              role="tabpanel"
+              aria-labelledby="preview-tab-home"
+              aria-hidden="true"
+              inert
+            >
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header main-header">
                 <div class="home-owner-title">
@@ -247,7 +256,13 @@
               </div>
             </article>
 
-            <article class="preview-slide chat-list-preview" aria-label="대화 목록 프리뷰">
+            <article
+              id="preview-panel-chat-list"
+              class="preview-slide chat-list-preview" aria-label="대화 목록 프리뷰"
+              data-preview-page="chat-list"
+              role="tabpanel"
+              aria-labelledby="preview-tab-chat-list"
+            >
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header chat-list-header">
                 <strong>대화</strong>
@@ -409,7 +424,15 @@
               </div>
             </article>
 
-            <article class="preview-slide open-chat-preview" aria-label="오픈채팅 프리뷰">
+            <article
+              id="preview-panel-open-chat"
+              class="preview-slide open-chat-preview" aria-label="오픈채팅 프리뷰"
+              data-preview-page="open-chat"
+              role="tabpanel"
+              aria-labelledby="preview-tab-open-chat"
+              aria-hidden="true"
+              inert
+            >
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header chat-list-header">
                 <strong>지금</strong>
@@ -632,7 +655,15 @@
               </div>
             </article>
 
-            <article class="preview-slide shopping-preview" aria-label="쇼핑 프리뷰">
+            <article
+              id="preview-panel-shopping"
+              class="preview-slide shopping-preview" aria-label="쇼핑 프리뷰"
+              data-preview-page="shopping"
+              role="tabpanel"
+              aria-labelledby="preview-tab-shopping"
+              aria-hidden="true"
+              inert
+            >
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header chat-list-header">
                 <strong>쇼핑</strong>
@@ -737,7 +768,15 @@
               </div>
             </article>
 
-            <article class="preview-slide more-preview" aria-label="더보기 프리뷰">
+            <article
+              id="preview-panel-more"
+              class="preview-slide more-preview" aria-label="더보기 프리뷰"
+              data-preview-page="more"
+              role="tabpanel"
+              aria-labelledby="preview-tab-more"
+              aria-hidden="true"
+              inert
+            >
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header chat-list-header">
                 <strong>더보기</strong>
@@ -845,7 +884,15 @@
               </div>
             </article>
 
-            <article class="preview-slide chat-preview" aria-label="채팅방 프리뷰">
+            <article
+              id="preview-panel-chat"
+              class="preview-slide chat-preview" aria-label="채팅방 프리뷰"
+              data-preview-page="chat"
+              role="tabpanel"
+              aria-labelledby="preview-tab-chat"
+              aria-hidden="true"
+              inert
+            >
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header">
                 <button type="button" title="뒤로" aria-label="뒤로">
@@ -937,7 +984,15 @@
               </div>
             </article>
 
-            <article class="preview-slide bubble-detail-preview" aria-label="말풍선 상세 프리뷰">
+            <article
+              id="preview-panel-bubble-detail"
+              class="preview-slide bubble-detail-preview" aria-label="말풍선 상세 프리뷰"
+              data-preview-page="bubble-detail"
+              role="tabpanel"
+              aria-labelledby="preview-tab-bubble-detail"
+              aria-hidden="true"
+              inert
+            >
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header bubble-detail-header">
                 <button type="button" title="뒤로" aria-label="뒤로">
@@ -970,7 +1025,15 @@
               </div>
             </article>
 
-            <article class="preview-slide passcode-preview" aria-label="잠금화면 프리뷰">
+            <article
+              id="preview-panel-passcode"
+              class="preview-slide passcode-preview" aria-label="잠금화면 프리뷰"
+              data-preview-page="passcode"
+              role="tabpanel"
+              aria-labelledby="preview-tab-passcode"
+              aria-hidden="true"
+              inert
+            >
               <div class="phone-status" data-phone-status></div>
               <div class="passcode-screen">
                 <div class="passcode-intro">
@@ -1002,14 +1065,30 @@
               </div>
             </article>
 
-            <article class="preview-slide splash-preview" aria-label="로딩화면 프리뷰">
+            <article
+              id="preview-panel-splash"
+              class="preview-slide splash-preview" aria-label="로딩화면 프리뷰"
+              data-preview-page="splash"
+              role="tabpanel"
+              aria-labelledby="preview-tab-splash"
+              aria-hidden="true"
+              inert
+            >
               <div class="phone-status" data-phone-status></div>
               <div class="splash-screen">
                 <div class="splash-icon" aria-hidden="true"></div>
               </div>
             </article>
 
-            <article class="preview-slide theme-list-preview" aria-label="테마 목록 프리뷰">
+            <article
+              id="preview-panel-theme-list"
+              class="preview-slide theme-list-preview" aria-label="테마 목록 프리뷰"
+              data-preview-page="theme-list"
+              role="tabpanel"
+              aria-labelledby="preview-tab-theme-list"
+              aria-hidden="true"
+              inert
+            >
               <div class="phone-status" data-phone-status></div>
               <div class="phone-header theme-list-header">
                 <button type="button" title="뒤로" aria-label="뒤로">

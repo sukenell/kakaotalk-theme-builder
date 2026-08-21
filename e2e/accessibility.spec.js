@@ -2,6 +2,7 @@ import { expect, test as base } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
 import { IMAGE_TARGETS } from "../src/theme-model.js";
+import { PREVIEW_PAGES } from "../src/preview-pages.js";
 
 const onePixelPng = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
@@ -62,6 +63,61 @@ async function nonEmptyLiveMessages(page, channel) {
     (selectedChannel) => window.__liveRegionMutations[selectedChannel].filter(Boolean),
     channel,
   );
+}
+
+async function expectPreviewInvariant(page, expectedIndex) {
+  const expectedPageIds = PREVIEW_PAGES.map((previewPage) => previewPage.id);
+  const state = await page.evaluate((pageIds) => {
+    const tabs = [...document.querySelectorAll('#preview-tabs > button[role="tab"]')];
+    const panels = pageIds.map((pageId) => document.querySelector(`#preview-panel-${pageId}`));
+
+    return {
+      tabs: tabs.map((tab) => ({
+        controls: tab.getAttribute("aria-controls"),
+        id: tab.id,
+        selected: tab.getAttribute("aria-selected"),
+        tabIndex: tab.tabIndex,
+      })),
+      panels: panels.map((panel) =>
+        panel
+          ? {
+              ariaHidden: panel.getAttribute("aria-hidden"),
+              hasInertAttribute: panel.hasAttribute("inert"),
+              inert: panel.inert,
+              labelledBy: panel.getAttribute("aria-labelledby"),
+              role: panel.getAttribute("role"),
+            }
+          : null,
+      ),
+    };
+  }, expectedPageIds);
+
+  expect(state.tabs).toHaveLength(PREVIEW_PAGES.length);
+  expect(state.panels).toHaveLength(PREVIEW_PAGES.length);
+  expect(state.tabs.filter((tab) => tab.selected === "true")).toHaveLength(1);
+  expect(state.tabs.filter((tab) => tab.tabIndex === 0)).toHaveLength(1);
+
+  for (const [index, pageDefinition] of PREVIEW_PAGES.entries()) {
+    const tab = state.tabs[index];
+    const panel = state.panels[index];
+    const isActive = index === expectedIndex;
+    const tabId = `preview-tab-${pageDefinition.id}`;
+    const panelId = `preview-panel-${pageDefinition.id}`;
+
+    expect(tab).toEqual({
+      controls: panelId,
+      id: tabId,
+      selected: String(isActive),
+      tabIndex: isActive ? 0 : -1,
+    });
+    expect(panel).toEqual({
+      ariaHidden: isActive ? null : "true",
+      hasInertAttribute: !isActive,
+      inert: !isActive,
+      labelledBy: tabId,
+      role: "tabpanel",
+    });
+  }
 }
 
 async function createPngBuffer(page, width, height, color = "#f78da7") {
@@ -1569,4 +1625,93 @@ test("@task2 keeps a long valid upload filename inside its row", async ({ page }
     textOverflow: "ellipsis",
   });
   expect(geometry.scrollWidth).toBeGreaterThan(geometry.clientWidth);
+});
+
+test("@task4 connects every preview tab to one panel and hides inactive panels from focus and the accessibility tree", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await expectPreviewInvariant(page, 1);
+
+  const snapshot = await page.locator("#preview-frame").ariaSnapshot();
+  expect(snapshot).toContain('tabpanel "대화 목록"');
+  for (const previewPage of PREVIEW_PAGES.filter((_, index) => index !== 1)) {
+    expect(snapshot).not.toContain(`tabpanel "${previewPage.label}"`);
+  }
+
+  await page.locator("#preview-next").focus();
+  const inactivePanelFocus = [];
+  for (let index = 0; index < 80; index += 1) {
+    await page.keyboard.press("Tab");
+    const focusState = await page.evaluate(() => {
+      const panel = document.activeElement?.closest(".preview-slide");
+      return panel
+        ? {
+            id: panel.id,
+            inactive: panel.hasAttribute("inert") || panel.getAttribute("aria-hidden") === "true",
+          }
+        : null;
+    });
+    if (focusState?.inactive) {
+      inactivePanelFocus.push(focusState.id);
+    }
+  }
+  expect(inactivePanelFocus).toEqual([]);
+});
+
+test("@task4 automatically activates scoped preview tabs with arrows, Home, End, and wraparound", async ({ page }) => {
+  await page.goto("/");
+  const tabs = page.locator('#preview-tabs > button[role="tab"]');
+  const previewStatus = page.locator("#preview-status");
+
+  await tabs.nth(1).focus();
+  for (const step of [
+    { key: "ArrowRight", index: 2 },
+    { key: "ArrowLeft", index: 1 },
+    { key: "Home", index: 0 },
+    { key: "ArrowLeft", index: 9 },
+    { key: "ArrowRight", index: 0 },
+    { key: "End", index: 9 },
+  ]) {
+    await page.keyboard.press(step.key);
+    await expectPreviewInvariant(page, step.index);
+    await expect(tabs.nth(step.index)).toBeFocused();
+    await expect(previewStatus).toHaveText("");
+  }
+
+  await tabs.nth(3).click();
+  await expectPreviewInvariant(page, 3);
+  await expect(tabs.nth(3)).toBeFocused();
+
+  await page.locator("#preview-previous").click();
+  await expectPreviewInvariant(page, 2);
+  await expect(page.locator("#preview-previous")).toBeFocused();
+  await expect(previewStatus).toHaveText("지금 프리뷰, 3/10");
+
+  await page.locator("#preview-next").click();
+  await expectPreviewInvariant(page, 3);
+  await expect(page.locator("#preview-next")).toBeFocused();
+  await expect(previewStatus).toHaveText("쇼핑 프리뷰, 4/10");
+});
+
+test("@task4 removes global arrow navigation and scopes passcode shortcuts to its focused panel", async ({ page }) => {
+  await page.goto("/");
+  const tabs = page.locator('#preview-tabs > button[role="tab"]');
+  const selectedDots = page.locator(".passcode-dot.is-selected");
+
+  await tabs.nth(7).click();
+  await expectPreviewInvariant(page, 7);
+
+  await page.locator("#preview-next").focus();
+  await page.keyboard.press("ArrowLeft");
+  await expectPreviewInvariant(page, 7);
+  await page.keyboard.press("7");
+  await expect(selectedDots).toHaveCount(0);
+
+  await page.locator('[data-passcode-digit="1"]').focus();
+  await page.keyboard.press("7");
+  await expect(selectedDots).toHaveCount(1);
+  await page.keyboard.press("Backspace");
+  await expect(selectedDots).toHaveCount(0);
 });

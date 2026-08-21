@@ -5,6 +5,7 @@ import {
   ADDITIONAL_IMAGE_KEYS,
   CHAT_BUBBLE_IMAGE_KEYS,
   getNextPreviewIndex,
+  getPreviewIndexForKey,
   getPreviewColorKeys,
   getPreviewIconUrl,
   getPreviewImageKeys,
@@ -143,4 +144,14 @@ test("getNextPreviewIndex moves left and right with wraparound", () => {
   assert.equal(getNextPreviewIndex(1, "previous"), 0);
   assert.equal(getNextPreviewIndex(0, "previous"), PREVIEW_PAGES.length - 1);
   assert.equal(getNextPreviewIndex(PREVIEW_PAGES.length - 1, "next"), 0);
+});
+
+test("getPreviewIndexForKey implements wrapped automatic tab navigation", () => {
+  assert.equal(getPreviewIndexForKey(0, "ArrowLeft"), PREVIEW_PAGES.length - 1);
+  assert.equal(getPreviewIndexForKey(PREVIEW_PAGES.length - 1, "ArrowRight"), 0);
+  assert.equal(getPreviewIndexForKey(4, "ArrowLeft"), 3);
+  assert.equal(getPreviewIndexForKey(4, "ArrowRight"), 5);
+  assert.equal(getPreviewIndexForKey(4, "Home"), 0);
+  assert.equal(getPreviewIndexForKey(4, "End"), PREVIEW_PAGES.length - 1);
+  assert.equal(getPreviewIndexForKey(4, "Enter"), undefined);
 });

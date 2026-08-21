@@ -1,7 +1,13 @@
 import { buildAndroidEntries, buildIosEntries, getSkippedAndroidUploads } from "./theme-builder.js";
 import { SHOW_FRIEND_AD_CAPTION } from "./env-config.js";
 import { applyPasscodeAction } from "./passcode-preview.js";
-import { getNextPreviewIndex, getPreviewColorKeys, getPreviewImageKeys, PREVIEW_PAGES } from "./preview-pages.js";
+import {
+  getNextPreviewIndex,
+  getPreviewColorKeys,
+  getPreviewImageKeys,
+  getPreviewIndexForKey,
+  PREVIEW_PAGES,
+} from "./preview-pages.js";
 import {
   ADDITIONAL_IMAGE_KEYS,
   CHAT_BUBBLE_IMAGE_KEYS,
@@ -306,6 +312,7 @@ const previewTabs = document.querySelector("#preview-tabs");
 const previewFrame = document.querySelector("#preview-frame");
 const previewPreviousButton = document.querySelector("#preview-previous");
 const previewNextButton = document.querySelector("#preview-next");
+const previewStatus = document.querySelector("#preview-status");
 const previewDeviceButtons = document.querySelectorAll("[data-preview-device]");
 const passcodeScreen = document.querySelector(".passcode-screen");
 const bubbleDetailTitle = document.querySelector("[data-bubble-detail-title]");
@@ -1037,6 +1044,8 @@ function renderPreviewTabs() {
       const button = document.createElement("button");
       button.type = "button";
       button.role = "tab";
+      button.id = `preview-tab-${page.id}`;
+      button.setAttribute("aria-controls", `preview-panel-${page.id}`);
       button.dataset.previewIndex = String(index);
       button.ariaLabel = page.label;
       button.title = page.label;
@@ -1050,10 +1059,32 @@ function renderPreviewTabs() {
   );
 }
 
-function setPreviewIndex(index) {
+function syncPreviewPanelAccessibility(activeIndex) {
+  const activePage = PREVIEW_PAGES[activeIndex];
+  const activePanel = document.querySelector(`#preview-panel-${activePage.id}`);
+
+  activePanel.inert = false;
+  activePanel.removeAttribute("inert");
+  activePanel.removeAttribute("aria-hidden");
+
+  PREVIEW_PAGES.forEach((page, index) => {
+    const panel = document.querySelector(`#preview-panel-${page.id}`);
+    panel.setAttribute("role", "tabpanel");
+    panel.setAttribute("aria-labelledby", `preview-tab-${page.id}`);
+
+    if (index !== activeIndex) {
+      panel.inert = true;
+      panel.setAttribute("inert", "");
+      panel.setAttribute("aria-hidden", "true");
+    }
+  });
+}
+
+function setPreviewIndex(index, { focus = "none", announce = false } = {}) {
   currentPreviewIndex = (index + PREVIEW_PAGES.length) % PREVIEW_PAGES.length;
   const page = PREVIEW_PAGES[currentPreviewIndex];
 
+  syncPreviewPanelAccessibility(currentPreviewIndex);
   previewTrack.style.transform = `translateX(-${currentPreviewIndex * 100}%)`;
   previewTabs.querySelectorAll("button").forEach((button, buttonIndex) => {
     const isActive = buttonIndex === currentPreviewIndex;
@@ -1065,10 +1096,33 @@ function setPreviewIndex(index) {
   renderUploadControls();
   renderBubbleDetailControls();
   updateBubbleDetailPreview();
+
+  if (focus === "tab") {
+    document.querySelector(`#preview-tab-${page.id}`).focus();
+  }
+
+  if (announce) {
+    previewStatus.textContent = `${page.label} 프리뷰, ${currentPreviewIndex + 1}/${PREVIEW_PAGES.length}`;
+  }
 }
 
 function movePreview(direction) {
-  setPreviewIndex(getNextPreviewIndex(currentPreviewIndex, direction));
+  setPreviewIndex(getNextPreviewIndex(currentPreviewIndex, direction), { announce: true });
+}
+
+function handlePreviewTabKeydown(event) {
+  const tab = event.target.closest('button[role="tab"]');
+  if (!tab || !previewTabs.contains(tab)) {
+    return;
+  }
+
+  const nextIndex = getPreviewIndexForKey(Number(tab.dataset.previewIndex), event.key);
+  if (nextIndex === undefined) {
+    return;
+  }
+
+  event.preventDefault();
+  setPreviewIndex(nextIndex, { focus: "tab" });
 }
 
 function openBubbleDetail(key) {
@@ -2187,24 +2241,12 @@ function isEditableTarget(target) {
   );
 }
 
-function handleGlobalKeydown(event) {
-  if (isEditableTarget(event.target)) {
-    return;
-  }
-
-  if (event.key === "ArrowLeft") {
-    event.preventDefault();
-    movePreview("previous");
-    return;
-  }
-
-  if (event.key === "ArrowRight") {
-    event.preventDefault();
-    movePreview("next");
-    return;
-  }
-
-  if (PREVIEW_PAGES[currentPreviewIndex].id !== "passcode") {
+function handlePasscodeKeydown(event) {
+  if (
+    PREVIEW_PAGES[currentPreviewIndex].id !== "passcode" ||
+    !passcodeScreen.contains(event.target) ||
+    isEditableTarget(event.target)
+  ) {
     return;
   }
 
@@ -2438,7 +2480,8 @@ previewDeviceButtons.forEach((button) => {
 ninePatchResetButton?.addEventListener("click", resetActiveBubbleDetail);
 bubbleDetailNextButton?.addEventListener("click", cycleActiveBubbleDetail);
 passcodeScreen.addEventListener("click", handlePasscodeClick);
-document.addEventListener("keydown", handleGlobalKeydown);
+passcodeScreen.addEventListener("keydown", handlePasscodeKeydown);
+previewTabs.addEventListener("keydown", handlePreviewTabKeydown);
 downloadIosButton.addEventListener("click", downloadIosTheme);
 downloadAndroidButton.addEventListener("click", downloadAndroidSource);
 

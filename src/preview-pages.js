@@ -154,6 +154,26 @@ export function getNextPreviewIndex(currentIndex, direction) {
   return (currentIndex + step + PREVIEW_PAGES.length) % PREVIEW_PAGES.length;
 }
 
+export function getPreviewIndexForKey(currentIndex, key) {
+  if (key === "ArrowLeft") {
+    return getNextPreviewIndex(currentIndex, "previous");
+  }
+
+  if (key === "ArrowRight") {
+    return getNextPreviewIndex(currentIndex, "next");
+  }
+
+  if (key === "Home") {
+    return 0;
+  }
+
+  if (key === "End") {
+    return PREVIEW_PAGES.length - 1;
+  }
+
+  return undefined;
+}
+
 export function getPreviewColorKeys(pageId) {
   return PREVIEW_PAGES.find((page) => page.id === pageId)?.colorKeys ?? [];
 }
