@@ -466,7 +466,7 @@ h2 {
   position: relative;
 }
 
-.file-button:has(input:focus-visible) {
+.file-button:focus-within {
   outline: 3px solid #075c52;
   outline-offset: 2px;
 }

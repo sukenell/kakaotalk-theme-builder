@@ -61,12 +61,10 @@ test("@task1 gives download buttons exact platform-specific accessible names", a
   await expect(androidDownload).toHaveText("Android");
 });
 
-test("@task2 gives every active upload row contextual names and descriptions", async ({ page }) => {
+test("@task2 gives every active preview upload and color row one contextual name", async ({ page }) => {
   await page.goto("/");
 
   const uploadControls = page.locator("#upload-controls");
-  await expect(uploadControls.getByRole("group")).toHaveCount(13);
-
   const mainBackgroundRow = uploadControls.getByRole("group", { name: "메인 배경", exact: true });
   await expect(mainBackgroundRow).toHaveCount(1);
   await expect(mainBackgroundRow).toHaveAttribute("aria-labelledby", "upload-title-mainBackground");
@@ -83,17 +81,84 @@ test("@task2 gives every active upload row contextual names and descriptions", a
   await expect(mainBackgroundRow.locator('label[for="upload-input-mainBackground"]')).toHaveText("업로드");
   await expect(mainBackgroundRow.getByRole("button", { name: "메인 배경 삭제", exact: true })).toHaveCount(1);
 
-  const compactTabRow = uploadControls.getByRole("group", { name: "친구1", exact: true });
-  await expect(compactTabRow.getByRole("button", { name: "친구1 업로드", exact: true })).toHaveCount(1);
-  const tintCheckbox = compactTabRow.getByRole("checkbox", { name: "친구1 색상 적용", exact: true });
-  await expect(tintCheckbox).toHaveCount(1);
-  await expect(compactTabRow.locator('input[type="color"]')).toHaveAccessibleName("친구1 색상");
-  expect(await tintCheckbox.evaluate((element) => element.closest("label") === null)).toBe(true);
+  const previewTabs = page.locator('#preview-tabs > button[role="tab"]');
+  const previewPageCount = await previewTabs.count();
+  const checkedColorInputKeys = new Set();
+  expect(previewPageCount).toBeGreaterThan(0);
 
-  await page.getByRole("tab", { name: "채팅방", exact: true }).click();
-  const bubbleRow = uploadControls.getByRole("group", { name: "나의 말풍선 - 기본", exact: true });
-  await expect(bubbleRow.getByRole("button", { name: "나의 말풍선 - 기본 업로드", exact: true })).toHaveCount(1);
-  await expect(bubbleRow.getByRole("button", { name: "나의 말풍선 - 기본 상세", exact: true })).toHaveCount(1);
+  for (let pageIndex = 0; pageIndex < previewPageCount; pageIndex += 1) {
+    await previewTabs.nth(pageIndex).click();
+
+    const uploadRows = await uploadControls.locator(":scope > .upload-item").evaluateAll((rows) =>
+      rows.map((row) => {
+        const title = row.querySelector('[id^="upload-title-"]');
+        return {
+          key: title.id.replace("upload-title-", ""),
+          title: title.textContent.trim(),
+          hasClear: Boolean(row.querySelector("[data-upload-clear]")),
+          hasDetail: Boolean(row.querySelector("[data-bubble-detail]")),
+          hasTint: Boolean(row.querySelector(".upload-tint-control")),
+        };
+      }),
+    );
+    expect(new Set(uploadRows.map(({ key }) => key)).size).toBe(uploadRows.length);
+    expect(new Set(uploadRows.map(({ title }) => title)).size).toBe(uploadRows.length);
+    await expect(uploadControls.getByRole("group")).toHaveCount(uploadRows.length);
+    await expect(uploadControls.getByRole("button", { name: "업로드", exact: true })).toHaveCount(0);
+    await expect(uploadControls.getByRole("button", { name: "상세", exact: true })).toHaveCount(0);
+    await expect(uploadControls.getByRole("button", { name: "삭제", exact: true })).toHaveCount(0);
+
+    for (const { key, title, hasClear, hasDetail, hasTint } of uploadRows) {
+      const row = uploadControls.locator(`:scope > .upload-item[aria-labelledby="upload-title-${key}"]`);
+      await expect(uploadControls.getByRole("group", { name: title, exact: true })).toHaveCount(1);
+      await expect(row.getByRole("button", { name: `${title} 업로드`, exact: true })).toHaveCount(1);
+      if (hasDetail) {
+        await expect(row.getByRole("button", { name: `${title} 상세`, exact: true })).toHaveCount(1);
+      }
+      if (hasClear) {
+        await expect(row.getByRole("button", { name: `${title} 삭제`, exact: true })).toHaveCount(1);
+      }
+      if (hasTint) {
+        const tintCheckbox = row.getByRole("checkbox", { name: `${title} 색상 적용`, exact: true });
+        await expect(tintCheckbox).toHaveCount(1);
+        await expect(row.locator('.upload-tint-control input[type="color"]')).toHaveAccessibleName(`${title} 색상`);
+        expect(await tintCheckbox.evaluate((element) => element.closest("label") === null)).toBe(true);
+      }
+    }
+
+    const colorControlRoot = page.locator("#color-controls");
+    const colorRows = await colorControlRoot.locator(":scope > .color-row").evaluateAll((rows) =>
+      rows.map((row) => {
+        const label = row.querySelector('[id^="color-label-"]');
+        const key = label.id.replace("color-label-", "");
+        return {
+          key,
+          label: label.textContent.trim(),
+          value: row.querySelector(`#color-value-${key}`).textContent.trim(),
+        };
+      }),
+    );
+    expect(new Set(colorRows.map(({ key }) => key)).size).toBe(colorRows.length);
+
+    for (const { key, label, value } of colorRows) {
+      const row = colorControlRoot.locator(":scope > .color-row").filter({ has: page.locator(`#color-label-${key}`) });
+      const picker = row.getByRole("button", { name: `${label} ${value}`, exact: true });
+      await expect(picker).toHaveCount(1);
+      await expect(row.getByRole("button", { name: `${label} 초기화`, exact: true })).toHaveCount(1);
+      if (!checkedColorInputKeys.has(key)) {
+        const hexInput = row.locator(`#color-hex-${key}`);
+        const nativeColorInput = row.locator(`#color-${key}`);
+        await picker.click();
+        await expect(hexInput).toBeVisible();
+        await expect(hexInput).toHaveAccessibleName(`${label} HEX 컬러 코드`);
+        await expect(nativeColorInput).toHaveAccessibleName(`${label} 색상 선택`);
+        expect(await hexInput.evaluate((element) => element.closest("label") === null)).toBe(true);
+        expect(await nativeColorInput.evaluate((element) => element.closest("label") === null)).toBe(true);
+        await page.keyboard.press("Escape");
+        checkedColorInputKeys.add(key);
+      }
+    }
+  }
 });
 
 test("@task2 keeps color control names independent and updates the picker HEX name", async ({ page }) => {
@@ -138,6 +203,72 @@ test("@task2 keeps uploaded filename state through upload-panel rerenders", asyn
   await page.getByRole("button", { name: "메인 배경 삭제", exact: true }).click();
   await expect(page.locator("#upload-description-mainBackground")).toContainText("이미지 삭제됨");
   await expect(page.locator("#upload-description-mainBackground")).not.toContainText("pink-background.png");
+});
+
+test("@task2 ignores a delayed replacement upload after the row is deleted", async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalArrayBuffer = File.prototype.arrayBuffer;
+    File.prototype.arrayBuffer = function (...args) {
+      if (this.name !== "delayed-replacement.png") {
+        return originalArrayBuffer.apply(this, args);
+      }
+
+      const file = this;
+      window.__delayedUploadStarted = true;
+      return new Promise((resolve) => {
+        window.__releaseDelayedUpload = async () => {
+          resolve(await originalArrayBuffer.call(file));
+          await new Promise((nextFrame) => requestAnimationFrame(() => requestAnimationFrame(nextFrame)));
+        };
+      });
+    };
+  });
+  await page.goto("/");
+
+  const uploadInput = page.locator("#upload-input-mainBackground");
+  const file = {
+    name: "pink-background.png",
+    mimeType: "image/png",
+    buffer: Buffer.from([137, 80, 78, 71]),
+  };
+  await uploadInput.setInputFiles(file);
+  await expect(page.locator("#upload-description-mainBackground")).toContainText(file.name);
+
+  await uploadInput.setInputFiles({ ...file, name: "delayed-replacement.png" });
+  await expect.poll(() => page.evaluate(() => window.__delayedUploadStarted)).toBe(true);
+  await page.getByRole("button", { name: "메인 배경 삭제", exact: true }).click();
+  await expect(page.locator("#upload-description-mainBackground")).toContainText("이미지 삭제됨");
+
+  await page.evaluate(() => window.__releaseDelayedUpload());
+  await expect(page.locator("#upload-description-mainBackground")).toContainText("이미지 삭제됨");
+  await expect(page.locator("#upload-description-mainBackground")).not.toContainText("delayed-replacement.png");
+  await expect(page.getByRole("button", { name: "메인 배경 삭제", exact: true })).toBeDisabled();
+});
+
+test("@task2 clears the live native file selection and accepts the same file again", async ({ page }) => {
+  await page.goto("/");
+
+  const uploadInput = page.locator("#upload-input-mainBackground");
+  const file = {
+    name: "same-background.png",
+    mimeType: "image/png",
+    buffer: Buffer.from([137, 80, 78, 71]),
+  };
+  await uploadInput.setInputFiles(file);
+  await expect(page.locator("#upload-description-mainBackground")).toContainText(file.name);
+
+  const clearButton = page.getByRole("button", { name: "메인 배경 삭제", exact: true });
+  await clearButton.click();
+  expect(await uploadInput.evaluate((element) => document.activeElement === element)).toBe(true);
+  await expect(page.locator("#upload-description-mainBackground")).toContainText("이미지 삭제됨");
+  expect(await uploadInput.evaluate((input) => ({ files: input.files.length, value: input.value }))).toEqual({
+    files: 0,
+    value: "",
+  });
+
+  await uploadInput.setInputFiles(file);
+  await expect(page.locator("#upload-description-mainBackground")).toContainText(file.name);
+  await expect(clearButton).toBeEnabled();
 });
 
 test("@task2 reaches the clipped file input by Tab and keeps a visible focus path after cancel", async ({ page }) => {
@@ -191,6 +322,17 @@ test("@task2 reaches the clipped file input by Tab and keeps a visible focus pat
   const chooser = await chooserPromise;
   await chooser.setFiles([]);
   expect(await uploadInput.evaluate((element) => document.activeElement === element)).toBe(true);
+
+  await page.keyboard.press("Tab");
+  expect(await nextUploadInput.evaluate((element) => document.activeElement === element)).toBe(true);
+
+  const pointerChooserPromise = page.waitForEvent("filechooser");
+  await fileButton.click();
+  const pointerChooser = await pointerChooserPromise;
+  await pointerChooser.setFiles([]);
+  expect(await uploadInput.evaluate((element) => document.activeElement === element)).toBe(true);
+  await expect(fileButton).toHaveCSS("outline-width", "3px");
+  await expect(fileButton).toHaveCSS("outline-color", "rgb(7, 92, 82)");
 
   await page.keyboard.press("Tab");
   expect(await nextUploadInput.evaluate((element) => document.activeElement === element)).toBe(true);

@@ -427,6 +427,18 @@ test("upload rows keep stable contextual relationships and persistent file state
   assert.match(app, /delete uploadUiState\[key\];/);
 });
 
+test("upload mutations invalidate stale async work and clear the live native input", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /const uploadOperationVersions = \{\};/);
+  assert.match(app, /function beginUploadOperation\(key\)/);
+  assert.match(app, /const operationVersion = beginUploadOperation\(key\);/);
+  assert.match(app, /if \(!isUploadOperationCurrent\(key, operationVersion\)\) \{[\s\S]*return;/);
+  assert.match(app, /handleClearUpload\(key\)[\s\S]*beginUploadOperation\(key\);/);
+  assert.match(app, /const input = document\.querySelector\(`#upload-input-\$\{key\}`\);/);
+  assert.match(app, /input\.value = "";/);
+});
+
 test("color and tint controls have independent contextual naming sources", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
@@ -441,7 +453,7 @@ test("color and tint controls have independent contextual naming sources", async
 test("the clipped file input exposes a three-pixel wrapper focus ring", async () => {
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 
-  assert.match(css, /\.file-button:has\(input:focus-visible\)\s*\{[\s\S]*outline: 3px solid #075c52;/);
+  assert.match(css, /\.file-button:focus-within\s*\{[\s\S]*outline: 3px solid #075c52;/);
   assert.match(css, /\.file-button input\s*\{[\s\S]*width: 1px;[\s\S]*height: 1px;[\s\S]*clip: rect\(0, 0, 0, 0\);/);
 });
 

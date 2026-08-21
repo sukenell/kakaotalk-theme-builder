@@ -275,7 +275,7 @@ const previews = {};
 const uploadTints = {};
 const uploadUiState = {};
 const bubbleNinePatchSettings = {};
-const uploadRenderVersions = {};
+const uploadOperationVersions = {};
 const templateCache = new Map();
 let currentPreviewIndex = 1;
 let currentPreviewDevice = "phone";
@@ -744,6 +744,16 @@ function getUploadStateText(key) {
   return isClearedImageUpload(key) ? "이미지 삭제됨" : "기본 이미지";
 }
 
+function beginUploadOperation(key) {
+  const operationVersion = (uploadOperationVersions[key] ?? 0) + 1;
+  uploadOperationVersions[key] = operationVersion;
+  return operationVersion;
+}
+
+function isUploadOperationCurrent(key, operationVersion) {
+  return uploadOperationVersions[key] === operationVersion;
+}
+
 function formatUploadSizeLines(target) {
   if (target.displaySizes) {
     return uploadDisplaySizePlatforms.flatMap(([platformKey, platform]) => {
@@ -1196,8 +1206,18 @@ async function handleUpload(key, file) {
     return;
   }
 
+  const operationVersion = beginUploadOperation(key);
   const bytes = new Uint8Array(await file.arrayBuffer());
-  uploads[key] = await createUploadRecord(key, file, bytes, file.type);
+  if (!isUploadOperationCurrent(key, operationVersion)) {
+    return;
+  }
+
+  const nextUpload = await createUploadRecord(key, file, bytes, file.type);
+  if (!isUploadOperationCurrent(key, operationVersion)) {
+    return;
+  }
+
+  uploads[key] = nextUpload;
   uploadUiState[key] = { fileName: file.name };
 
   if (previews[key]) {
@@ -1222,20 +1242,19 @@ async function refreshUploadImage(key) {
     return;
   }
 
+  const operationVersion = beginUploadOperation(key);
   if (upload && getUploadSourceKind(upload) === "default" && !requestedTintColor) {
     clearGeneratedTintUpload(key);
     return;
   }
 
-  const renderVersion = (uploadRenderVersions[key] ?? 0) + 1;
-  uploadRenderVersions[key] = renderVersion;
   let sourceData = getUploadSourceData(upload);
   let sourceType = getUploadSourceType(upload);
   let sourceKind = getUploadSourceKind(upload) || "upload";
 
   if (!sourceData && requestedTintColor) {
     const defaultSource = await getDefaultUploadSource(key);
-    if (!defaultSource) {
+    if (!defaultSource || !isUploadOperationCurrent(key, operationVersion)) {
       return;
     }
 
@@ -1251,7 +1270,7 @@ async function refreshUploadImage(key) {
   const sourceBlob = new Blob([sourceData], { type: sourceType || "image/png" });
   const nextUpload = await createUploadRecord(key, sourceBlob, sourceData, sourceType, { sourceKind });
 
-  if (uploadRenderVersions[key] !== renderVersion) {
+  if (!isUploadOperationCurrent(key, operationVersion)) {
     return;
   }
 
@@ -1286,16 +1305,22 @@ function handleClearUpload(key) {
     return;
   }
 
+  beginUploadOperation(key);
   if (previews[key]) {
     URL.revokeObjectURL(previews[key]);
   }
   delete previews[key];
   uploads[key] = { cleared: true };
   delete uploadUiState[key];
+  const input = document.querySelector(`#upload-input-${key}`);
+  if (input) {
+    input.value = "";
+  }
 
   updatePreview();
   updateUploadControlsState();
   setStatus(`${IMAGE_TARGETS[key].label} 삭제`);
+  input?.focus();
 }
 
 function isClearedImageUpload(key) {
