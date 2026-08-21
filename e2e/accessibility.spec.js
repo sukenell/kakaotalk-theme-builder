@@ -31,12 +31,24 @@ test("@task1 labels theme metadata without adding help copy to accessible names"
   const author = page.getByRole("textbox", { name: "제작자", exact: true });
 
   await expect(themeId).toHaveAccessibleName("테마 ID");
-  await expect(themeId).toHaveAccessibleDescription(/영문자/);
+  await expect(themeId).toHaveAccessibleDescription("영문자만 입력해 주세요.");
   await expect(themeId).toHaveAttribute("required", "");
   await expect(version).toHaveAccessibleName("버전");
-  await expect(version).toHaveAccessibleDescription(/숫자\.숫자\.숫자/);
+  await expect(version).toHaveAccessibleDescription("숫자.숫자.숫자 형식으로 입력해 주세요.");
   await expect(version).toHaveAttribute("required", "");
   await expect(author).toHaveAccessibleName("제작자");
+});
+
+test("@task1 keeps version and author input borders aligned", async ({ page }) => {
+  await page.goto("/");
+
+  const versionBox = await page.locator("#version").boundingBox();
+  const authorBox = await page.locator(".author-input").boundingBox();
+
+  expect(versionBox).not.toBeNull();
+  expect(authorBox).not.toBeNull();
+  expect(Math.abs(versionBox.y - authorBox.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(versionBox.height - authorBox.height)).toBeLessThanOrEqual(5);
 });
 
 test("@task1 gives download buttons exact platform-specific accessible names", async ({ page }) => {

@@ -70,18 +70,20 @@ test("theme id, author, and version use concise explicit labels", () => {
   }
 });
 
-test("required theme id and version fields reference persistent help and hidden errors", () => {
+test("required theme id and version fields initially reference only persistent help", () => {
   const themeId = openingTag("input", "theme-id-segment");
   const version = openingTag("input", "version");
 
   assert.match(themeId, /\brequired(?:="")?(?:\s|>)/);
   assert.match(themeId, /\bpattern="\[A-Za-z\]\+"/);
-  assert.match(themeId, /\baria-describedby="theme-id-help theme-id-error"/);
+  assert.match(themeId, /\baria-describedby="theme-id-help"/);
+  assert.doesNotMatch(themeId, /theme-id-error/);
   assert.match(html, /<p\b[^>]*\bid="theme-id-help"[^>]*\bclass="field-help"[^>]*>[^<]+<\/p>/);
   assert.match(html, /<p\b[^>]*\bid="theme-id-error"[^>]*\bclass="field-error"[^>]*\bhidden[^>]*>[^<]+<\/p>/);
 
   assert.match(version, /\brequired(?:="")?(?:\s|>)/);
-  assert.match(version, /\baria-describedby="version-help version-error"/);
+  assert.match(version, /\baria-describedby="version-help"/);
+  assert.doesNotMatch(version, /version-error/);
   assert.match(html, /<p\b[^>]*\bid="version-help"[^>]*\bclass="field-help"[^>]*>[^<]+<\/p>/);
   assert.match(html, /<p\b[^>]*\bid="version-error"[^>]*\bclass="field-error"[^>]*\bhidden[^>]*>[^<]+<\/p>/);
 });
