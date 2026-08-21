@@ -1313,13 +1313,13 @@ async function handleUpload(key, file) {
 }
 
 async function refreshUploadImage(key) {
+  const operation = beginUploadRefreshOperation(key);
   const requestedTintColor = tintableUploadKeys.has(key) ? normalizeTintColor(uploadTints[key]) : "";
   const upload = uploads[key];
   if (isClearedImageUpload(key) || (!upload && !requestedTintColor)) {
     return;
   }
 
-  const operation = beginUploadRefreshOperation(key);
   if (upload && getUploadSourceKind(upload) === "default" && !requestedTintColor) {
     clearGeneratedTintUpload(key);
     return;

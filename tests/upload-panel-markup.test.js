@@ -445,6 +445,7 @@ test("upload mutations invalidate stale async work and clear the live native inp
   assert.match(app, /function beginUploadRefreshOperation\(key\)/);
   assert.match(app, /function isUploadSourceOperationCurrent\(key, sourceVersion\)/);
   assert.match(app, /function isUploadRefreshOperationCurrent\(key, operation\)/);
+  assert.match(app, /async function refreshUploadImage\(key\) \{\s*const operation = beginUploadRefreshOperation\(key\);/);
   assert.match(app, /function markBubbleSettingsChanged\(key\)/);
   assert.match(app, /while \(bubbleUploadKeys\.has\(key\) && getBubbleSettingsVersion\(key\) !== bubbleSettingsVersion\)/);
   assert.match(app, /handleClearUpload\(key\)[\s\S]*invalidateUploadOperations\(key\);/);

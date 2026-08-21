@@ -442,6 +442,78 @@ test("@task2 commits a delayed tab icon selection after a tint refresh", async (
   expect(await input.evaluate((element) => element.files?.[0]?.name)).toBe(fileName);
 });
 
+test("@task2 invalidates a pending default tint render when tint is disabled", async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalCreateImageBitmap = window.createImageBitmap.bind(window);
+    const originalClose = window.ImageBitmap.prototype.close;
+
+    window.ImageBitmap.prototype.close = function (...args) {
+      if (this === window.__delayedDefaultTintBitmap) {
+        window.__delayedDefaultTintBitmapClosed = true;
+      }
+      return originalClose.apply(this, args);
+    };
+
+    window.createImageBitmap = (source, ...args) => {
+      if (
+        !window.__holdNextDefaultTintBitmap ||
+        window.__delayedDefaultTintBitmapStarted ||
+        !(source instanceof Blob) ||
+        source instanceof File
+      ) {
+        return originalCreateImageBitmap(source, ...args);
+      }
+
+      window.__delayedDefaultTintBitmapStarted = true;
+      return new Promise((resolve, reject) => {
+        window.__releaseDelayedDefaultTintBitmap = async () => {
+          try {
+            const image = await originalCreateImageBitmap(source, ...args);
+            window.__delayedDefaultTintBitmap = image;
+            resolve(image);
+          } catch (error) {
+            reject(error);
+          }
+        };
+      });
+    };
+  });
+  await page.goto("/");
+
+  const row = page.locator('[aria-labelledby="upload-title-tabFriendIcon"]');
+  const checkbox = row.getByRole("checkbox", { name: "친구 탭 아이콘 - 기본 색상 적용", exact: true });
+  const tintColor = row.locator('input[type="color"]');
+  const thumb = row.locator('[data-upload-thumb="tabFriendIcon"]');
+  const initialBackgroundImage = await thumb.evaluate((element) => getComputedStyle(element).backgroundImage);
+
+  await page.evaluate(() => {
+    window.__holdNextDefaultTintBitmap = true;
+  });
+  await checkbox.check();
+  await expect.poll(
+    () => page.evaluate(() => window.__delayedDefaultTintBitmapStarted),
+    { timeout: 5_000 },
+  ).toBe(true);
+
+  await checkbox.uncheck();
+  await expect(checkbox).not.toBeChecked();
+  await expect(tintColor).toBeDisabled();
+
+  await page.evaluate(() => window.__releaseDelayedDefaultTintBitmap());
+  await expect.poll(
+    () => page.evaluate(() => window.__delayedDefaultTintBitmapClosed),
+    { timeout: 5_000 },
+  ).toBe(true);
+  await page.evaluate(() => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  }));
+
+  await expect(checkbox).not.toBeChecked();
+  await expect(tintColor).toBeDisabled();
+  await expect(page.locator("#upload-description-tabFriendIcon")).toContainText("기본 이미지");
+  await expect(thumb).toHaveCSS("background-image", initialBackgroundImage);
+});
+
 test("@task2 ignores stale bubble layout changes from an older decoded upload", async ({ page }) => {
   const olderFileName = "older-360.png";
   const newerFileName = "newer-120x105.png";
