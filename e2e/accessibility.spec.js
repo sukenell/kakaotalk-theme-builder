@@ -4184,3 +4184,69 @@ test("@task9-reflow bounds observed layout nodes across repeated bubble-detail r
     "removed layout nodes are explicitly released",
   ).toBeGreaterThan(0);
 });
+
+test("@task9-motion keeps the preview transition in the default motion preference", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+
+  const transition = await page.locator("#preview-track").evaluate((track) => {
+    const style = getComputedStyle(track);
+    const toSeconds = (value) => value.endsWith("ms")
+      ? Number.parseFloat(value) / 1000
+      : Number.parseFloat(value);
+    const duration = style.transitionDuration.split(",").reduce((total, value) => total + toSeconds(value), 0);
+    const delay = style.transitionDelay.split(",").reduce((total, value) => total + toSeconds(value), 0);
+
+    return {
+      delay,
+      duration,
+      property: style.transitionProperty,
+      total: duration + delay,
+    };
+  });
+
+  expect(transition.property.split(",").map((value) => value.trim())).toContain("transform");
+  expect(transition.duration).toBeGreaterThan(0);
+  expect(transition.total).toBeGreaterThan(0);
+});
+
+test("@task9-motion removes preview motion while preserving keyboard, button, and focus behavior", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
+  const transition = await page.locator("#preview-track").evaluate((track) => {
+    const style = getComputedStyle(track);
+    const toSeconds = (value) => value.endsWith("ms")
+      ? Number.parseFloat(value) / 1000
+      : Number.parseFloat(value);
+    const duration = style.transitionDuration.split(",").reduce((total, value) => total + toSeconds(value), 0);
+    const delay = style.transitionDelay.split(",").reduce((total, value) => total + toSeconds(value), 0);
+
+    return {
+      delay,
+      duration,
+      total: duration + delay,
+    };
+  });
+
+  expect(transition).toEqual({ delay: 0, duration: 0, total: 0 });
+
+  const tabs = page.locator('#preview-tabs > button[role="tab"]');
+  await tabs.nth(1).focus();
+  await page.keyboard.press("ArrowRight");
+  await expectPreviewInvariant(page, 2);
+  await expect(tabs.nth(2)).toBeFocused();
+
+  const previous = page.locator("#preview-previous");
+  await previous.focus();
+  await previous.click();
+  await expectPreviewInvariant(page, 1);
+  await expect(previous).toBeFocused();
+
+  const next = page.locator("#preview-next");
+  await next.focus();
+  await next.click();
+  await expectPreviewInvariant(page, 2);
+  await expect(next).toBeFocused();
+});

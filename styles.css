@@ -815,6 +815,12 @@ h2 {
   transition: transform 220ms ease;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .preview-track {
+    transition: none;
+  }
+}
+
 .preview-slide {
   flex: 0 0 100%;
   min-width: 0;
