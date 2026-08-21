@@ -457,10 +457,25 @@ function setupPreviewScrollRegions() {
   const resizeObserver = "ResizeObserver" in window
     ? new ResizeObserver(queueSync)
     : null;
+  const observedLayoutElements = new Set();
+  const observeLayoutElement = (element) => {
+    if (!resizeObserver || observedLayoutElements.has(element)) {
+      return;
+    }
+    observedLayoutElements.add(element);
+    resizeObserver.observe(element);
+  };
   const observeLayout = (root) => {
-    resizeObserver?.observe(root);
+    observeLayoutElement(root);
     for (const element of root.children) {
-      resizeObserver?.observe(element);
+      observeLayoutElement(element);
+    }
+  };
+  const unobserveLayout = (root) => {
+    for (const element of [root, ...root.querySelectorAll("*")]) {
+      if (observedLayoutElements.delete(element)) {
+        resizeObserver?.unobserve(element);
+      }
     }
   };
 
@@ -468,9 +483,14 @@ function setupPreviewScrollRegions() {
     observeLayout(region);
     new MutationObserver((mutations) => {
       for (const mutation of mutations) {
+        for (const node of mutation.removedNodes) {
+          if (node instanceof Element) {
+            unobserveLayout(node);
+          }
+        }
         for (const node of mutation.addedNodes) {
           if (node instanceof Element && node.parentElement === region) {
-            resizeObserver?.observe(node);
+            observeLayoutElement(node);
           }
         }
       }

@@ -4120,3 +4120,67 @@ for (const viewport of reflowViewportCases) {
     }
   }
 }
+
+test("@task9-reflow bounds observed layout nodes across repeated bubble-detail rerenders", async ({ page }) => {
+  await page.addInitScript(() => {
+    const NativeResizeObserver = window.ResizeObserver;
+    const instances = [];
+    let observeCalls = 0;
+    let unobserveCalls = 0;
+
+    window.ResizeObserver = class TrackingResizeObserver {
+      constructor(callback) {
+        this.nativeObserver = new NativeResizeObserver(callback);
+        this.targets = new Set();
+        instances.push(this);
+      }
+
+      observe(target, options) {
+        observeCalls += 1;
+        this.targets.add(target);
+        this.nativeObserver.observe(target, options);
+      }
+
+      unobserve(target) {
+        unobserveCalls += 1;
+        this.targets.delete(target);
+        this.nativeObserver.unobserve(target);
+      }
+
+      disconnect() {
+        this.targets.clear();
+        this.nativeObserver.disconnect();
+      }
+    };
+
+    window.__resizeObserverSnapshot = () => {
+      const targets = instances.flatMap((instance) => [...instance.targets]);
+      return {
+        active: targets.length,
+        detached: targets.filter((target) => !target.isConnected).length,
+        observeCalls,
+        unobserveCalls,
+      };
+    };
+  });
+
+  await page.goto("/");
+  await page.getByRole("tab", { name: "말풍선 상세", exact: true }).click();
+  await waitForReflowLayout(page);
+  const before = await page.evaluate(() => window.__resizeObserverSnapshot());
+
+  const nextBubble = page.getByRole("button", { name: "다음 말풍선", exact: true });
+  for (let index = 0; index < 30; index += 1) {
+    await nextBubble.click();
+  }
+  await waitForReflowLayout(page);
+  const after = await page.evaluate(() => window.__resizeObserverSnapshot());
+
+  expect(before.active, "the harness sees the initial observed layout nodes").toBeGreaterThan(0);
+  expect(after.active, "repeated rerenders keep the observed set bounded").toBeLessThanOrEqual(before.active);
+  expect(after.detached, "detached controls are no longer observed").toBe(0);
+  expect(
+    after.unobserveCalls - before.unobserveCalls,
+    "removed layout nodes are explicitly released",
+  ).toBeGreaterThan(0);
+});
