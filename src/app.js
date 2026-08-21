@@ -1,6 +1,6 @@
 import { buildAndroidEntries, buildIosEntries, getSkippedAndroidUploads } from "./theme-builder.js";
 import { SHOW_FRIEND_AD_CAPTION } from "./env-config.js";
-import { applyPasscodeAction } from "./passcode-preview.js";
+import { applyPasscodeAction, formatPasscodeStatus } from "./passcode-preview.js";
 import {
   getNextPreviewIndex,
   getPreviewColorKeys,
@@ -315,6 +315,7 @@ const previewNextButton = document.querySelector("#preview-next");
 const previewStatus = document.querySelector("#preview-status");
 const previewDeviceButtons = document.querySelectorAll("[data-preview-device]");
 const passcodeScreen = document.querySelector(".passcode-screen");
+const passcodeStatus = document.querySelector("#passcode-status");
 const bubbleDetailTitle = document.querySelector("[data-bubble-detail-title]");
 const bubbleDetailPanel = document.querySelector("[data-bubble-detail-panel]");
 const ninePatchPreview = document.querySelector("[data-nine-patch-preview]");
@@ -2405,6 +2406,7 @@ function updatePasscodePreview() {
 function handlePasscodeAction(action) {
   passcodeCount = applyPasscodeAction(passcodeCount, action);
   updatePasscodePreview();
+  passcodeStatus.textContent = formatPasscodeStatus(passcodeCount);
 }
 
 function handlePasscodeClick(event) {

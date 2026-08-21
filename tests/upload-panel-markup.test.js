@@ -1455,10 +1455,9 @@ test("passcode preview follows the reference lock screen copy and keypad actions
 
   assert.match(passcodeMarkup, /<div class="passcode-intro">[\s\S]*<strong>암호입력<\/strong>[\s\S]*<span>암호를 입력해주세요<\/span>/);
   assert.match(passcodeMarkup, /data-passcode-action="reset"[^>]*>취소<\/button>/);
-  assert.match(passcodeMarkup, /data-passcode-action="delete"[^>]*aria-label="뒤로"[^>]*>\s*뒤로\s*<\/button>/);
+  assert.match(passcodeMarkup, /data-passcode-action="delete"[^>]*aria-label="한 자리 지우기"[^>]*>\s*한 자리 지우기\s*<\/button>/);
   assert.doesNotMatch(passcodeMarkup, /class="backspace-icon"/);
   assert.doesNotMatch(passcodeMarkup, />리셋<\/button>/);
-  assert.doesNotMatch(passcodeMarkup, />지우기<\/button>/);
   assert.match(css, /\.passcode-screen\s*\{[\s\S]*grid-template-rows: minmax\(230px, 0\.76fr\) auto minmax\(0, 1fr\);/);
   assert.match(css, /\.passcode-intro\s*\{[\s\S]*gap: 14px;/);
   assert.match(css, /\.keypad\s*\{[\s\S]*grid-template-columns: repeat\(3, 64px\);/);

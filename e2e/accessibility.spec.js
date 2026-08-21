@@ -1716,6 +1716,83 @@ test("@task4 removes global arrow navigation and scopes passcode shortcuts to it
   await expect(selectedDots).toHaveCount(0);
 });
 
+test("@task7 exposes click-driven passcode progress without revealing the entered digit", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("tab", { name: "잠금화면", exact: true }).click();
+
+  const status = page.locator("#passcode-status");
+  const selectedDots = page.locator(".passcode-dot.is-selected");
+  const digit = page.locator('[data-passcode-digit="8"]');
+  const deleteButton = page.getByRole("button", { name: "한 자리 지우기", exact: true });
+
+  await expect(status).toHaveAttribute("role", "status");
+  await expect(status).toHaveAttribute("aria-live", "polite");
+  await expect(status).toHaveAttribute("aria-atomic", "true");
+  await expect(status).toHaveText("4자리 중 0자리 입력됨");
+  await expect(selectedDots).toHaveCount(0);
+
+  await digit.click();
+  await expect(status).toHaveText("4자리 중 1자리 입력됨");
+  await expect(status).not.toContainText("8");
+  await expect(selectedDots).toHaveCount(1);
+
+  for (let count = 2; count <= 4; count += 1) {
+    await digit.click();
+    await expect(status).toHaveText(`4자리 중 ${count}자리 입력됨`);
+    await expect(selectedDots).toHaveCount(count);
+  }
+  await digit.click();
+  await expect(status).toHaveText("4자리 중 4자리 입력됨");
+  await expect(status).not.toContainText("8");
+  await expect(selectedDots).toHaveCount(4);
+
+  await deleteButton.click();
+  await expect(status).toHaveText("4자리 중 3자리 입력됨");
+  await expect(selectedDots).toHaveCount(3);
+
+  await page.getByRole("button", { name: "취소", exact: true }).click();
+  await expect(status).toHaveText("4자리 중 0자리 입력됨");
+  await expect(selectedDots).toHaveCount(0);
+});
+
+test("@task7 scopes keyboard passcode progress to the focused active screen", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("tab", { name: "잠금화면", exact: true }).click();
+
+  const status = page.locator("#passcode-status");
+  const selectedDots = page.locator(".passcode-dot.is-selected");
+  const digit = page.locator('[data-passcode-digit="9"]');
+  await digit.focus();
+
+  await page.keyboard.press("9");
+  await expect(status).toHaveText("4자리 중 1자리 입력됨");
+  await expect(status).not.toContainText("9");
+  await expect(selectedDots).toHaveCount(1);
+
+  for (let count = 2; count <= 4; count += 1) {
+    await page.keyboard.press("9");
+    await expect(status).toHaveText(`4자리 중 ${count}자리 입력됨`);
+    await expect(selectedDots).toHaveCount(count);
+  }
+  await page.keyboard.press("9");
+  await expect(status).toHaveText("4자리 중 4자리 입력됨");
+  await expect(status).not.toContainText("9");
+  await expect(selectedDots).toHaveCount(4);
+
+  await page.keyboard.press("ArrowRight");
+  await expectPreviewInvariant(page, 7);
+  await expect(status).toHaveText("4자리 중 4자리 입력됨");
+  await expect(selectedDots).toHaveCount(4);
+
+  await page.keyboard.press("Backspace");
+  await expect(status).toHaveText("4자리 중 3자리 입력됨");
+  await expect(selectedDots).toHaveCount(3);
+
+  await page.keyboard.press("Escape");
+  await expect(status).toHaveText("4자리 중 0자리 입력됨");
+  await expect(selectedDots).toHaveCount(0);
+});
+
 async function openDefaultBubbleDetail(page) {
   await page.goto("/");
   await page.getByRole("tab", { name: "채팅방", exact: true }).click();

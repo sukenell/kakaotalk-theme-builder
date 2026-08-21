@@ -1073,6 +1073,7 @@
                     <span class="passcode-dot" data-passcode-slot="2"></span>
                     <span class="passcode-dot" data-passcode-slot="3"></span>
                   </div>
+                  <p id="passcode-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">4자리 중 0자리 입력됨</p>
                 </div>
                 <div class="keypad">
                   <button type="button" data-passcode-digit="1">1</button>
@@ -1086,8 +1087,8 @@
                   <button type="button" data-passcode-digit="9">9</button>
                   <button class="passcode-cancel" type="button" data-passcode-action="reset">취소</button>
                   <button type="button" data-passcode-digit="0">0</button>
-                  <button class="passcode-delete" type="button" data-passcode-action="delete" title="뒤로" aria-label="뒤로">
-                    뒤로
+                  <button class="passcode-delete" type="button" data-passcode-action="delete" title="한 자리 지우기" aria-label="한 자리 지우기">
+                    한 자리 지우기
                   </button>
                 </div>
               </div>
