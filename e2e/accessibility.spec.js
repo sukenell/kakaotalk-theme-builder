@@ -3452,3 +3452,310 @@ test("@task9-focus changes stable rendered edge pixels after real Tab focuses an
   const appearance = await focusGeometry(imageControl);
   expect(appearance.clippedBy).toEqual([]);
 });
+
+async function forcedColorPalette(page) {
+  return page.evaluate(() => {
+    const probe = document.createElement("span");
+    probe.style.cssText = [
+      "position:fixed",
+      "width:1px",
+      "height:1px",
+      "color:ButtonText",
+      "background-color:Canvas",
+      "border:1px solid Highlight",
+    ].join(";");
+    document.body.append(probe);
+    const style = getComputedStyle(probe);
+    const palette = {
+      buttonText: style.color,
+      canvas: style.backgroundColor,
+      highlight: style.borderTopColor,
+    };
+    probe.remove();
+    return palette;
+  });
+}
+
+async function uploadForcedColorFixtures(page) {
+  const uploads = [
+    ["대화 목록", "mainBackground", "forced-main.png", 48, 48],
+    ["대화 목록", "tabBackground", "forced-tab.png", 90, 24],
+    ["채팅방", "chatBackground", "forced-chat.png", 48, 48],
+    ["채팅방", "sendBubbleNormal", "forced-bubble.png", 120, 105],
+    ["잠금화면", "passcodeBackgroundImage", "forced-passcode.png", 48, 48],
+    ["로딩화면", "splashImage", "forced-splash.png", 48, 72],
+    ["로딩화면", "themeIcon", "forced-icon.png", 162, 162],
+  ];
+
+  for (const [preview, key, name, width, height] of uploads) {
+    await page.getByRole("tab", { name: preview, exact: true }).click();
+    await page.locator(`#upload-input-${key}`).setInputFiles({
+      name,
+      mimeType: "image/png",
+      buffer: await createPngBuffer(page, width, height),
+    });
+    await expect(page.locator(`#upload-description-${key}`)).toContainText(name);
+  }
+}
+
+test("@task9-forced removes uploaded and decorative preview images while leaving forced colors automatic", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await uploadForcedColorFixtures(page);
+
+  await expect(page.locator("#preview-panel-home .main-screen")).toHaveCSS("background-image", /blob:/);
+  await expect(page.locator("#chat-screen")).toHaveCSS("background-image", /blob:/);
+  await expect(page.locator("#preview-panel-home .bottom-tabs")).toHaveCSS("background-image", /blob:/);
+  await expect(page.locator(".passcode-screen")).toHaveCSS("background-image", /blob:/);
+  await expect(page.locator(".splash-preview")).toHaveCSS("background-image", /blob:/);
+  await expect(page.locator(".splash-icon")).toHaveCSS("background-image", /blob:/);
+  await expect(page.locator("#preview-panel-chat .send-bubble").first()).toHaveCSS("border-image-source", /blob:/);
+  await page.locator("#chat-screen").evaluate((element) => {
+    element.style.backgroundImage = document.documentElement.style.getPropertyValue("--preview-chat-image");
+  });
+
+  await page.emulateMedia({ forcedColors: "active" });
+
+  const retainedSources = await page.evaluate(() => ({
+    chatInline: document.querySelector("#chat-screen").style.backgroundImage,
+    mainVariable: document.documentElement.style.getPropertyValue("--preview-main-image"),
+    tabVariable: document.documentElement.style.getPropertyValue("--preview-tab-image"),
+    passcodeVariable: document.documentElement.style.getPropertyValue("--preview-passcode-image"),
+  }));
+  expect(retainedSources.chatInline).toContain("blob:");
+  expect(retainedSources.mainVariable).toContain("blob:");
+  expect(retainedSources.tabVariable).toContain("blob:");
+  expect(retainedSources.passcodeVariable).toContain("blob:");
+
+  const imageSurfaces = [
+    ["main header", "#preview-panel-home .main-header"],
+    ["main screen", "#preview-panel-home .main-screen"],
+    ["chat list", "#preview-panel-chat-list .chat-list-screen"],
+    ["chat room", "#chat-screen"],
+    ["tab background", "#preview-panel-home .bottom-tabs"],
+    ["passcode", ".passcode-screen"],
+    ["splash", ".splash-preview"],
+    ["splash icon", ".splash-icon"],
+    ["profile avatar", "#preview-panel-home .avatar"],
+    ["group avatar", "#preview-panel-chat-list .group-avatar-item"],
+    ["tab icon", "#preview-panel-home .tab-icon"],
+    ["shopping summary", ".shopping-summary-thumb"],
+    ["shopping product", ".shop-thumb"],
+    ["advertisement art", ".more-ad-art"],
+    ["theme mode artwork", ".theme-preview-card"],
+    ["theme icon", "#preview-panel-theme-list .theme-icon:not(.pale)"],
+  ];
+  for (const [name, selector] of imageSurfaces) {
+    const locator = page.locator(selector).first();
+    await expect(locator, `${name} exists`).toBeAttached();
+    await expect(locator, `${name} image is removed`).toHaveCSS("background-image", "none");
+  }
+
+  await expect(page.locator("#preview-panel-chat .bubble").first()).toHaveCSS("border-image-source", "none");
+  const effects = await page.evaluate(() => {
+    const style = (selector, pseudo) => getComputedStyle(document.querySelector(selector), pseudo);
+    return {
+      adFilter: style(".more-ad-art").filter,
+      avatarFilter: style(".avatar.soft").filter,
+      downloadBackdrop: style(".download-bar").backdropFilter || style(".download-bar").webkitBackdropFilter,
+      phoneShadow: style(".phone-preview").boxShadow,
+      productAfterBackdrop:
+        style(".shop-card", "::after").backdropFilter || style(".shop-card", "::after").webkitBackdropFilter,
+      productAfterImage: style(".shop-card", "::after").backgroundImage,
+      productBeforeImage: style(".shop-card", "::before").backgroundImage,
+    };
+  });
+  const bubbleBoundary = await page.locator("#preview-panel-chat .bubble").first().evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      background: style.backgroundColor,
+      borderColor: style.borderTopColor,
+      borderWidth: Number.parseFloat(style.borderTopWidth),
+      padding: Number.parseFloat(style.paddingTop),
+    };
+  });
+  const palette = await forcedColorPalette(page);
+  expect(bubbleBoundary).toMatchObject({
+    background: palette.canvas,
+    borderColor: palette.buttonText,
+    borderWidth: 1,
+    padding: 9,
+  });
+  expect(effects).toMatchObject({
+    adFilter: "none",
+    avatarFilter: "none",
+    downloadBackdrop: "none",
+    phoneShadow: "none",
+    productAfterBackdrop: "none",
+    productAfterImage: "none",
+  });
+  expect(effects.productBeforeImage.split(", ").every((image) => image === "none")).toBe(true);
+
+  for (const selector of ["html", "body", "#preview-frame", ".preview-slide"]) {
+    await expect(page.locator(selector).first()).toHaveCSS("forced-color-adjust", "auto");
+  }
+});
+
+test("@task9-forced uses system boundaries, focus, mask icons, and non-color selected indicators", async ({ page }) => {
+  await page.goto("/");
+  await page.emulateMedia({ forcedColors: "active" });
+  const palette = await forcedColorPalette(page);
+
+  const boundaryCases = [
+    ["theme name", "#app-name"],
+    ["theme id", ".package-input"],
+    ["color picker", ".color-picker-control"],
+    ["file upload", ".file-button"],
+    ["tint control", ".upload-tint-control"],
+    ["device picker", ".device-picker"],
+    ["preview arrow", ".preview-arrow"],
+    ["preview tabs", ".preview-tabs"],
+    ["download", ".download-actions button"],
+  ];
+  for (const [name, selector] of boundaryCases) {
+    const boundary = await page.locator(selector).first().evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        color: style.borderTopColor,
+        style: style.borderTopStyle,
+        width: Number.parseFloat(style.borderTopWidth),
+      };
+    });
+    expect(boundary.color, `${name} boundary uses ButtonText`).toBe(palette.buttonText);
+    expect(boundary.style, `${name} boundary is drawn`).toBe("solid");
+    expect(boundary.width, `${name} boundary width`).toBeGreaterThanOrEqual(1);
+  }
+
+  const themeName = page.locator("#app-name");
+  await tabTo(page, themeName);
+  await expect(themeName).toBeFocused();
+  const themeNameFocus = await focusGeometry(themeName);
+  expect(themeNameFocus.outlineColor).toBe(palette.highlight);
+  expect(themeNameFocus.outlineWidth).toBeGreaterThanOrEqual(3);
+
+  const activeTab = page.locator('#preview-tabs > button[aria-selected="true"]');
+  await tabTo(page, activeTab);
+  await expect(activeTab).toBeFocused();
+  const activeTabState = await activeTab.evaluate((element) => {
+    const focusStyle = getComputedStyle(element);
+    const indicatorStyle = getComputedStyle(element, "::after");
+    return {
+      focusColor: focusStyle.outlineColor,
+      focusWidth: Number.parseFloat(focusStyle.outlineWidth),
+      indicatorColor: indicatorStyle.borderTopColor,
+      indicatorContent: indicatorStyle.content,
+      indicatorThickness: Number.parseFloat(indicatorStyle.borderTopWidth),
+      indicatorWidth: Number.parseFloat(indicatorStyle.width),
+    };
+  });
+  expect(activeTabState.focusColor).toBe(palette.highlight);
+  expect(activeTabState.focusWidth).toBeGreaterThanOrEqual(3);
+  expect(activeTabState.indicatorColor).toBe(palette.highlight);
+  expect(activeTabState.indicatorContent).not.toBe("none");
+  expect(activeTabState.indicatorThickness).toBeGreaterThanOrEqual(3);
+  expect(activeTabState.indicatorWidth).toBeGreaterThan(0);
+
+  for (const [name, selector] of [
+    ["page icon", ".page-icon"],
+    ["arrow icon", ".preview-arrow .arrow-icon"],
+    ["header icon", ".friend-action-icon"],
+    ["bubble action icon", ".bubble-detail-action-icon"],
+  ]) {
+    const icon = await page.locator(selector).first().evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        backgroundColor: style.backgroundColor,
+        forcedColorAdjust: style.forcedColorAdjust,
+        maskImage: style.maskImage || style.webkitMaskImage,
+      };
+    });
+    expect(icon.backgroundColor, `${name} uses ButtonText`).toBe(palette.buttonText);
+    expect(icon.forcedColorAdjust, `${name} retains only its mask paint`).toBe("none");
+    expect(icon.maskImage, `${name} mask remains identifiable`).not.toBe("none");
+  }
+
+  const selectedDevice = await page.locator(".device-picker button.is-active").evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      color: style.borderTopColor,
+      style: style.borderTopStyle,
+      width: Number.parseFloat(style.borderTopWidth),
+    };
+  });
+  expect(selectedDevice).toMatchObject({ color: palette.highlight, style: "solid" });
+  expect(selectedDevice.width).toBeGreaterThanOrEqual(3);
+
+  await page.getByRole("tab", { name: "잠금화면", exact: true }).click();
+  await page.locator('[data-passcode-digit="1"]').click();
+  const dotStates = await page.locator(".passcode-dot").evaluateAll((dots) => dots.slice(0, 2).map((dot) => {
+    const style = getComputedStyle(dot);
+    return {
+      color: style.borderTopColor,
+      image: style.backgroundImage,
+      selected: dot.classList.contains("is-selected"),
+      width: Number.parseFloat(style.borderTopWidth),
+    };
+  }));
+  expect(dotStates[0]).toMatchObject({ color: palette.highlight, image: "none", selected: true });
+  expect(dotStates[0].width).toBeGreaterThanOrEqual(3);
+  expect(dotStates[1]).toMatchObject({ color: palette.buttonText, image: "none", selected: false });
+  expect(dotStates[1].width).toBeGreaterThanOrEqual(1);
+  expect(dotStates[1].width).toBeLessThan(dotStates[0].width);
+});
+
+test("@task9-forced preserves nine-patch editing content with system stage, crop, and guides", async ({ page }) => {
+  await page.goto("/");
+  const bubbleName = "forced-nine-patch.png";
+  await page.getByRole("tab", { name: "채팅방", exact: true }).click();
+  await page.locator("#upload-input-sendBubbleNormal").setInputFiles({
+    name: bubbleName,
+    mimeType: "image/png",
+    buffer: await createPngBuffer(page, 120, 105),
+  });
+  await expect(page.locator("#upload-description-sendBubbleNormal")).toContainText(bubbleName);
+  await page.getByRole("tab", { name: "말풍선 상세", exact: true }).click();
+
+  const preview = page.locator(".nine-patch-preview");
+  const crop = page.locator(".nine-patch-crop");
+  await expect(preview).toHaveCSS("background-image", "none");
+  expect(await preview.evaluate((element) => getComputedStyle(element, "::before").backgroundImage)).toContain("blob:");
+  await expect(crop).toHaveCSS("background-image", /blob:/);
+
+  await page.emulateMedia({ forcedColors: "active" });
+  const palette = await forcedColorPalette(page);
+  const editingAppearance = await page.evaluate(() => {
+    const style = (selector, pseudo) => getComputedStyle(document.querySelector(selector), pseudo);
+    return {
+      cropBorder: style(".nine-patch-crop").borderTopColor,
+      cropImage: style(".nine-patch-crop").backgroundImage,
+      cropShadow: style(".nine-patch-crop").boxShadow,
+      paddingGuide: style(".nine-patch-guide.padding-x").borderLeftColor,
+      sourceImage: style(".nine-patch-preview", "::before").backgroundImage,
+      stageBackground: style(".nine-patch-stage").backgroundColor,
+      stretchGuide: style(".nine-patch-guide.stretch-x").borderLeftColor,
+    };
+  });
+  expect(editingAppearance.stageBackground).toBe(palette.canvas);
+  expect(editingAppearance.cropBorder).toBe(palette.buttonText);
+  expect(editingAppearance.cropShadow).toBe("none");
+  expect(editingAppearance.stretchGuide).toBe(palette.highlight);
+  expect(editingAppearance.paddingGuide).toBe(palette.buttonText);
+  expect(editingAppearance.sourceImage).toContain("blob:");
+  expect(editingAppearance.cropImage).toContain("blob:");
+
+  const choices = await page.locator(".nine-patch-fit-option label").evaluateAll((labels) => labels.map((label) => {
+    const style = getComputedStyle(label);
+    return {
+      checked: label.previousElementSibling.checked,
+      color: style.borderTopColor,
+      width: Number.parseFloat(style.borderTopWidth),
+    };
+  }));
+  const selected = choices.find(({ checked }) => checked);
+  const unselected = choices.find(({ checked }) => !checked);
+  expect(selected.color).toBe(palette.highlight);
+  expect(selected.width).toBeGreaterThanOrEqual(3);
+  expect(unselected.color).toBe(palette.buttonText);
+  expect(unselected.width).toBeLessThan(selected.width);
+});

@@ -3597,3 +3597,231 @@ h2 {
     font-size: 11px;
   }
 }
+
+@media (forced-colors: active) {
+  :root {
+    --page: Canvas;
+    --panel: Canvas;
+    --line: ButtonText;
+    --control-border: ButtonText;
+    --focus-ring: Highlight;
+    --selected-indicator: Highlight;
+    --ink: CanvasText;
+    --muted: CanvasText;
+    --accent: Canvas;
+    --accent-ink: CanvasText;
+    --shadow: none;
+  }
+
+  body,
+  .panel,
+  .preview-panel,
+  .phone-preview,
+  .preview-slide,
+  .download-bar {
+    background-color: Canvas;
+    color: CanvasText;
+  }
+
+  :is(
+    .text-field input,
+    .package-input,
+    .author-input,
+    .color-picker-control,
+    .color-picker-swatch,
+    .color-picker-popover,
+    .color-hex-input,
+    .color-native-input,
+    .color-reset-button,
+    .file-button,
+    .detail-upload-button,
+    .restore-upload-button,
+    .clear-upload-button,
+    .upload-tint-control,
+    .upload-tint-color,
+    .device-picker,
+    .preview-arrow,
+    .preview-tabs,
+    .download-actions button,
+    .bubble-detail-actions button,
+    .shopping-carousel-control,
+    .nine-patch-fit-option label,
+    .more-ad-footer a
+  ) {
+    border-color: ButtonText;
+  }
+
+  :where(
+    a[href],
+    button,
+    input:not(#theme-id-segment):not(#additional-author-name):not([type="file"]):not([type="radio"]),
+    [tabindex]
+  ):focus-visible,
+  .file-button:focus-within,
+  .package-input:focus-within,
+  .author-input:focus-within,
+  #preview-frame :is(button, input, [tabindex]):focus-visible,
+  .nine-patch-fit-option input:focus-visible + label {
+    outline: 3px solid Highlight;
+    box-shadow: none;
+  }
+
+  .preview-tabs button.is-active::after {
+    height: 0;
+    border-top: 3px solid Highlight;
+    background: transparent;
+  }
+
+  .device-picker button.is-active,
+  .nine-patch-fit-option input:checked + label {
+    border: 3px solid Highlight;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  :is(.friend-segment, .shopping-tab, .more-segment).is-active {
+    border: 3px double Highlight;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .bottom-tabs .preview-mock-control.is-selected {
+    border-bottom: 3px solid Highlight;
+    color: CanvasText;
+  }
+
+  .theme-choice {
+    border-color: ButtonText;
+  }
+
+  .theme-choice.selected {
+    border: 6px double Highlight;
+  }
+
+  .active-theme-row {
+    border-left: 3px solid Highlight;
+  }
+
+  .passcode-dots .passcode-dot {
+    border: 1px solid ButtonText;
+  }
+
+  .passcode-dots .passcode-dot.is-selected {
+    border: 3px solid Highlight;
+  }
+
+  #preview-frame :is(
+    .phone-header,
+    .main-screen,
+    .tab-preview-screen,
+    .shopping-screen,
+    .chat-list-screen,
+    .chat-screen,
+    .bubble-detail-screen,
+    .passcode-screen,
+    .splash-preview,
+    .splash-icon,
+    .bottom-tabs,
+    .avatar,
+    .group-avatar-item,
+    .room-thumb,
+    .shopping-summary-thumb,
+    .shop-thumb,
+    .more-menu-icon,
+    .more-ad-art,
+    .theme-preview-card,
+    .theme-icon,
+    .tab-icon,
+    .passcode-dot
+  ),
+  #preview-frame :is(
+    .shop-card::before,
+    .shop-card::after,
+    .promo-mascot::before,
+    .promo-mascot::after,
+    .promo-mascot span
+  ) {
+    background-image: none !important;
+  }
+
+  #preview-frame .bubble {
+    border-width: 1px;
+    border-image-source: none !important;
+    border-color: ButtonText;
+    padding: 9px;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  #preview-frame .bubble::before {
+    background: Canvas;
+  }
+
+  .shop-card::before,
+  .shop-card::after {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .download-bar,
+  .shop-card::after {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :is(.phone-preview, .preview-arrow, .color-picker-popover, .nine-patch-crop) {
+    box-shadow: none;
+  }
+
+  :is(.avatar.soft, .passcode-dots span, .more-ad-art) {
+    filter: none;
+  }
+
+  .shopping-screen :is(.shop-card strong, .shop-price) {
+    text-shadow: none;
+  }
+
+  .nine-patch-stage,
+  .nine-patch-preview {
+    background-color: Canvas;
+    color: CanvasText;
+  }
+
+  .nine-patch-crop {
+    border-color: ButtonText;
+    box-shadow: none;
+  }
+
+  .nine-patch-guide.stretch-x {
+    border-right-color: Highlight;
+    border-left-color: Highlight;
+  }
+
+  .nine-patch-guide.stretch-y {
+    border-top-color: Highlight;
+    border-bottom-color: Highlight;
+  }
+
+  .nine-patch-guide.padding-x {
+    border-right-color: ButtonText;
+    border-left-color: ButtonText;
+  }
+
+  .nine-patch-guide.padding-y {
+    border-top-color: ButtonText;
+    border-bottom-color: ButtonText;
+  }
+
+  :is(
+    .page-icon,
+    .arrow-icon,
+    .friend-action-icon,
+    .chat-compose-icon,
+    .shopping-action-icon,
+    .scan-action-icon,
+    .bubble-detail-action-icon
+  ) {
+    forced-color-adjust: none;
+    background-color: ButtonText !important;
+  }
+}
