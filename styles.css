@@ -3548,6 +3548,92 @@ h2 {
 
   .phone-preview.is-tablet {
     width: min(100%, 520px);
+    aspect-ratio: 3 / 4;
+  }
+
+  [data-preview-scroll-region] {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .shopping-pick-section {
+    flex: 0 0 auto;
+    min-height: auto;
+  }
+
+  .shopping-pick-carousel {
+    flex: none;
+    min-height: 338px;
+  }
+
+  .phone-preview.is-tablet .passcode-screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: start;
+    gap: 18px;
+    padding: 24px;
+  }
+
+  .phone-preview.is-tablet .passcode-intro {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .phone-preview.is-tablet .keypad {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+    width: min(100%, 260px);
+  }
+
+  .phone-preview.is-tablet .chat-screen {
+    padding: 18px 14px;
+  }
+
+  .keypad button {
+    height: auto;
+    min-height: 48px;
+    padding: 4px 2px;
+    overflow-wrap: anywhere;
+  }
+
+  :is(
+    .open-room-card strong,
+    .open-room-card span,
+    .more-profile-card strong,
+    .more-profile-card span,
+    .shopping-screen .shop-card strong,
+    .shopping-screen .shop-price,
+    .shopping-summary-card strong,
+    .shopping-summary-heading span,
+    .more-menu-item strong,
+    .more-service-item strong,
+    .more-ad-footer strong,
+    .friends-promo-card strong,
+    .friends-promo-card span,
+    .favorite-profile-row strong,
+    .favorite-profile-row span,
+    .chat-list-copy > strong,
+    .chat-list-title strong,
+    .chat-list-copy > span,
+    .theme-list-copy strong,
+    .theme-list-copy span
+  ) {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .status-message-pill {
+    height: auto;
+    min-height: 28px;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .download-bar {
@@ -3555,6 +3641,16 @@ h2 {
     inset: auto;
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .download-copy,
+  .download-bar strong,
+  .download-bar span,
+  .site-disclaimer {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .download-actions {

@@ -323,6 +323,7 @@ const previewPreviousButton = document.querySelector("#preview-previous");
 const previewNextButton = document.querySelector("#preview-next");
 const previewStatus = document.querySelector("#preview-status");
 const previewDeviceButtons = document.querySelectorAll("[data-preview-device]");
+const previewScrollRegions = document.querySelectorAll("[data-preview-scroll-region]");
 const passcodeScreen = document.querySelector(".passcode-screen");
 const passcodeStatus = document.querySelector("#passcode-status");
 const bubbleDetailTitle = document.querySelector("[data-bubble-detail-title]");
@@ -339,6 +340,7 @@ const announcePreviewMessage = createDiscreteLiveAnnouncer(previewStatus);
 const announceContrastMessage = createContrastLiveAnnouncer(contrastStatus);
 
 setupDownloadBarInset();
+setupPreviewScrollRegions();
 applyPreviewDefaultImages(documentRoot);
 applyShoppingPreviewImages();
 applyGroupAvatarImages();
@@ -430,6 +432,55 @@ function setupDownloadBarInset() {
   } else {
     window.addEventListener("resize", updateInset);
   }
+}
+
+function setupPreviewScrollRegions() {
+  let frame;
+  const sync = () => {
+    frame = undefined;
+    for (const region of previewScrollRegions) {
+      const hasOverflow =
+        region.scrollHeight > region.clientHeight + 1 ||
+        region.scrollWidth > region.clientWidth + 1;
+      if (hasOverflow) {
+        region.setAttribute("tabindex", "0");
+      } else {
+        region.removeAttribute("tabindex");
+      }
+    }
+  };
+  const queueSync = () => {
+    if (frame === undefined) {
+      frame = window.requestAnimationFrame(sync);
+    }
+  };
+  const resizeObserver = "ResizeObserver" in window
+    ? new ResizeObserver(queueSync)
+    : null;
+  const observeLayout = (root) => {
+    resizeObserver?.observe(root);
+    for (const element of root.children) {
+      resizeObserver?.observe(element);
+    }
+  };
+
+  for (const region of previewScrollRegions) {
+    observeLayout(region);
+    new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (node instanceof Element && node.parentElement === region) {
+            resizeObserver?.observe(node);
+          }
+        }
+      }
+      queueSync();
+    }).observe(region, { childList: true, subtree: true });
+  }
+
+  window.addEventListener("resize", queueSync);
+  document.fonts?.ready.then(queueSync);
+  queueSync();
 }
 
 function getContrastImageStates() {

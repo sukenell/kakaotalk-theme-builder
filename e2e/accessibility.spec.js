@@ -3771,3 +3771,352 @@ test("@task9-forced preserves nine-patch editing content with system stage, crop
   expect(unselected.color).toBe(palette.buttonText);
   expect(unselected.width).toBeLessThan(selected.width);
 });
+
+const reflowViewportCases = [
+  { width: 320, height: 800 },
+  { width: 390, height: 844 },
+];
+
+const reflowPageCases = [
+  {
+    id: "home",
+    region: ".main-screen",
+    name: "친구 홈 콘텐츠",
+    last: ".all-friends-section .favorite-profile-row:last-child",
+    role: "region",
+  },
+  {
+    id: "chat-list",
+    region: ".chat-list-screen",
+    name: "대화 목록 예시",
+    last: ".chat-list-row:last-child",
+    role: "list",
+  },
+  {
+    id: "open-chat",
+    region: ".open-chat-screen",
+    name: "오픈채팅 목록 예시",
+    last: ".chat-list-row:last-child",
+    role: "list",
+  },
+  {
+    id: "shopping",
+    region: ".shopping-screen",
+    name: "쇼핑 콘텐츠",
+    last: ".shop-card:first-child .shop-card-content",
+    role: "region",
+  },
+  {
+    id: "more",
+    region: ".more-screen",
+    name: "더보기 콘텐츠",
+    last: ".more-section-heading",
+    role: "region",
+  },
+  {
+    id: "chat",
+    region: "#chat-screen",
+    name: "메시지 대화 예시",
+    last: ".message-group:not(.typing-group):nth-last-child(2)",
+    role: "list",
+  },
+  {
+    id: "bubble-detail",
+    region: ".bubble-detail-panel",
+    name: "말풍선 편집 설정",
+    last: ".nine-patch-control:last-child",
+    role: "region",
+  },
+  {
+    id: "passcode",
+    region: ".passcode-screen",
+    name: "잠금화면 키패드",
+    last: ".passcode-delete",
+    role: "region",
+  },
+  {
+    id: "splash",
+    region: ".splash-screen",
+    name: "로딩화면 콘텐츠",
+    last: ".splash-icon",
+    role: "region",
+  },
+  {
+    id: "theme-list",
+    region: ".theme-list-screen",
+    name: "테마 목록",
+    last: ".theme-list-row:last-child",
+    role: "group",
+  },
+];
+
+async function waitForReflowLayout(page) {
+  await page.evaluate(() => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  }));
+}
+
+async function clippedReflowText(page) {
+  return page.evaluate(() => {
+    const roots = [
+      document.querySelector('.preview-slide:not([aria-hidden="true"])'),
+      document.querySelector(".download-copy"),
+    ];
+    const failures = [];
+    const isClipValue = (value) => /^(?:clip|hidden)$/.test(value);
+
+    for (const root of roots) {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (!node.textContent.trim()) {
+          continue;
+        }
+
+        const parent = node.parentElement;
+        if (
+          !parent ||
+          parent.closest(".visually-hidden, [aria-hidden=true], [hidden]") ||
+          getComputedStyle(parent).visibility === "hidden"
+        ) {
+          continue;
+        }
+
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const textRects = [...range.getClientRects()].filter(({ width, height }) => width > 0 && height > 0);
+        if (textRects.length === 0) {
+          continue;
+        }
+
+        for (let ancestor = parent; ancestor; ancestor = ancestor.parentElement) {
+          if (ancestor !== parent && ancestor.matches("[data-preview-scroll-region]")) {
+            break;
+          }
+
+          const style = getComputedStyle(ancestor);
+          const clipsX = isClipValue(style.overflowX);
+          const clipsY = isClipValue(style.overflowY);
+          if (clipsX || clipsY) {
+            const clip = ancestor.getBoundingClientRect();
+            const clipped = textRects.some((rect) =>
+              (clipsX && (rect.left < clip.left - 1 || rect.right > clip.right + 1)) ||
+              (clipsY && (rect.top < clip.top - 1 || rect.bottom > clip.bottom + 1))
+            );
+            if (clipped) {
+              failures.push({
+                clipper: ancestor.id || ancestor.className || ancestor.tagName,
+                text: node.textContent.trim().slice(0, 80),
+              });
+              break;
+            }
+          }
+
+          if (ancestor === root) {
+            break;
+          }
+        }
+      }
+    }
+
+    return failures;
+  });
+}
+
+async function activePreviewTabStops(page) {
+  return page.locator('.preview-slide:not([aria-hidden="true"])').evaluate((panel) => {
+    const candidates = [...panel.querySelectorAll("a[href], button, input, [tabindex]")];
+    const radioNames = new Set();
+    let index = 0;
+    const targetIds = [];
+
+    for (const element of candidates) {
+      const style = getComputedStyle(element);
+      if (
+        element.disabled ||
+        element.tabIndex < 0 ||
+        style.display === "none" ||
+        style.visibility === "hidden" ||
+        element.getClientRects().length === 0
+      ) {
+        continue;
+      }
+      if (element.matches('input[type="radio"]')) {
+        if (radioNames.has(element.name) || !element.checked) {
+          continue;
+        }
+        radioNames.add(element.name);
+      }
+      const targetId = `${panel.dataset.previewPage}-${index}`;
+      element.dataset.reflowFocusTarget = targetId;
+      targetIds.push(targetId);
+      index += 1;
+    }
+
+    return targetIds;
+  });
+}
+
+async function assertActivePreviewTabStops(page, context) {
+  const expectedTargets = await activePreviewTabStops(page);
+  const visitedTargets = new Set();
+  let reachedIos = false;
+  let reachedAndroid = false;
+  await page.locator("#preview-next").focus();
+
+  for (let index = 0; index < 80 && (!reachedAndroid || visitedTargets.size < expectedTargets.length); index += 1) {
+    await page.keyboard.press("Tab");
+    const focused = await page.evaluate(() => ({
+      id: document.activeElement?.id,
+      target: document.activeElement?.dataset.reflowFocusTarget,
+    }));
+    if (focused.target) {
+      visitedTargets.add(focused.target);
+    }
+    reachedIos ||= focused.id === "download-ios";
+    reachedAndroid ||= focused.id === "download-android";
+  }
+
+  expect([...visitedTargets].sort(), `${context}: active preview controls are visited`).toEqual([...expectedTargets].sort());
+  expect(reachedIos, `${context}: iOS download is visited after preview content`).toBe(true);
+  expect(reachedAndroid, `${context}: Android download is visited after preview content`).toBe(true);
+}
+
+async function assertReflowPage(page, pageCase, device, viewport, mode) {
+  const context = `${mode} ${viewport.width}x${viewport.height} ${device} ${pageCase.id}`;
+  await page.locator(`#preview-tab-${pageCase.id}`).click();
+  await waitForReflowLayout(page);
+
+  const shell = await page.evaluate(() => {
+    const app = document.querySelector(".app-shell").getBoundingClientRect();
+    const footer = document.querySelector(".download-bar").getBoundingClientRect();
+    const previewPanel = document.querySelector(".preview-panel").getBoundingClientRect();
+    const frame = document.querySelector("#preview-frame").getBoundingClientRect();
+    return {
+      appBottom: app.bottom,
+      documentClientWidth: document.documentElement.clientWidth,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      footerPosition: getComputedStyle(document.querySelector(".download-bar")).position,
+      footerTop: footer.top,
+      frame: { bottom: frame.bottom, height: frame.height, left: frame.left, right: frame.right, width: frame.width },
+      panel: { bottom: previewPanel.bottom, left: previewPanel.left, right: previewPanel.right },
+    };
+  });
+  expect(shell.documentScrollWidth, `${context}: document has no horizontal overflow`).toBeLessThanOrEqual(
+    shell.documentClientWidth + 1,
+  );
+  expect(shell.footerPosition, `${context}: the mobile footer participates in document flow`).toBe("static");
+  expect(shell.footerTop, `${context}: footer clears the app shell`).toBeGreaterThanOrEqual(shell.appBottom - 1);
+  expect(shell.frame.left, `${context}: preview starts inside its panel`).toBeGreaterThanOrEqual(shell.panel.left - 1);
+  expect(shell.frame.right, `${context}: preview ends inside its panel`).toBeLessThanOrEqual(shell.panel.right + 1);
+  expect(shell.frame.bottom, `${context}: preview is contained by its panel`).toBeLessThanOrEqual(shell.panel.bottom + 1);
+  if (device === "tablet") {
+    expect(shell.frame.height, `${context}: narrow tablet uses a portrait 3:4 frame`).toBeGreaterThanOrEqual(
+      (shell.frame.width * 4) / 3 - 1,
+    );
+  }
+
+  const footerText = await page.locator("#download-title, #status-text, .site-disclaimer").evaluateAll((elements) =>
+    elements.map((element) => {
+      const style = getComputedStyle(element);
+      return {
+        id: element.id || element.className,
+        overflowWrap: style.overflowWrap,
+        textOverflow: style.textOverflow,
+        whiteSpace: style.whiteSpace,
+      };
+    }),
+  );
+  for (const text of footerText) {
+    expect(text.whiteSpace, `${context}: ${text.id} can wrap`).not.toBe("nowrap");
+    expect(text.textOverflow, `${context}: ${text.id} is not ellipsized`).not.toBe("ellipsis");
+    expect(text.overflowWrap, `${context}: ${text.id} breaks long tokens`).toBe("anywhere");
+  }
+
+  const region = page.locator(`#preview-panel-${pageCase.id} ${pageCase.region}`).first();
+  await expect(region, `${context}: primary content region exists`).toBeAttached();
+  const regionState = await region.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    clientWidth: element.clientWidth,
+    dataRegion: element.hasAttribute("data-preview-scroll-region"),
+    name: element.getAttribute("aria-label"),
+    role: element.getAttribute("role"),
+    scrollHeight: element.scrollHeight,
+    scrollWidth: element.scrollWidth,
+    tabIndexAttribute: element.getAttribute("tabindex"),
+  }));
+  expect(regionState.dataRegion, `${context}: content is registered for overflow synchronization`).toBe(true);
+  expect(regionState.name, `${context}: content has a unique accessible name`).toBe(pageCase.name);
+  expect(regionState.role, `${context}: existing list/group semantics are preserved`).toBe(pageCase.role);
+  expect(regionState.scrollWidth, `${context}: primary content does not need horizontal scrolling`).toBeLessThanOrEqual(
+    regionState.clientWidth + 1,
+  );
+
+  const isOverflowing =
+    regionState.scrollHeight > regionState.clientHeight + 1 || regionState.scrollWidth > regionState.clientWidth + 1;
+  expect(regionState.tabIndexAttribute, `${context}: only actual overflow becomes a Tab stop`).toBe(
+    isOverflowing ? "0" : null,
+  );
+
+  if (regionState.scrollHeight > regionState.clientHeight + 1) {
+    await page.locator("#preview-next").focus();
+    await tabTo(page, region, 30);
+    await expect(region, `${context}: overflow is reached with a real Tab`).toBeFocused();
+    await page.keyboard.press("End");
+    await expect.poll(
+      () => region.evaluate((element) => element.scrollTop),
+      { message: `${context}: End scrolls the named region to its final content` },
+    ).toBeGreaterThanOrEqual(regionState.scrollHeight - regionState.clientHeight - 2);
+  }
+
+  const lastContent = region.locator(pageCase.last).first();
+  await expect(lastContent, `${context}: final representative content exists`).toBeAttached();
+  const visibility = await lastContent.evaluate((element, scrollSelector) => {
+    const region = element.closest(scrollSelector);
+    const content = element.getBoundingClientRect();
+    const viewport = region.getBoundingClientRect();
+    return {
+      bottom: content.bottom,
+      left: content.left,
+      right: content.right,
+      top: content.top,
+      viewportBottom: viewport.bottom,
+      viewportLeft: viewport.left,
+      viewportRight: viewport.right,
+      viewportTop: viewport.top,
+    };
+  }, pageCase.region);
+  expect(visibility.bottom, `${context}: final content bottom is visible`).toBeLessThanOrEqual(visibility.viewportBottom + 1);
+  expect(visibility.top, `${context}: final content top is visible`).toBeGreaterThanOrEqual(visibility.viewportTop - 1);
+  expect(visibility.left, `${context}: final content starts inside the region`).toBeGreaterThanOrEqual(visibility.viewportLeft - 1);
+  expect(visibility.right, `${context}: final content ends inside the region`).toBeLessThanOrEqual(visibility.viewportRight + 1);
+
+  expect(await clippedReflowText(page), `${context}: no meaningful text is clipped`).toEqual([]);
+  await assertActivePreviewTabStops(page, context);
+}
+
+for (const viewport of reflowViewportCases) {
+  for (const device of ["phone", "tablet"]) {
+    for (const mode of ["default spacing", "WCAG text spacing"]) {
+      test(`@task9-reflow keeps all pages operable at ${viewport.width}x${viewport.height}, ${device}, ${mode}`, async ({
+        page,
+      }) => {
+        await page.setViewportSize(viewport);
+        await page.goto("/");
+        if (mode === "WCAG text spacing") {
+          await page.addStyleTag({
+            content: `
+              * { line-height: 1.5 !important; letter-spacing: .12em !important; word-spacing: .16em !important; }
+              p { margin-bottom: 2em !important; }
+            `,
+          });
+        }
+        await page.locator(`[data-preview-device="${device}"]`).click();
+        await waitForReflowLayout(page);
+
+        for (const pageCase of reflowPageCases) {
+          await assertReflowPage(page, pageCase, device, viewport, mode);
+        }
+      });
+    }
+  }
+}
