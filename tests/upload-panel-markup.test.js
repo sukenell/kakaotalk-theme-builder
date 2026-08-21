@@ -1491,7 +1491,10 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(app, /const index = CHAT_BUBBLE_IMAGE_KEYS\.indexOf\(activeBubbleDetailKey\);/);
   assert.match(app, /activeBubbleDetailKey = CHAT_BUBBLE_IMAGE_KEYS\[\(index \+ 1\) % CHAT_BUBBLE_IMAGE_KEYS\.length\];/);
   assert.match(app, /bubbleDetailNextButton\?\.addEventListener\("click", cycleActiveBubbleDetail\);/);
-  assert.match(app, /setPreviewIndex\(PREVIEW_PAGES\.findIndex\(\(page\) => page\.id === "bubble-detail"\)\);/);
+  assert.match(
+    app,
+    /setPreviewIndex\(PREVIEW_PAGES\.findIndex\(\(page\) => page\.id === "bubble-detail"\), \{[\s\S]*focus: "panel-heading",[\s\S]*\}\);/,
+  );
   assert.match(app, /getNinePatchAxisControlMax/);
   assert.match(app, /getNinePatchReferenceSizeForSource/);
   assert.match(app, /getNinePatchReferenceSizeForMarkers/);

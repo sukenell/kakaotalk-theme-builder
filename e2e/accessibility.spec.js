@@ -515,12 +515,12 @@ for (const refreshFailureCase of [
       await page.getByRole("button", { name: "나의 말풍선 - 기본 상세", exact: true }).click();
 
       if (refreshFailureCase.caller === "detail") {
-        const fitButton = page.getByRole("button", { name: "채우기", exact: true });
+        const fitButton = page.getByRole("radio", { name: "채우기", exact: true });
         trigger = async () => {
           await fitButton.focus();
-          await fitButton.click();
+          await fitButton.check();
         };
-        focusedAfterFailure = page.getByRole("button", { name: "채우기", exact: true });
+        focusedAfterFailure = page.getByRole("radio", { name: "채우기", exact: true });
       } else {
         const range = page.locator('input[data-nine-patch-field="stretchX"][data-nine-patch-index="0"]');
         if (refreshFailureCase.caller === "nine-patch") {
@@ -1714,4 +1714,163 @@ test("@task4 removes global arrow navigation and scopes passcode shortcuts to it
   await expect(selectedDots).toHaveCount(1);
   await page.keyboard.press("Backspace");
   await expect(selectedDots).toHaveCount(0);
+});
+
+async function openDefaultBubbleDetail(page) {
+  await page.goto("/");
+  await page.getByRole("tab", { name: "채팅방", exact: true }).click();
+  await page.getByRole("button", { name: "나의 말풍선 - 기본 상세", exact: true }).click();
+}
+
+test("@task5 detail click focuses its semantic heading", async ({ page }) => {
+  await openDefaultBubbleDetail(page);
+
+  const heading = page.getByRole("heading", { name: "나의 말풍선 - 기본 상세", level: 3, exact: true });
+  await expect(heading).toHaveAttribute("tabindex", "-1");
+  await expect(heading).toBeFocused();
+  await expectPreviewInvariant(page, 6);
+});
+
+test("@task5 exposes native fit radios and four labelled range groups", async ({ page }) => {
+  await openDefaultBubbleDetail(page);
+
+  const panel = page.locator("[data-bubble-detail-panel]");
+  const fitGroup = panel.getByRole("group", { name: "배치", exact: true });
+  const cover = fitGroup.getByRole("radio", { name: "채우기", exact: true });
+  const contain = fitGroup.getByRole("radio", { name: "전체", exact: true });
+  await expect(cover).not.toBeChecked();
+  await expect(contain).toBeChecked();
+  await expect(cover).toHaveAttribute("id", "nine-patch-fit-cover");
+  await expect(contain).toHaveAttribute("id", "nine-patch-fit-contain");
+
+  const rangeDefinitions = [
+    { field: "stretchX", legend: "가로 늘림" },
+    { field: "stretchY", legend: "세로 늘림" },
+    { field: "paddingX", legend: "내용 가로" },
+    { field: "paddingY", legend: "내용 세로" },
+  ];
+  await expect(panel.locator("fieldset.nine-patch-control")).toHaveCount(4);
+  await expect(panel.getByRole("slider")).toHaveCount(8);
+
+  for (const { field, legend } of rangeDefinitions) {
+    const group = panel.getByRole("group", { name: legend, exact: true });
+    for (const [index, position] of ["시작", "끝"].entries()) {
+      const slider = group.getByRole("slider", {
+        name: `나의 말풍선 - 기본 ${legend} ${position}`,
+        exact: true,
+      });
+      await expect(slider).toHaveAttribute("id", `nine-patch-${field}-${position === "시작" ? "start" : "end"}`);
+      await expect(slider).toHaveAttribute("aria-valuetext", /^\d+픽셀$/);
+      await expect(slider).toHaveAttribute("data-nine-patch-index", String(index));
+    }
+  }
+
+  await expect(panel.locator("output")).toHaveCount(0);
+  await expect(panel.getByRole("status")).toHaveCount(0);
+  const snapshot = await panel.ariaSnapshot();
+  expect(snapshot).not.toMatch(/stretchX|stretchY|paddingX|paddingY/);
+});
+
+for (const fitMode of [
+  { name: "채우기", value: "cover" },
+  { name: "전체", value: "contain" },
+]) {
+  test(`@task5 ${fitMode.name} fit radio retains its exact node and focus`, async ({ page }) => {
+    await openDefaultBubbleDetail(page);
+
+    const radio = page.getByRole("radio", { name: fitMode.name, exact: true });
+    await radio.focus();
+    const node = await radio.elementHandle();
+    await radio.check();
+
+    await expect(radio).toBeChecked();
+    await expect(radio).toBeFocused();
+    expect(await radio.evaluate((element, previous) => element === previous, node)).toBe(true);
+    await expect(page.locator('[data-bubble-detail-panel] input[type="radio"]:checked')).toHaveValue(fitMode.value);
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(false);
+  });
+}
+
+test("@task5 range input keeps focus and synchronizes its pixel value", async ({ page }) => {
+  await openDefaultBubbleDetail(page);
+
+  const slider = page.getByRole("slider", {
+    name: "나의 말풍선 - 기본 가로 늘림 시작",
+    exact: true,
+  });
+  await slider.focus();
+  const node = await slider.elementHandle();
+  const nextValue = await slider.evaluate((input) => String(Math.max(Number(input.min), Number(input.value) - 1)));
+  await slider.evaluate((input, value) => {
+    input.value = value;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, nextValue);
+
+  await expect(slider).toHaveValue(nextValue);
+  await expect(slider).toHaveAttribute("aria-valuetext", `${nextValue}픽셀`);
+  await expect(slider).toBeFocused();
+  expect(await slider.evaluate((element, previous) => element === previous, node)).toBe(true);
+  await expect(page.locator('[data-nine-patch-value="stretchX-0"]')).toHaveText(nextValue);
+  await expect(page.locator('[data-nine-patch-value="stretchX-0"]')).toHaveAttribute("aria-hidden", "true");
+});
+
+test("@task5 uploaded bubble dimensions resynchronize slider bounds without replacing controls", async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalToBlob = HTMLCanvasElement.prototype.toBlob;
+    HTMLCanvasElement.prototype.toBlob = function (callback, ...args) {
+      if (!window.__holdTask5CanvasBlob || window.__task5CanvasBlobStarted) {
+        return originalToBlob.call(this, callback, ...args);
+      }
+
+      const canvas = this;
+      window.__task5CanvasBlobStarted = true;
+      window.__releaseTask5CanvasBlob = () => originalToBlob.call(canvas, callback, ...args);
+      return undefined;
+    };
+  });
+  await page.goto("/");
+  await page.getByRole("tab", { name: "채팅방", exact: true }).click();
+  await page.evaluate(() => {
+    window.__holdTask5CanvasBlob = true;
+  });
+  await page.locator("#upload-input-sendBubbleNormal").setInputFiles({
+    name: "large-bubble.png",
+    mimeType: "image/png",
+    buffer: await createPngBuffer(page, 520, 450),
+  });
+  await expect.poll(() => page.evaluate(() => window.__task5CanvasBlobStarted)).toBe(true);
+  await page.getByRole("button", { name: "나의 말풍선 - 기본 상세", exact: true }).click();
+
+  const slider = page.getByRole("slider", {
+    name: "나의 말풍선 - 기본 가로 늘림 끝",
+    exact: true,
+  });
+  const node = await slider.elementHandle();
+  await expect(slider).toHaveAttribute("max", "300");
+
+  await page.evaluate(() => window.__releaseTask5CanvasBlob());
+  await expect(page.locator("#status-text")).toHaveText("나의 말풍선 - 기본 반영");
+  await expect(slider).toHaveAttribute("max", "520");
+  await expect(slider).toHaveAttribute("aria-valuetext", /^\d+픽셀$/);
+  expect(await slider.evaluate((element, previous) => element === previous, node)).toBe(true);
+});
+
+test("@task5 previous preview navigation preserves its trigger focus", async ({ page }) => {
+  await openDefaultBubbleDetail(page);
+
+  const previous = page.locator("#preview-previous");
+  await previous.click();
+  await expectPreviewInvariant(page, 5);
+  await expect(previous).toBeFocused();
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(false);
+});
+
+test("@task5 next preview navigation preserves its trigger focus", async ({ page }) => {
+  await openDefaultBubbleDetail(page);
+
+  const next = page.locator("#preview-next");
+  await next.click();
+  await expectPreviewInvariant(page, 7);
+  await expect(next).toBeFocused();
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(false);
 });

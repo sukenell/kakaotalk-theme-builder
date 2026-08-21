@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -16,6 +17,29 @@ import {
   rebaseNinePatchSettingsForReferenceSize,
   updateNinePatchPair,
 } from "../src/nine-patch-controls.js";
+
+test("bubble detail exposes a programmatically focusable semantic heading", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+
+  assert.match(
+    html,
+    /<h3\b[^>]*data-bubble-detail-title[^>]*tabindex="-1"[^>]*>말풍선 상세<\/h3>|<h3\b[^>]*tabindex="-1"[^>]*data-bubble-detail-title[^>]*>말풍선 상세<\/h3>/,
+  );
+  assert.doesNotMatch(html, /<strong\b[^>]*data-bubble-detail-title/);
+});
+
+test("bubble detail builds native labelled fit and range groups without output live regions", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /document\.createElement\("fieldset"\)/);
+  assert.match(app, /document\.createElement\("legend"\)/);
+  assert.match(app, /input\.type = "radio";/);
+  assert.match(app, /input\.type = "range";/);
+  assert.match(app, /input\.id = `nine-patch-\$\{field\}-\$\{position\}`;/);
+  assert.match(app, /label\.htmlFor = input\.id;/);
+  assert.match(app, /input\.setAttribute\("aria-valuetext", `\$\{value\}픽셀`\);/);
+  assert.doesNotMatch(app, /document\.createElement\("output"\)/);
+});
 
 test("nine-patch padding pairs keep the default content width and can only expand outward", () => {
   assert.equal(MINIMUM_NINE_PATCH_CONTENT_SIZE.x, 40);

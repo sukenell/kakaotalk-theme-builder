@@ -1080,7 +1080,7 @@ function syncPreviewPanelAccessibility(activeIndex) {
   });
 }
 
-function setPreviewIndex(index, { focus = "none", announce = false } = {}) {
+function setPreviewIndex(index, { focus = "preserve", announce = false } = {}) {
   currentPreviewIndex = (index + PREVIEW_PAGES.length) % PREVIEW_PAGES.length;
   const page = PREVIEW_PAGES[currentPreviewIndex];
 
@@ -1099,6 +1099,8 @@ function setPreviewIndex(index, { focus = "none", announce = false } = {}) {
 
   if (focus === "tab") {
     document.querySelector(`#preview-tab-${page.id}`).focus();
+  } else if (focus === "panel-heading") {
+    document.querySelector(`#preview-panel-${page.id} [data-preview-panel-heading]`)?.focus();
   }
 
   if (announce) {
@@ -1131,7 +1133,9 @@ function openBubbleDetail(key) {
   }
 
   activeBubbleDetailKey = key;
-  setPreviewIndex(PREVIEW_PAGES.findIndex((page) => page.id === "bubble-detail"));
+  setPreviewIndex(PREVIEW_PAGES.findIndex((page) => page.id === "bubble-detail"), {
+    focus: "panel-heading",
+  });
 }
 
 function cycleActiveBubbleDetail() {
@@ -1147,63 +1151,88 @@ function renderBubbleDetailControls() {
   }
 
   const key = activeBubbleDetailKey;
+  if (bubbleDetailPanel.dataset.bubbleDetailKey === key) {
+    syncBubbleFitControlState();
+    syncBubbleDetailControlValues();
+    return;
+  }
+
   const settings = getBubbleNinePatchSettings(key);
-  const fitControl = document.createElement("div");
+  const fitControl = document.createElement("fieldset");
   fitControl.className = "nine-patch-fit-control";
-  fitControl.append(document.createElement("span"));
-  fitControl.firstElementChild.textContent = "배치";
+  const fitLegend = document.createElement("legend");
+  fitLegend.textContent = "배치";
+  const fitOptions = document.createElement("div");
+  fitOptions.className = "nine-patch-fit-options";
+  fitControl.append(fitLegend, fitOptions);
 
   bubbleNinePatchFitModes.forEach((mode) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = mode === "contain" ? "전체" : "채우기";
-    button.dataset.ninePatchFit = mode;
-    button.classList.toggle("is-active", settings.fit === mode);
-    button.addEventListener("click", async () => {
-      const shouldRestoreFocus = document.activeElement === button;
+    const option = document.createElement("span");
+    option.className = "nine-patch-fit-option";
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.id = `nine-patch-fit-${mode}`;
+    input.name = "nine-patch-fit";
+    input.value = mode;
+    input.dataset.ninePatchFit = mode;
+    input.checked = settings.fit === mode;
+    const label = document.createElement("label");
+    label.htmlFor = input.id;
+    label.textContent = mode === "contain" ? "전체" : "채우기";
+    input.addEventListener("change", async () => {
+      if (!input.checked) {
+        return;
+      }
+
       getBubbleNinePatchSettings(key).fit = mode;
       markBubbleSettingsChanged(key);
-      renderBubbleDetailControls();
+      syncBubbleFitControlState();
       updateBubbleDetailPreview();
-      if (shouldRestoreFocus) {
-        bubbleDetailPanel.querySelector(`[data-nine-patch-fit="${mode}"]`)?.focus();
-      }
       await guardedRefreshUploadImage(key);
     });
-    fitControl.append(button);
+    option.append(input, label);
+    fitOptions.append(option);
   });
 
   const controls = bubbleNinePatchControlFields.map(({ field, label, axis }) => {
-    const control = document.createElement("label");
+    const control = document.createElement("fieldset");
     control.className = "nine-patch-control";
     control.dataset.ninePatchControl = field;
 
-    const title = document.createElement("span");
-    title.textContent = label;
+    const legend = document.createElement("legend");
+    legend.textContent = label;
+    const fields = document.createElement("div");
+    fields.className = "nine-patch-control-fields";
 
     const startInput = createNinePatchRangeInput(key, field, 0, axis);
-    const startOutput = createNinePatchOutput(field, 0);
+    const startLabel = createNinePatchRangeLabel(startInput, key, label, "시작");
+    const startValue = createNinePatchValue(field, 0);
     const endInput = createNinePatchRangeInput(key, field, 1, axis);
-    const endOutput = createNinePatchOutput(field, 1);
+    const endLabel = createNinePatchRangeLabel(endInput, key, label, "끝");
+    const endValue = createNinePatchValue(field, 1);
 
-    control.append(title, startInput, startOutput, endInput, endOutput);
+    fields.append(startLabel, startInput, startValue, endLabel, endInput, endValue);
+    control.append(legend, fields);
     return control;
   });
 
   bubbleDetailPanel.replaceChildren(fitControl, ...controls);
+  bubbleDetailPanel.dataset.bubbleDetailKey = key;
+  syncBubbleFitControlState();
   syncBubbleDetailControlValues();
 }
 
 function createNinePatchRangeInput(key, field, index, axis) {
   const input = document.createElement("input");
   const bounds = getNinePatchInputBounds(key, field, index, axis);
+  const position = index === 0 ? "start" : "end";
   input.type = "range";
+  input.id = `nine-patch-${field}-${position}`;
   input.min = String(bounds.min);
   input.max = String(bounds.max);
   input.step = "1";
   input.dataset.ninePatchField = field;
   input.dataset.ninePatchIndex = String(index);
-  input.ariaLabel = `${IMAGE_TARGETS[key].label} ${field} ${index + 1}`;
   input.addEventListener("input", async () => {
     updateNinePatchPairValue(key, field, index, Number(input.value));
     syncBubbleDetailControlValues();
@@ -1213,10 +1242,19 @@ function createNinePatchRangeInput(key, field, index, axis) {
   return input;
 }
 
-function createNinePatchOutput(field, index) {
-  const output = document.createElement("output");
-  output.dataset.ninePatchValue = `${field}-${index}`;
-  return output;
+function createNinePatchRangeLabel(input, key, fieldLabel, positionLabel) {
+  const label = document.createElement("label");
+  label.className = "visually-hidden";
+  label.htmlFor = input.id;
+  label.textContent = `${IMAGE_TARGETS[key].label} ${fieldLabel} ${positionLabel}`;
+  return label;
+}
+
+function createNinePatchValue(field, index) {
+  const value = document.createElement("span");
+  value.dataset.ninePatchValue = `${field}-${index}`;
+  value.setAttribute("aria-hidden", "true");
+  return value;
 }
 
 function updateNinePatchPairValue(key, field, index, value) {
@@ -1285,11 +1323,28 @@ function syncBubbleDetailControlValues() {
   bubbleDetailPanel.querySelectorAll("[data-nine-patch-field]").forEach((input) => {
     const field = input.dataset.ninePatchField;
     const index = Number(input.dataset.ninePatchIndex);
-    input.value = String(settings[field][index]);
+    const axis = field.endsWith("X") ? "x" : "y";
+    const bounds = getNinePatchInputBounds(activeBubbleDetailKey, field, index, axis);
+    const value = settings[field][index];
+    input.min = String(bounds.min);
+    input.max = String(bounds.max);
+    input.value = String(value);
+    input.setAttribute("aria-valuetext", `${value}픽셀`);
   });
-  bubbleDetailPanel.querySelectorAll("[data-nine-patch-value]").forEach((output) => {
-    const [field, index] = output.dataset.ninePatchValue.split("-");
-    output.value = String(settings[field][Number(index)]);
+  bubbleDetailPanel.querySelectorAll("[data-nine-patch-value]").forEach((value) => {
+    const [field, index] = value.dataset.ninePatchValue.split("-");
+    value.textContent = String(settings[field][Number(index)]);
+  });
+}
+
+function syncBubbleFitControlState() {
+  if (!bubbleDetailPanel) {
+    return;
+  }
+
+  const fit = getBubbleNinePatchSettings(activeBubbleDetailKey).fit;
+  bubbleDetailPanel.querySelectorAll("[data-nine-patch-fit]").forEach((input) => {
+    input.checked = input.value === fit;
   });
 }
 
@@ -1302,7 +1357,7 @@ function updateBubbleDetailPreview() {
   const settings = getBubbleNinePatchSettings(key);
   const target = IMAGE_TARGETS[key];
   if (bubbleDetailTitle) {
-    bubbleDetailTitle.textContent = target?.label ?? "말풍선 상세";
+    bubbleDetailTitle.textContent = target ? `${target.label} 상세` : "말풍선 상세";
   }
 
   const imageValue = previews[key] ? `url("${previews[key]}")` : getPreviewDefaultCssUrl(key) || "none";
@@ -2135,6 +2190,8 @@ function updatePreview() {
   Object.entries(previewBubbleSources).forEach(([variableName, keys]) => {
     setPreviewBubbleImage(variableName, keys);
   });
+  syncBubbleFitControlState();
+  syncBubbleDetailControlValues();
   updateBubbleDetailPreview();
 
   if (previews.mainBackground && !previews.chatBackground && !isClearedImageUpload("chatBackground")) {

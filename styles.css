@@ -2392,6 +2392,11 @@ h2 {
   background: var(--preview-main-bg, #ffdddd);
 }
 
+.bubble-detail-header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
 .bubble-detail-header .bubble-detail-actions {
   display: inline-flex;
   align-items: center;
@@ -2584,15 +2589,51 @@ h2 {
 
 .nine-patch-fit-control {
   display: grid;
-  grid-template-columns: 54px 1fr 1fr;
+  grid-template-columns: 54px minmax(0, 1fr);
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
   color: var(--preview-description, #6f5555);
   font-size: 11px;
   font-weight: 800;
 }
 
-.nine-patch-fit-control button {
+.nine-patch-fit-control legend,
+.nine-patch-control legend {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+}
+
+.nine-patch-fit-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  min-width: 0;
+}
+
+.nine-patch-fit-option {
+  position: relative;
+  min-width: 0;
+}
+
+.nine-patch-fit-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+}
+
+.nine-patch-fit-option label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 30px;
   border: 1px solid color-mix(in srgb, var(--preview-body-border, #ead0d0) 84%, transparent);
   border-radius: 8px;
@@ -2602,19 +2643,36 @@ h2 {
   font-weight: 900;
 }
 
-.nine-patch-fit-control button.is-active {
+.nine-patch-fit-option input:checked + label {
   background: var(--preview-send-button, #664242);
   color: var(--preview-send-button-text, #ffffff);
 }
 
+.nine-patch-fit-option input:focus-visible + label {
+  outline: 3px solid var(--focus-ring, #075c52);
+  outline-offset: 2px;
+}
+
 .nine-patch-control {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) 34px minmax(0, 1fr) 34px;
+  grid-template-columns: 54px minmax(0, 1fr);
   align-items: center;
   gap: 5px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
   color: var(--preview-description, #6f5555);
   font-size: 11px;
   font-weight: 800;
+}
+
+.nine-patch-control-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
 }
 
 .nine-patch-control input[type="range"] {
@@ -2622,7 +2680,7 @@ h2 {
   accent-color: #2f9f68;
 }
 
-.nine-patch-control output {
+.nine-patch-control [data-nine-patch-value] {
   width: 34px;
   color: var(--preview-title, #4d3434);
   font-variant-numeric: tabular-nums;
