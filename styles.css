@@ -3734,13 +3734,14 @@ h2 {
     .tab-icon,
     .passcode-dot
   ),
-  #preview-frame :is(
-    .shop-card::before,
-    .shop-card::after,
-    .promo-mascot::before,
-    .promo-mascot::after,
-    .promo-mascot span
-  ) {
+  #preview-frame .promo-mascot span {
+    background-image: none !important;
+  }
+
+  #preview-frame .shop-card::before,
+  #preview-frame .shop-card::after,
+  #preview-frame .promo-mascot::before,
+  #preview-frame .promo-mascot::after {
     background-image: none !important;
   }
 

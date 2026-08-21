@@ -3514,6 +3514,16 @@ test("@task9-forced removes uploaded and decorative preview images while leaving
   await page.locator("#chat-screen").evaluate((element) => {
     element.style.backgroundImage = document.documentElement.style.getPropertyValue("--preview-chat-image");
   });
+  await page.addStyleTag({
+    content: `
+      @media (forced-colors: active) {
+        #preview-frame .shop-card::before,
+        #preview-frame .promo-mascot::before {
+          background-image: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==");
+        }
+      }
+    `,
+  });
 
   await page.emulateMedia({ forcedColors: "active" });
 
@@ -3564,6 +3574,7 @@ test("@task9-forced removes uploaded and decorative preview images while leaving
         style(".shop-card", "::after").backdropFilter || style(".shop-card", "::after").webkitBackdropFilter,
       productAfterImage: style(".shop-card", "::after").backgroundImage,
       productBeforeImage: style(".shop-card", "::before").backgroundImage,
+      promoBeforeImage: style(".promo-mascot", "::before").backgroundImage,
     };
   });
   const bubbleBoundary = await page.locator("#preview-panel-chat .bubble").first().evaluate((element) => {
@@ -3591,6 +3602,7 @@ test("@task9-forced removes uploaded and decorative preview images while leaving
     productAfterImage: "none",
   });
   expect(effects.productBeforeImage.split(", ").every((image) => image === "none")).toBe(true);
+  expect(effects.promoBeforeImage.split(", ").every((image) => image === "none")).toBe(true);
 
   for (const selector of ["html", "body", "#preview-frame", ".preview-slide"]) {
     await expect(page.locator(selector).first()).toHaveCSS("forced-color-adjust", "auto");
