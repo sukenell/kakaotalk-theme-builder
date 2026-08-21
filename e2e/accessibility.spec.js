@@ -60,3 +60,138 @@ test("@task1 gives download buttons exact platform-specific accessible names", a
   await expect(iosDownload).toHaveText("IOS");
   await expect(androidDownload).toHaveText("Android");
 });
+
+test("@task2 gives every active upload row contextual names and descriptions", async ({ page }) => {
+  await page.goto("/");
+
+  const uploadControls = page.locator("#upload-controls");
+  await expect(uploadControls.getByRole("group")).toHaveCount(13);
+
+  const mainBackgroundRow = uploadControls.getByRole("group", { name: "메인 배경", exact: true });
+  await expect(mainBackgroundRow).toHaveCount(1);
+  await expect(mainBackgroundRow).toHaveAttribute("aria-labelledby", "upload-title-mainBackground");
+  await expect(mainBackgroundRow.locator("#upload-title-mainBackground")).toHaveText("메인 배경");
+  await expect(mainBackgroundRow.locator(".upload-thumb")).toHaveAttribute("aria-hidden", "true");
+
+  const uploadInput = mainBackgroundRow.getByRole("button", { name: "메인 배경 업로드", exact: true });
+  await expect(uploadInput).toHaveCount(1);
+  await expect(uploadInput).toHaveAttribute("id", "upload-input-mainBackground");
+  await expect(uploadInput).toHaveAttribute("aria-describedby", "upload-description-mainBackground");
+  await expect(uploadInput).toHaveAccessibleDescription(
+    "IOS 1125x2250px Android 1440x2880px iOS / Android 적용 이미지 삭제됨",
+  );
+  await expect(mainBackgroundRow.locator('label[for="upload-input-mainBackground"]')).toHaveText("업로드");
+  await expect(mainBackgroundRow.getByRole("button", { name: "메인 배경 삭제", exact: true })).toHaveCount(1);
+
+  const compactTabRow = uploadControls.getByRole("group", { name: "친구1", exact: true });
+  await expect(compactTabRow.getByRole("button", { name: "친구1 업로드", exact: true })).toHaveCount(1);
+  const tintCheckbox = compactTabRow.getByRole("checkbox", { name: "친구1 색상 적용", exact: true });
+  await expect(tintCheckbox).toHaveCount(1);
+  await expect(compactTabRow.locator('input[type="color"]')).toHaveAccessibleName("친구1 색상");
+  expect(await tintCheckbox.evaluate((element) => element.closest("label") === null)).toBe(true);
+
+  await page.getByRole("tab", { name: "채팅방", exact: true }).click();
+  const bubbleRow = uploadControls.getByRole("group", { name: "나의 말풍선 - 기본", exact: true });
+  await expect(bubbleRow.getByRole("button", { name: "나의 말풍선 - 기본 업로드", exact: true })).toHaveCount(1);
+  await expect(bubbleRow.getByRole("button", { name: "나의 말풍선 - 기본 상세", exact: true })).toHaveCount(1);
+});
+
+test("@task2 keeps color control names independent and updates the picker HEX name", async ({ page }) => {
+  await page.goto("/");
+
+  const row = page.locator(".color-row").filter({ has: page.locator("#color-label-mainBackground") });
+  const picker = row.getByRole("button", { name: "배경 색 #FFDEDE", exact: true });
+  const pickerControl = row.locator(".color-picker-control");
+  await expect(picker).toHaveCount(1);
+  await expect(picker).toHaveAttribute("aria-labelledby", "color-label-mainBackground color-value-mainBackground");
+  await expect(row.getByRole("button", { name: "배경 색 초기화", exact: true })).toHaveCount(1);
+
+  await picker.click();
+  const hexInput = row.getByRole("textbox", { name: "배경 색 HEX 컬러 코드", exact: true });
+  const nativeColorInput = row.locator("#color-mainBackground");
+  await expect(hexInput).toHaveCount(1);
+  await expect(nativeColorInput).toHaveAccessibleName("배경 색 색상 선택");
+  expect(await hexInput.evaluate((element) => element.closest("label") === null)).toBe(true);
+  expect(await nativeColorInput.evaluate((element) => element.closest("label") === null)).toBe(true);
+
+  await hexInput.fill("#123456");
+  await expect(pickerControl).toHaveAccessibleName("배경 색 #123456");
+  await expect(row.locator("#color-value-mainBackground")).toHaveText("#123456");
+});
+
+test("@task2 keeps uploaded filename state through upload-panel rerenders", async ({ page }) => {
+  await page.goto("/");
+
+  const uploadInput = page.locator("#upload-input-mainBackground");
+  await uploadInput.setInputFiles({
+    name: "pink-background.png",
+    mimeType: "image/png",
+    buffer: Buffer.from([137, 80, 78, 71]),
+  });
+  await expect(page.locator("#upload-description-mainBackground")).toContainText("선택한 파일: pink-background.png");
+
+  await page.getByRole("tab", { name: "채팅방", exact: true }).click();
+  await expect(page.locator("#upload-input-mainBackground")).toHaveCount(0);
+  await page.getByRole("tab", { name: "대화 목록", exact: true }).click();
+  await expect(page.locator("#upload-description-mainBackground")).toContainText("선택한 파일: pink-background.png");
+
+  await page.getByRole("button", { name: "메인 배경 삭제", exact: true }).click();
+  await expect(page.locator("#upload-description-mainBackground")).toContainText("이미지 삭제됨");
+  await expect(page.locator("#upload-description-mainBackground")).not.toContainText("pink-background.png");
+});
+
+test("@task2 reaches the clipped file input by Tab and keeps a visible focus path after cancel", async ({ page }) => {
+  await page.goto("/");
+
+  const guideLink = page.getByRole("link", { name: "공식 가이드 파일 다운로드", exact: true });
+  for (let tabCount = 0; tabCount < 40; tabCount += 1) {
+    await page.keyboard.press("Tab");
+    if (await guideLink.evaluate((element) => document.activeElement === element)) {
+      break;
+    }
+  }
+  expect(await guideLink.evaluate((element) => document.activeElement === element)).toBe(true);
+
+  await page.keyboard.press("Tab");
+  const uploadInput = page.locator("#upload-input-mainBackground");
+  expect(await uploadInput.evaluate((element) => document.activeElement === element)).toBe(true);
+
+  const fileButton = page.locator('label.file-button[for="upload-input-mainBackground"]');
+  const focusAppearance = await fileButton.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const bounds = element.getBoundingClientRect();
+    const inputBounds = element.querySelector("input").getBoundingClientRect();
+    return {
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth,
+      outlineColor: style.outlineColor,
+      width: bounds.width,
+      height: bounds.height,
+      inputWidth: inputBounds.width,
+      inputHeight: inputBounds.height,
+    };
+  });
+  expect(focusAppearance).toMatchObject({
+    outlineStyle: "solid",
+    outlineWidth: "3px",
+    outlineColor: "rgb(7, 92, 82)",
+  });
+  expect(focusAppearance.width).toBeGreaterThan(40);
+  expect(focusAppearance.height).toBeGreaterThanOrEqual(34);
+  expect(focusAppearance.inputWidth).toBeLessThanOrEqual(1);
+  expect(focusAppearance.inputHeight).toBeLessThanOrEqual(1);
+
+  await page.keyboard.press("Tab");
+  const nextUploadInput = page.getByRole("button", { name: "탭 배경 업로드", exact: true });
+  expect(await nextUploadInput.evaluate((element) => document.activeElement === element)).toBe(true);
+
+  await page.keyboard.press("Shift+Tab");
+  const chooserPromise = page.waitForEvent("filechooser");
+  await page.keyboard.press("Space");
+  const chooser = await chooserPromise;
+  await chooser.setFiles([]);
+  expect(await uploadInput.evaluate((element) => document.activeElement === element)).toBe(true);
+
+  await page.keyboard.press("Tab");
+  expect(await nextUploadInput.evaluate((element) => document.activeElement === element)).toBe(true);
+});

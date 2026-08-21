@@ -141,7 +141,7 @@ h2 {
 
 .text-field > span,
 .text-field > label,
-.color-row label,
+.color-row .color-label,
 .package-field > label,
 .author-field > label,
 .page-picker > span,
@@ -417,6 +417,11 @@ h2 {
   min-width: 0;
 }
 
+.upload-description {
+  display: grid;
+  gap: 2px;
+}
+
 .upload-label strong {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -455,6 +460,15 @@ h2 {
   color: #1f5952;
   font-weight: 800;
   line-height: 1;
+}
+
+.file-button {
+  position: relative;
+}
+
+.file-button:has(input:focus-visible) {
+  outline: 3px solid #075c52;
+  outline-offset: 2px;
 }
 
 .detail-upload-button {
@@ -526,8 +540,13 @@ h2 {
   position: absolute;
   width: 1px;
   height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .preview-controls {

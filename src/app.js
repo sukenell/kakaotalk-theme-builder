@@ -273,6 +273,7 @@ const state = cloneDefaultThemeState();
 const uploads = Object.fromEntries([...defaultClearedImageUploadKeys].map((key) => [key, { cleared: true }]));
 const previews = {};
 const uploadTints = {};
+const uploadUiState = {};
 const bubbleNinePatchSettings = {};
 const uploadRenderVersions = {};
 const templateCache = new Map();
@@ -470,8 +471,9 @@ function renderColorControls() {
       const row = document.createElement("div");
       row.className = "color-row";
 
-      const text = document.createElement("label");
-      text.htmlFor = `color-hex-${key}`;
+      const text = document.createElement("span");
+      text.id = `color-label-${key}`;
+      text.className = "color-label";
       text.textContent = label;
 
       const input = document.createElement("input");
@@ -491,12 +493,15 @@ function renderColorControls() {
       swatch.className = "color-picker-swatch";
 
       const valueText = document.createElement("span");
+      valueText.id = `color-value-${key}`;
       valueText.className = "color-picker-value";
+      picker.setAttribute("aria-labelledby", `${text.id} ${valueText.id}`);
 
       const resetButton = document.createElement("button");
       resetButton.type = "button";
       resetButton.className = "color-reset-button";
       resetButton.textContent = "초기화";
+      resetButton.ariaLabel = `${label} 초기화`;
 
       const colorPopover = document.createElement("div");
       colorPopover.id = `color-popover-${key}`;
@@ -616,12 +621,16 @@ function renderUploadControls() {
   uploadControlRoot.replaceChildren(
     ...visibleUploadKeys.map((key) => {
       const target = IMAGE_TARGETS[key];
+      const displayLabel = getUploadDisplayLabel(key, target);
       const item = document.createElement("div");
       item.className = "upload-item";
+      item.setAttribute("role", "group");
+      item.setAttribute("aria-labelledby", `upload-title-${key}`);
 
       const thumb = document.createElement("div");
       thumb.className = "upload-thumb";
       thumb.dataset.uploadThumb = key;
+      thumb.setAttribute("aria-hidden", "true");
       applyUploadThumb(thumb, key);
 
       const label = document.createElement("div");
@@ -631,16 +640,32 @@ function renderUploadControls() {
       if (metaText) {
         const meta = document.createElement("span");
         meta.textContent = metaText;
-        label.append(meta);
+        label.querySelector(`#upload-description-${key}`).append(meta);
       }
+      const uploadState = document.createElement("span");
+      uploadState.dataset.uploadState = key;
+      uploadState.textContent = getUploadStateText(key);
+      label.querySelector(`#upload-description-${key}`).append(uploadState);
 
       const button = document.createElement("label");
       button.className = "file-button";
       button.textContent = "업로드";
       const input = document.createElement("input");
+      input.id = `upload-input-${key}`;
       input.type = "file";
       input.accept = "image/png,image/jpeg,image/webp";
-      input.addEventListener("change", () => handleUpload(key, input.files?.[0]));
+      input.ariaLabel = `${displayLabel} 업로드`;
+      input.setAttribute("aria-describedby", `upload-description-${key}`);
+      button.htmlFor = input.id;
+      input.addEventListener("change", () => {
+        const file = input.files?.[0];
+        if (!file) {
+          input.focus();
+          return;
+        }
+        handleUpload(key, file);
+      });
+      input.addEventListener("cancel", () => input.focus());
       button.append(input);
 
       const actions = document.createElement("div");
@@ -655,6 +680,7 @@ function renderUploadControls() {
         detailButton.type = "button";
         detailButton.dataset.bubbleDetail = key;
         detailButton.textContent = "상세";
+        detailButton.ariaLabel = `${displayLabel} 상세`;
         detailButton.addEventListener("click", () => openBubbleDetail(key));
         actions.append(detailButton);
       }
@@ -664,6 +690,7 @@ function renderUploadControls() {
         clearButton.type = "button";
         clearButton.dataset.uploadClear = key;
         clearButton.textContent = "삭제";
+        clearButton.ariaLabel = `${displayLabel} 삭제`;
         clearButton.disabled = isClearedImageUpload(key);
         clearButton.addEventListener("click", () => handleClearUpload(key));
         actions.append(clearButton);
@@ -675,10 +702,20 @@ function renderUploadControls() {
   );
 }
 
+function getUploadDisplayLabel(key, target) {
+  return tabIconUploadLabels[key] ?? target.label;
+}
+
 function appendUploadLabel(label, target, key) {
   const title = document.createElement("strong");
-  title.textContent = tabIconUploadLabels[key] ?? target.label;
+  title.id = `upload-title-${key}`;
+  title.textContent = getUploadDisplayLabel(key, target);
   label.append(title);
+
+  const description = document.createElement("span");
+  description.id = `upload-description-${key}`;
+  description.className = "upload-description";
+  label.append(description);
 
   const sizeLines = formatUploadSizeLines(target);
   if (!sizeLines.length) {
@@ -695,7 +732,16 @@ function appendUploadLabel(label, target, key) {
       return sizeLine;
     }),
   );
-  label.append(sizeList);
+  description.append(sizeList);
+}
+
+function getUploadStateText(key) {
+  const fileName = uploadUiState[key]?.fileName;
+  if (fileName) {
+    return `선택한 파일: ${fileName}`;
+  }
+
+  return isClearedImageUpload(key) ? "이미지 삭제됨" : "기본 이미지";
 }
 
 function formatUploadSizeLines(target) {
@@ -732,21 +778,22 @@ function getUploadMeta(key, target) {
 }
 
 function createUploadTintControl(key, target) {
-  const control = document.createElement("label");
+  const control = document.createElement("div");
   control.className = "upload-tint-control";
   control.title = "아이콘 색상 적용";
+  const displayLabel = getUploadDisplayLabel(key, target);
 
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.checked = Boolean(uploadTints[key]);
-  checkbox.ariaLabel = `${target.label} 색상 적용`;
+  checkbox.ariaLabel = `${displayLabel} 색상 적용`;
 
   const input = document.createElement("input");
   input.type = "color";
   input.className = "upload-tint-color";
   input.value = normalizeTintColor(uploadTints[key]) || defaultUploadTintColor;
   input.disabled = !checkbox.checked;
-  input.ariaLabel = `${target.label} 색상`;
+  input.ariaLabel = `${displayLabel} 색상`;
 
   checkbox.addEventListener("change", async () => {
     if (checkbox.checked) {
@@ -1151,6 +1198,7 @@ async function handleUpload(key, file) {
 
   const bytes = new Uint8Array(await file.arrayBuffer());
   uploads[key] = await createUploadRecord(key, file, bytes, file.type);
+  uploadUiState[key] = { fileName: file.name };
 
   if (previews[key]) {
     URL.revokeObjectURL(previews[key]);
@@ -1243,6 +1291,7 @@ function handleClearUpload(key) {
   }
   delete previews[key];
   uploads[key] = { cleared: true };
+  delete uploadUiState[key];
 
   updatePreview();
   updateUploadControlsState();
@@ -1259,6 +1308,9 @@ function updateUploadControlsState() {
   });
   document.querySelectorAll("[data-upload-clear]").forEach((button) => {
     button.disabled = isClearedImageUpload(button.dataset.uploadClear);
+  });
+  document.querySelectorAll("[data-upload-state]").forEach((element) => {
+    element.textContent = getUploadStateText(element.dataset.uploadState);
   });
 }
 

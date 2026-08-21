@@ -410,6 +410,41 @@ test("tab icon upload actions place the color control before the upload button",
   );
 });
 
+test("upload rows keep stable contextual relationships and persistent file state", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /const uploadUiState = \{\};/);
+  assert.match(app, /function getUploadDisplayLabel\(key, target\)/);
+  assert.match(app, /title\.id = `upload-title-\$\{key\}`;/);
+  assert.match(app, /description\.id = `upload-description-\$\{key\}`;/);
+  assert.match(app, /item\.setAttribute\("role", "group"\);/);
+  assert.match(app, /item\.setAttribute\("aria-labelledby", `upload-title-\$\{key\}`\);/);
+  assert.match(app, /input\.id = `upload-input-\$\{key\}`;/);
+  assert.match(app, /button\.htmlFor = input\.id;/);
+  assert.match(app, /input\.setAttribute\("aria-describedby", `upload-description-\$\{key\}`\);/);
+  assert.match(app, /thumb\.setAttribute\("aria-hidden", "true"\);/);
+  assert.match(app, /uploadUiState\[key\] = \{ fileName: file\.name \};/);
+  assert.match(app, /delete uploadUiState\[key\];/);
+});
+
+test("color and tint controls have independent contextual naming sources", async () => {
+  const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /text\.id = `color-label-\$\{key\}`;/);
+  assert.match(app, /valueText\.id = `color-value-\$\{key\}`;/);
+  assert.match(app, /picker\.setAttribute\("aria-labelledby", `\$\{text\.id\} \$\{valueText\.id\}`\);/);
+  assert.match(app, /resetButton\.ariaLabel = `\$\{label\} 초기화`;/);
+  assert.match(app, /const control = document\.createElement\("div"\);/);
+  assert.match(app, /const displayLabel = getUploadDisplayLabel\(key, target\);/);
+});
+
+test("the clipped file input exposes a three-pixel wrapper focus ring", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+
+  assert.match(css, /\.file-button:has\(input:focus-visible\)\s*\{[\s\S]*outline: 3px solid #075c52;/);
+  assert.match(css, /\.file-button input\s*\{[\s\S]*width: 1px;[\s\S]*height: 1px;[\s\S]*clip: rect\(0, 0, 0, 0\);/);
+});
+
 test("tab icon upload labels stay compact and only expose previewed bottom tabs", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
