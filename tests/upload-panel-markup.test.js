@@ -156,7 +156,7 @@ test("theme id and author wrapper inputs keep rounded focus treatment", async ()
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 
   assert.match(css, /\.package-input:focus-within,\s*\.author-input:focus-within/);
-  assert.match(css, /\.package-input input,\s*\.author-input input\s*\{[\s\S]*outline: (?:0|none);/);
+  assert.doesNotMatch(css, /\.package-input input,\s*\.author-input input\s*\{[\s\S]*outline: (?:0|none);/);
   assert.match(css, /\.package-input input,\s*\.author-input input\s*\{[\s\S]*border-radius: inherit;/);
 });
 
@@ -487,7 +487,7 @@ test("color and tint controls have independent contextual naming sources", async
 test("the clipped file input exposes a three-pixel wrapper focus ring", async () => {
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 
-  assert.match(css, /\.file-button:focus-within\s*\{[\s\S]*outline: 3px solid #075c52;/);
+  assert.match(css, /\.file-button:focus-within\s*\{[\s\S]*outline: 3px solid var\(--focus-ring\);/);
   assert.match(css, /\.file-button input\s*\{[\s\S]*width: 1px;[\s\S]*height: 1px;[\s\S]*clip: rect\(0, 0, 0, 0\);/);
 });
 

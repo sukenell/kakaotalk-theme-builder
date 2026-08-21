@@ -3,6 +3,9 @@
   --page: #f7f7f4;
   --panel: #ffffff;
   --line: #deded7;
+  --control-border: #7a8087;
+  --focus-ring: #0b6b5f;
+  --selected-indicator: #0b6b5f;
   --ink: #24272c;
   --muted: #6b6f76;
   --accent: #f4c430;
@@ -42,6 +45,16 @@ input {
 button {
   border: 0;
   cursor: pointer;
+}
+
+:where(
+  a[href],
+  button,
+  input:not(#theme-id-segment):not(#additional-author-name):not([type="file"]):not([type="radio"]),
+  [tabindex]
+):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .preview-mock-control {
@@ -196,7 +209,7 @@ h2 {
 .author-input {
   width: 100%;
   min-width: 0;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   color: var(--ink);
   background: #fbfbfa;
@@ -213,12 +226,10 @@ h2 {
   overflow: hidden;
 }
 
-.text-field input:focus,
 .package-input:focus-within,
 .author-input:focus-within {
-  border-color: #9dbbb5;
-  outline: 0;
-  box-shadow: 0 0 0 3px rgba(79, 143, 132, 0.18);
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .package-input input,
@@ -228,7 +239,6 @@ h2 {
   flex: 1;
   border: 0;
   border-radius: inherit;
-  outline: 0;
   padding: 0 10px;
   background: transparent;
   color: var(--ink);
@@ -272,7 +282,7 @@ h2 {
   gap: 8px;
   min-width: 0;
   height: 34px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   padding: 0 10px;
   background: #ffffff;
@@ -280,17 +290,14 @@ h2 {
   text-align: left;
 }
 
-.color-picker-control:focus-visible,
 .color-picker-control[aria-expanded="true"] {
-  border-color: #9dbbb5;
-  outline: 0;
-  box-shadow: 0 0 0 3px rgba(79, 143, 132, 0.18);
+  border-color: var(--control-border);
 }
 
 .color-picker-swatch {
   width: 18px;
   height: 18px;
-  border: 1px solid rgba(0, 0, 0, 0.16);
+  border: 1px solid var(--control-border);
   border-radius: 6px;
   background: var(--color-picker-swatch, #000000);
 }
@@ -314,7 +321,7 @@ h2 {
   grid-template-columns: minmax(0, 1fr) 38px;
   gap: 8px;
   padding: 8px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 12px 28px rgba(30, 33, 38, 0.14);
@@ -327,7 +334,7 @@ h2 {
 .color-hex-input {
   min-width: 0;
   height: 34px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   padding: 0 10px;
   background: #fbfbfa;
@@ -338,16 +345,10 @@ h2 {
   text-transform: uppercase;
 }
 
-.color-hex-input:focus {
-  border-color: #9dbbb5;
-  outline: 0;
-  box-shadow: 0 0 0 3px rgba(79, 143, 132, 0.18);
-}
-
 .color-native-input {
   width: 38px;
   height: 34px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   padding: 2px;
   background: #ffffff;
@@ -356,7 +357,7 @@ h2 {
 
 .color-reset-button {
   height: 34px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   padding: 0 10px;
   background: #ffffff;
@@ -526,6 +527,7 @@ h2 {
   min-height: 34px;
   margin: 0;
   padding: 0 12px;
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   background: #eff4f2;
   color: #1f5952;
@@ -538,23 +540,23 @@ h2 {
 }
 
 .file-button:focus-within {
-  outline: 3px solid #075c52;
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
 .detail-upload-button {
-  border: 1px solid #d4e4df;
+  border-color: var(--control-border);
   background: #ffffff;
 }
 
 .restore-upload-button {
-  border: 1px solid #ded8c6;
+  border-color: var(--control-border);
   background: #fff9e8;
   color: #5b4a17;
 }
 
 .clear-upload-button {
-  border: 1px solid #ead6d6;
+  border-color: var(--control-border);
   background: #fff3f1;
   color: #a24f49;
 }
@@ -571,7 +573,7 @@ h2 {
   gap: 0;
   min-height: 34px;
   padding: 0 6px 0 0;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   background: #ffffff;
   color: #42524e;
@@ -590,17 +592,17 @@ h2 {
 }
 
 .upload-tint-control input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
+  width: 24px;
+  height: 24px;
   margin: 0;
   accent-color: #1f5952;
 }
 
 .upload-tint-color {
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: 0;
+  width: 24px;
+  height: 24px;
+  padding: 1px;
+  border: 1px solid var(--control-border);
   border-radius: 50%;
   background: transparent;
 }
@@ -652,7 +654,7 @@ h2 {
   grid-template-columns: repeat(2, 38px);
   gap: 6px;
   padding: 4px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-border);
   border-radius: 999px;
   background: #ffffff;
 }
@@ -711,6 +713,7 @@ h2 {
   place-items: center;
   width: 38px;
   height: 38px;
+  border: 1px solid var(--control-border);
   border-radius: 50%;
   background: #ffffff;
   color: var(--ink);
@@ -737,13 +740,14 @@ h2 {
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
   padding: 0;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   background: #ffffff;
   overflow: hidden;
 }
 
 .preview-tabs button {
+  position: relative;
   display: grid;
   place-items: center;
   min-width: 0;
@@ -762,6 +766,21 @@ h2 {
 .preview-tabs button.is-active {
   background: #eef0f2;
   color: var(--muted);
+}
+
+.preview-tabs button:focus-visible {
+  outline-offset: -3px;
+}
+
+.preview-tabs button.is-active::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  bottom: 0;
+  left: 8px;
+  height: 3px;
+  background: var(--selected-indicator);
+  pointer-events: none;
 }
 
 .page-icon {
@@ -1404,7 +1423,7 @@ h2 {
   place-items: center;
   width: 34px;
   height: 34px;
-  border: 1px solid var(--preview-body-border, #26664242);
+  border: 1px solid var(--control-border);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.9);
   color: var(--preview-title, #664242);
@@ -2543,6 +2562,7 @@ h2 {
   place-items: center;
   width: 34px;
   height: 34px;
+  border: 1px solid var(--control-border);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.56);
   color: var(--preview-header, #664242);
@@ -2703,6 +2723,7 @@ h2 {
   grid-template-columns: 54px minmax(0, 1fr);
   align-items: center;
   gap: 6px;
+  width: 100%;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -2721,8 +2742,14 @@ h2 {
   font: inherit;
 }
 
+.nine-patch-fit-control > legend,
+.nine-patch-control > legend {
+  grid-column: 1;
+}
+
 .nine-patch-fit-options {
   display: grid;
+  grid-column: 2;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
   min-width: 0;
@@ -2746,7 +2773,7 @@ h2 {
   align-items: center;
   justify-content: center;
   height: 30px;
-  border: 1px solid color-mix(in srgb, var(--preview-body-border, #ead0d0) 84%, transparent);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.68);
   color: var(--preview-title, #4d3434);
@@ -2760,8 +2787,11 @@ h2 {
 }
 
 .nine-patch-fit-option input:focus-visible + label {
-  outline: 3px solid var(--focus-ring, #075c52);
-  outline-offset: 2px;
+  outline: 3px solid var(--focus-ring);
+  outline-offset: -3px;
+  box-shadow:
+    inset 0 0 0 3px #ffffff,
+    inset 0 0 0 6px var(--focus-ring);
 }
 
 .nine-patch-control {
@@ -2769,6 +2799,7 @@ h2 {
   grid-template-columns: 54px minmax(0, 1fr);
   align-items: center;
   gap: 5px;
+  width: 100%;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -2780,6 +2811,7 @@ h2 {
 
 .nine-patch-control-fields {
   display: grid;
+  grid-column: 2;
   grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr) 34px;
   align-items: center;
   gap: 5px;
@@ -2787,7 +2819,10 @@ h2 {
 }
 
 .nine-patch-control input[type="range"] {
+  width: 100%;
   min-width: 0;
+  min-height: 24px;
+  margin: 0;
   accent-color: #2f9f68;
 }
 
@@ -3448,6 +3483,7 @@ h2 {
 .download-actions button {
   min-height: 42px;
   padding: 0 16px;
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   color: var(--accent-ink);
   background: var(--accent);
@@ -3462,6 +3498,14 @@ h2 {
 .download-actions button:disabled {
   cursor: wait;
   opacity: 0.6;
+}
+
+#preview-frame :is(button, input, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: -6px;
+  box-shadow:
+    inset 0 0 0 3px #ffffff,
+    inset 0 0 0 6px var(--focus-ring);
 }
 
 @media (max-width: 1080px) {

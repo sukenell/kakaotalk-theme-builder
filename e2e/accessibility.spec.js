@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import {
   CONTRAST_CONTEXTS,
   compositeColors,
+  contrastRatio,
   evaluateContrastContext,
   evaluateThemeContrast,
   parseCssHex,
@@ -116,6 +117,84 @@ async function fillThemeHexColor(page, key, value) {
   const input = row.locator(`#color-hex-${key}`);
   await input.fill(value);
   return { input, row };
+}
+
+function parseComputedColor(value) {
+  const channels = value.match(/[\d.]+/g)?.map(Number) ?? [];
+  if (channels.length < 3) {
+    return null;
+  }
+
+  return {
+    r: channels[0],
+    g: channels[1],
+    b: channels[2],
+    a: channels[3] ?? 1,
+  };
+}
+
+function computedContrast(foreground, background) {
+  const parsedForeground = parseComputedColor(foreground);
+  const parsedBackground = parseComputedColor(background);
+  const resolvedForeground = compositeColors(parsedForeground, parsedBackground);
+  return contrastRatio(resolvedForeground, parsedBackground);
+}
+
+async function tabTo(page, locator, maximumTabs = 200) {
+  for (let index = 0; index < maximumTabs; index += 1) {
+    await page.keyboard.press("Tab");
+    if (await locator.evaluate((element) => document.activeElement === element)) {
+      return;
+    }
+  }
+
+  expect(await locator.evaluate((element) => document.activeElement === element), "target is reachable by Tab").toBe(true);
+}
+
+async function focusGeometry(locator) {
+  return locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const bounds = element.getBoundingClientRect();
+    const outlineWidth = Number.parseFloat(style.outlineWidth) || 0;
+    const outlineOffset = Number.parseFloat(style.outlineOffset) || 0;
+    const expansion = Math.max(0, outlineWidth + outlineOffset);
+    const focusBounds = {
+      left: bounds.left - expansion,
+      right: bounds.right + expansion,
+      top: bounds.top - expansion,
+      bottom: bounds.bottom + expansion,
+    };
+    const clippedBy = [];
+
+    for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      const ancestorStyle = getComputedStyle(ancestor);
+      const clipsX = /(?:auto|clip|hidden|scroll)/.test(ancestorStyle.overflowX);
+      const clipsY = /(?:auto|clip|hidden|scroll)/.test(ancestorStyle.overflowY);
+      if (!clipsX && !clipsY) {
+        continue;
+      }
+
+      const ancestorBounds = ancestor.getBoundingClientRect();
+      if (
+        (clipsX && (focusBounds.left < ancestorBounds.left - 1 || focusBounds.right > ancestorBounds.right + 1)) ||
+        (clipsY && (focusBounds.top < ancestorBounds.top - 1 || focusBounds.bottom > ancestorBounds.bottom + 1))
+      ) {
+        clippedBy.push(ancestor.id || ancestor.className || ancestor.tagName);
+      }
+    }
+
+    return {
+      backgroundColor: style.backgroundColor,
+      boxShadow: style.boxShadow,
+      clippedBy,
+      focusBounds,
+      outlineColor: style.outlineColor,
+      outlineOffset,
+      outlineStyle: style.outlineStyle,
+      outlineWidth,
+      viewport: { height: innerHeight, width: innerWidth },
+    };
+  });
 }
 
 async function expectPreviewInvariant(page, expectedIndex) {
@@ -1413,7 +1492,7 @@ test("@task2 reaches the clipped file input by Tab and keeps a visible focus pat
   expect(focusAppearance).toMatchObject({
     outlineStyle: "solid",
     outlineWidth: "3px",
-    outlineColor: "rgb(7, 92, 82)",
+    outlineColor: "rgb(11, 107, 95)",
   });
   expect(focusAppearance.width).toBeGreaterThan(40);
   expect(focusAppearance.height).toBeGreaterThanOrEqual(34);
@@ -1440,7 +1519,7 @@ test("@task2 reaches the clipped file input by Tab and keeps a visible focus pat
   await pointerChooser.setFiles([]);
   expect(await uploadInput.evaluate((element) => document.activeElement === element)).toBe(true);
   await expect(fileButton).toHaveCSS("outline-width", "3px");
-  await expect(fileButton).toHaveCSS("outline-color", "rgb(7, 92, 82)");
+  await expect(fileButton).toHaveCSS("outline-color", "rgb(11, 107, 95)");
 
   await page.keyboard.press("Tab");
   expect(await nextUploadInput.evaluate((element) => document.activeElement === element)).toBe(true);
@@ -2946,4 +3025,177 @@ test("@task8-user low-contrast content leaves app chrome and warning UI axe-clea
     .analyze();
 
   expect(results.violations).toEqual([]);
+});
+
+test("@task9-focus renders essential control boundaries at three-to-one contrast", async ({ page }) => {
+  await page.goto("/");
+  await page.locator(".color-picker-control").first().click();
+
+  const controlCases = [
+    ["theme name", page.locator("#app-name")],
+    ["theme id", page.locator(".package-input")],
+    ["author", page.locator(".author-input")],
+    ["color picker", page.locator(".color-picker-control").first()],
+    ["HEX input", page.locator(".color-hex-input").first()],
+    ["native color input", page.locator(".color-native-input").first()],
+    ["color reset", page.locator(".color-reset-button").first()],
+    ["file upload", page.locator(".file-button").first()],
+    ["tint control", page.locator(".upload-tint-control").first()],
+    ["device picker", page.locator(".device-picker")],
+    ["preview previous", page.locator("#preview-previous")],
+    ["preview tabs", page.locator("#preview-tabs")],
+  ];
+
+  for (const [name, locator] of controlCases) {
+    const colors = await locator.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        background: style.backgroundColor,
+        border: style.borderTopColor,
+        borderWidth: Number.parseFloat(style.borderTopWidth),
+      };
+    });
+    expect(colors.borderWidth, `${name} has a perceivable boundary`).toBeGreaterThanOrEqual(1);
+    expect(computedContrast(colors.border, colors.background), `${name} boundary contrast`).toBeGreaterThanOrEqual(3);
+  }
+});
+
+test("@task9-focus exposes three-pixel unclipped focus rings through actual Tab navigation", async ({ page }) => {
+  await page.goto("/");
+
+  const focusCases = [
+    {
+      name: "theme name",
+      target: page.locator("#app-name"),
+      proxy: page.locator("#app-name"),
+      adjacentBackground: "rgb(255, 255, 255)",
+    },
+    {
+      name: "theme id wrapper",
+      target: page.locator("#theme-id-segment"),
+      proxy: page.locator(".package-input"),
+      adjacentBackground: "rgb(255, 255, 255)",
+    },
+    {
+      name: "selected preview tab",
+      target: page.locator('#preview-tabs > button[aria-selected="true"]'),
+      proxy: page.locator('#preview-tabs > button[aria-selected="true"]'),
+      adjacentBackground: "rgb(241, 242, 243)",
+    },
+    {
+      name: "file label",
+      target: page.locator("#upload-input-mainBackground"),
+      proxy: page.locator('label.file-button[for="upload-input-mainBackground"]'),
+      adjacentBackground: "rgb(255, 255, 255)",
+    },
+  ];
+
+  for (const { name, target, proxy, adjacentBackground } of focusCases) {
+    await tabTo(page, target);
+    const appearance = await focusGeometry(proxy);
+    expect(appearance.outlineStyle, `${name} ring style`).toBe("solid");
+    expect(appearance.outlineWidth, `${name} ring width`).toBeGreaterThanOrEqual(3);
+    expect(computedContrast(appearance.outlineColor, adjacentBackground), `${name} ring contrast`).toBeGreaterThanOrEqual(3);
+    expect(appearance.focusBounds.left, `${name} ring starts in viewport`).toBeGreaterThanOrEqual(-1);
+    expect(appearance.focusBounds.top, `${name} ring starts in viewport`).toBeGreaterThanOrEqual(-1);
+    expect(appearance.focusBounds.right, `${name} ring ends in viewport`).toBeLessThanOrEqual(appearance.viewport.width + 1);
+    expect(appearance.focusBounds.bottom, `${name} ring ends in viewport`).toBeLessThanOrEqual(appearance.viewport.height + 1);
+    expect(appearance.clippedBy, `${name} ring clears every clip ancestor`).toEqual([]);
+  }
+});
+
+test("@task9-focus gives the selected preview tab a contrasting internal three-pixel indicator", async ({ page }) => {
+  await page.goto("/");
+
+  const indicator = await page.locator('#preview-tabs > button[aria-selected="true"]').evaluate((element) => {
+    const buttonStyle = getComputedStyle(element);
+    const style = getComputedStyle(element, "::after");
+    return {
+      background: style.backgroundColor,
+      buttonBackground: buttonStyle.backgroundColor,
+      bottom: Number.parseFloat(style.bottom),
+      content: style.content,
+      height: Number.parseFloat(style.height),
+      left: Number.parseFloat(style.left),
+      position: style.position,
+      right: Number.parseFloat(style.right),
+    };
+  });
+
+  expect(indicator.content).not.toBe("none");
+  expect(indicator.position).toBe("absolute");
+  expect(indicator.height).toBeGreaterThanOrEqual(3);
+  expect(indicator.bottom).toBeGreaterThanOrEqual(0);
+  expect(indicator.left).toBeGreaterThanOrEqual(0);
+  expect(indicator.right).toBeGreaterThanOrEqual(0);
+  expect(computedContrast(indicator.background, indicator.buttonBackground)).toBeGreaterThanOrEqual(3);
+});
+
+test("@task9-focus keeps proxy and small control hit areas at least twenty-four CSS pixels", async ({ page }) => {
+  await page.goto("/");
+  const tintCheckbox = page.locator('.upload-tint-control input[type="checkbox"]').first();
+  await tintCheckbox.check();
+  await page.locator(".color-picker-control").first().click();
+
+  const initialTargets = [
+    ["file label", page.locator(".file-button").first()],
+    ["tint checkbox label", page.locator(".upload-tint-checkbox-label").first()],
+    ["tint checkbox", tintCheckbox],
+    ["tint color", page.locator(".upload-tint-color").first()],
+    ["native theme color", page.locator(".color-native-input").first()],
+  ];
+
+  for (const [name, locator] of initialTargets) {
+    const bounds = await locator.boundingBox();
+    expect(bounds, `${name} is rendered`).not.toBeNull();
+    expect(bounds.width, `${name} target width`).toBeGreaterThanOrEqual(24);
+    expect(bounds.height, `${name} target height`).toBeGreaterThanOrEqual(24);
+  }
+
+  await page.getByRole("tab", { name: "말풍선 상세", exact: true }).click();
+  const fitOptions = page.locator(".nine-patch-fit-option label");
+  await expect(fitOptions).toHaveCount(2);
+  for (const label of await fitOptions.all()) {
+    const bounds = await label.boundingBox();
+    expect(bounds.width, "hidden radio label width").toBeGreaterThanOrEqual(24);
+    expect(bounds.height, "hidden radio label height").toBeGreaterThanOrEqual(24);
+  }
+
+  const ranges = page.locator('.nine-patch-control input[type="range"]');
+  await expect(ranges).toHaveCount(8);
+  for (const range of await ranges.all()) {
+    const bounds = await range.boundingBox();
+    expect(bounds.width, "range target width").toBeGreaterThanOrEqual(24);
+    expect(bounds.height, "range target height").toBeGreaterThanOrEqual(24);
+  }
+
+  const fitLayout = await page.locator(".nine-patch-fit-control").evaluate((fieldset) => {
+    const fieldsetBounds = fieldset.getBoundingClientRect();
+    const legendBounds = fieldset.querySelector("legend").getBoundingClientRect();
+    const optionsBounds = fieldset.querySelector(".nine-patch-fit-options").getBoundingClientRect();
+    return {
+      fieldsetLeft: fieldsetBounds.left,
+      legendRight: legendBounds.right,
+      optionsLeft: optionsBounds.left,
+      optionsWidth: optionsBounds.width,
+    };
+  });
+  expect(fitLayout.optionsWidth).toBeGreaterThanOrEqual(48);
+  expect(fitLayout.optionsLeft).toBeGreaterThanOrEqual(fitLayout.legendRight);
+  expect(fitLayout.optionsLeft).toBeGreaterThan(fitLayout.fieldsetLeft);
+});
+
+test("@task9-focus uses a bright and dark internal double ring for controls over preview imagery", async ({ page }) => {
+  await page.goto("/");
+  const bubbleTab = page.getByRole("tab", { name: "말풍선 상세", exact: true });
+  await bubbleTab.click();
+  const imageControl = page.getByRole("button", { name: "다음 말풍선", exact: true });
+  await tabTo(page, imageControl);
+
+  const appearance = await focusGeometry(imageControl);
+  expect(appearance.outlineStyle).toBe("solid");
+  expect(appearance.outlineWidth).toBeGreaterThanOrEqual(3);
+  expect(appearance.boxShadow).toContain("rgb(255, 255, 255)");
+  expect(appearance.boxShadow).toContain("rgb(11, 107, 95)");
+  expect(appearance.clippedBy).toEqual([]);
 });

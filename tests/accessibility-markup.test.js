@@ -93,3 +93,15 @@ test("language and download names expose their intended meaning", () => {
   assert.match(html, /<button\b[^>]*\bid="download-ios"[^>]*\baria-label="iOS 테마 다운로드"[^>]*>IOS<\/button>/);
   assert.match(html, /<button\b[^>]*\bid="download-android"[^>]*\baria-label="Android 소스 다운로드"[^>]*>Android<\/button>/);
 });
+
+test("shared control, focus, and selected-state tokens keep exact accessible values", () => {
+  const root = css.match(/:root\s*\{[\s\S]*?\}/)?.[0] ?? "";
+
+  assert.match(root, /--control-border:\s*#7a8087;/i);
+  assert.match(root, /--focus-ring:\s*#0b6b5f;/i);
+  assert.match(root, /--selected-indicator:\s*#0b6b5f;/i);
+  assert.doesNotMatch(css, /outline:\s*0(?:px)?\s*;/i);
+  assert.match(css, /:focus-visible[\s\S]*outline:\s*3px solid var\(--focus-ring\)/);
+  assert.match(css, /\.file-button:focus-within[\s\S]*outline:\s*3px solid var\(--focus-ring\)/);
+  assert.match(css, /\.preview-tabs button\.is-active::after[\s\S]*height:\s*3px;/);
+});
