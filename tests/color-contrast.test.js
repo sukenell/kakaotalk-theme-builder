@@ -463,6 +463,7 @@ test("CONTRAST_CONTEXTS covers exactly every preview page with auditable fields"
     assert.ok(["cleared", "bundled", "user", "none"].includes(context.imageState));
     assert.ok(Array.isArray(context.imageKeys));
     assert.ok(Array.isArray(context.protectedImageKeys));
+    assert.ok(Array.isArray(context.requiresOpaqueColorKeys));
     assert.equal(typeof context.imageStates, "object", `${context.id} declares per-image default states`);
     assert.deepEqual(
       Object.keys(context.imageStates).sort(),
@@ -731,6 +732,88 @@ test("token-derived preview surfaces never freeze their default color-mix values
   assert.ok(report.byColor.sectionTitle.some(({ id }) => id === "theme-list-secondary-selected"));
 });
 
+test("weighted layers declare when their backing guarantee requires an opaque theme token", () => {
+  const weightedContexts = CONTRAST_CONTEXTS.filter((context) =>
+    context.backgroundLayers?.some((layer) => layer && typeof layer === "object" && "alpha" in layer),
+  );
+  const byId = Object.fromEntries(weightedContexts.map((context) => [context.id, context]));
+
+  assert.deepEqual(
+    weightedContexts.map(({ id }) => id),
+    [
+      "more-service-icon",
+      "more-service-title",
+      "more-page-dot-default",
+      "more-page-dot-selected",
+      "theme-list-title-selected",
+      "theme-list-secondary-selected",
+      "theme-list-choice-selected",
+      "theme-list-user-icon",
+    ],
+  );
+  for (const id of ["more-service-icon", "more-service-title", "more-page-dot-default", "more-page-dot-selected"]) {
+    assert.deepEqual(byId[id].requiresOpaqueColorKeys, ["mainBackground"], id);
+  }
+  for (const id of [
+    "theme-list-title-selected",
+    "theme-list-secondary-selected",
+    "theme-list-choice-selected",
+    "theme-list-user-icon",
+  ]) {
+    assert.deepEqual(byId[id].requiresOpaqueColorKeys, [], id);
+    assert.equal(byId[id].backgroundLayers[0], "#FFFFFF", `${id} has a fixed opaque base`);
+  }
+});
+
+test("translucent mainBackground makes every more-service backing unresolved with or without a user image", () => {
+  const colors = {
+    ...defaultThemeState.colors,
+    mainBackground: "#80000000",
+    headerText: "#FFFFFFFF",
+    titleText: "#FFFFFFFF",
+  };
+  const contextIds = [
+    "more-service-icon",
+    "more-service-title",
+    "more-page-dot-default",
+    "more-page-dot-selected",
+  ];
+
+  for (const imageStates of [{}, { mainBackground: "user" }]) {
+    const report = evaluateThemeContrast({ colors, imageStates, contexts: CONTRAST_CONTEXTS });
+    for (const id of contextIds) {
+      const result = report.results.find(({ id: resultId }) => resultId === id);
+      assert.equal(result.status, "unknown", `${id} with ${imageStates.mainBackground ?? "cleared"} image`);
+      assert.equal(result.ratio, null, id);
+      assert.ok(result.colorKeys.includes("mainBackground"), `${id} retains the opacity dependency`);
+    }
+    assert.ok(
+      report.byColor.mainBackground.some(({ id }) => id === "more-service-title"),
+      "per-color descriptions retain the translucent token dependency",
+    );
+  }
+});
+
+test("translucent sectionTitle remains computable over the theme list fixed white base", () => {
+  const colors = { ...defaultThemeState.colors, sectionTitle: "#7F000000" };
+  const report = evaluateThemeContrast({ colors, contexts: CONTRAST_CONTEXTS });
+  const result = report.results.find(({ id }) => id === "theme-list-secondary-selected");
+  const expectedBackground = compositeColors(
+    { ...parseThemeArgb(colors.sectionTitle), a: parseThemeArgb(colors.sectionTitle).a * 0.06 },
+    parseCssHex("#FFFFFF"),
+  );
+
+  assert.equal(result.status, "pass");
+  assertClose(result.ratio, contrastRatio(parseCssHex("#687078"), expectedBackground));
+  for (const id of ["theme-list-title-selected", "theme-list-secondary-selected", "theme-list-choice-selected"]) {
+    const weightedResult = report.results.find(({ id: resultId }) => resultId === id);
+    assert.notEqual(weightedResult.status, "unknown", id);
+    assert.equal(typeof weightedResult.ratio, "number", id);
+  }
+  assert.equal(report.results.find(({ id }) => id === "theme-list-user-icon").status, "unknown");
+  assert.ok(report.byColor.sectionTitle.some(({ id }) => id === result.id));
+});
+
 test("image-backed text contexts use a guaranteed backing instead of pretending the raster was computed", () => {
   const protectedContexts = CONTRAST_CONTEXTS.filter(({ id }) =>
     [
@@ -788,6 +871,9 @@ test("the human-readable contrast ledger records every selector, state, threshol
     assert.match(row, new RegExp(context.selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     if ((context.protectedImageKeys ?? []).length > 0) {
       assert.match(row, new RegExp(`보호 키: ${context.protectedImageKeys.join(", ")}`));
+    }
+    if ((context.requiresOpaqueColorKeys ?? []).length > 0) {
+      assert.match(row, new RegExp(`불투명 색상 요구: ${context.requiresOpaqueColorKeys.join(", ")}`));
     }
   }
 });

@@ -2572,6 +2572,80 @@ test("@task8-user matches token-mixed more and selected-theme surfaces under adv
   await expect(page.locator(`[data-contrast-context="${context.id}"]`)).toContainText("미달");
 });
 
+test("@task8-user treats translucent more backings as unknown while fixed-white theme mixes stay numeric", async ({ page }) => {
+  await page.goto("/");
+  const colors = {
+    ...defaultThemeState.colors,
+    mainBackground: "#80000000",
+    headerText: "#FFFFFFFF",
+    titleText: "#FFFFFFFF",
+    sectionTitle: "#7F000000",
+  };
+  const moreContextIds = [
+    "more-service-icon",
+    "more-service-title",
+    "more-page-dot-default",
+    "more-page-dot-selected",
+  ];
+
+  await page.getByRole("tab", { name: "더보기", exact: true }).click();
+  await fillThemeHexColor(page, "mainBackground", colors.mainBackground);
+  await fillThemeHexColor(page, "headerText", colors.headerText);
+  await fillThemeHexColor(page, "titleText", colors.titleText);
+
+  const titleContext = CONTRAST_CONTEXTS.find(({ id }) => id === "more-service-title");
+  const [renderedTitle] = await renderedContextSamples(page.locator(titleContext.selector), titleContext);
+  const clearedReport = evaluateThemeContrast({ colors, contexts: CONTRAST_CONTEXTS });
+  const servicePanelAlpha = await page.locator("#preview-panel-more .more-service-panel").evaluate((element) => {
+    const channels = getComputedStyle(element).backgroundColor.match(/[\d.]+/g)?.map(Number) ?? [];
+    return channels[3] ?? 1;
+  });
+  expect(renderedTitle.ratio).toBeCloseTo(4.5996, 2);
+  expect(servicePanelAlpha).toBeLessThan(1);
+  expect(clearedReport.results.find(({ id }) => id === titleContext.id).status).toBe("unknown");
+  for (const id of moreContextIds) {
+    const result = page.locator(`[data-contrast-context="${id}"]`);
+    await expect(result).toContainText("자동 확인 불가");
+    await expect(result).toContainText("투명 색상");
+  }
+  const mainDescription = page.locator("#color-contrast-description-mainBackground");
+  await expect(mainDescription).toContainText("자동 확인 불가");
+  await expect(mainDescription).toContainText("더보기 서비스 이름");
+  await expect(page.locator("#contrast-current-summary")).toContainText("설정은 유지");
+  await expect(page.locator("#download-ios")).toBeEnabled();
+
+  await page.locator("#upload-input-mainBackground").setInputFiles({
+    name: "translucent-backing.png",
+    mimeType: "image/png",
+    buffer: await createPngBuffer(page, 32, 32, "#ffffff"),
+  });
+  await expect(page.locator("html")).toHaveCSS("--preview-main-image", /blob:/);
+  await expect(page.locator("#preview-panel-more .more-screen")).toHaveCSS("background-image", /blob:/);
+  const userImageReport = evaluateThemeContrast({
+    colors,
+    imageStates: { mainBackground: "user" },
+    contexts: CONTRAST_CONTEXTS,
+  });
+  for (const id of moreContextIds) {
+    expect(userImageReport.results.find(({ id: resultId }) => resultId === id).status).toBe("unknown");
+    await expect(page.locator(`[data-contrast-context="${id}"]`)).toContainText("자동 확인 불가");
+  }
+
+  await page.getByRole("tab", { name: "테마 목록", exact: true }).click();
+  await fillThemeHexColor(page, "sectionTitle", colors.sectionTitle);
+  const themeReport = evaluateThemeContrast({ colors, contexts: CONTRAST_CONTEXTS });
+  for (const id of ["theme-list-title-selected", "theme-list-secondary-selected", "theme-list-choice-selected"]) {
+    const themeContext = CONTRAST_CONTEXTS.find(({ id: contextId }) => contextId === id);
+    const themeResult = themeReport.results.find(({ id: resultId }) => resultId === id);
+    const [renderedTheme] = await renderedContextSamples(page.locator(themeContext.selector), themeContext);
+    expect(themeResult.status, id).not.toBe("unknown");
+    expect(renderedTheme.ratio, id).toBeCloseTo(themeResult.ratio, 2);
+    await expect(page.locator(`[data-contrast-context="${id}"]`)).toContainText(
+      `${themeResult.ratio.toFixed(2)}:1`,
+    );
+  }
+});
+
 for (const { width, height } of [
   { width: 1280, height: 800 },
   { width: 760, height: 800 },

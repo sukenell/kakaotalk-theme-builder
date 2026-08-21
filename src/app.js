@@ -460,7 +460,7 @@ function formatContrastCounts(summary) {
 
 function formatContrastResult(result) {
   if (result.status === "unknown") {
-    return `${result.label}: 자동 확인 불가 — 이미지 또는 렌더링 문맥을 수동 확인해 주세요. 기준 ${result.required.toFixed(2)}:1`;
+    return `${result.label}: 자동 확인 불가 — 이미지, 투명 색상 또는 렌더링 문맥을 수동 확인해 주세요. 기준 ${result.required.toFixed(2)}:1`;
   }
 
   const outcome = result.status === "pass" ? "통과" : "미달";

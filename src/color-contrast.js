@@ -238,6 +238,7 @@ const contrastContext = (definition) => {
   const imageStates = Object.freeze({ ...declaredImageStates });
   const imageKeys = Object.freeze(Object.keys(imageStates));
   const protectedImageKeys = Object.freeze([...(definition.protectedImageKeys ?? [])]);
+  const requiresOpaqueColorKeys = Object.freeze([...(definition.requiresOpaqueColorKeys ?? [])]);
   const states = Object.values(imageStates);
   const imageState = states.length === 0
     ? "none"
@@ -256,6 +257,7 @@ const contrastContext = (definition) => {
     imageState,
     imageStates,
     protectedImageKeys,
+    requiresOpaqueColorKeys,
   });
 };
 
@@ -282,6 +284,8 @@ const productImages = Object.freeze({
  * theme color keys use KakaoTalk's ARGB syntax. `backgroundLayers` are ordered
  * back-to-front. Raster-dependent rows remain unknown unless each dependency
  * is named in `protectedImageKeys` and covered by the declared CSS guarantee.
+ * A guarantee guarded by `requiresOpaqueColorKeys` applies only while every
+ * named theme token is fully opaque.
  */
 export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
@@ -559,18 +563,21 @@ export const CONTRAST_CONTEXTS = Object.freeze([
     id: "more-service-icon", pageId: "more", label: "더보기 서비스 아이콘", selector: "#preview-panel-more .more-service-icon",
     foregroundKey: "headerText", backgroundLayers: ["#FFFFFF", { colorKey: "mainBackground", alpha: 0.72 }, { colorKey: "headerText", alpha: 0.08 }],
     imageStates: mainImage, kind: "ui-component", guarantee: "opaque-backing", protectedImageKeys: ["mainBackground"],
+    requiresOpaqueColorKeys: ["mainBackground"],
     foregroundProperty: "border-top-color", evidence: "mainBackground 72% panel 위 headerText 8% 아이콘 채움과 headerText 경계",
   }),
   contrastContext({
     id: "more-service-title", pageId: "more", label: "더보기 서비스 이름", selector: "#preview-panel-more .more-service-item strong",
     foregroundKey: "titleText", backgroundLayers: ["#FFFFFF", { colorKey: "mainBackground", alpha: 0.72 }],
     imageStates: mainImage, guarantee: "opaque-backing", protectedImageKeys: ["mainBackground"],
+    requiresOpaqueColorKeys: ["mainBackground"],
     evidence: "main raster를 차단하는 불투명 mainBackground 72% + white color-mix",
   }),
   contrastContext({
     id: "more-page-dot-default", pageId: "more", label: "더보기 기본 페이지 점", selector: "#preview-panel-more .more-page-dots span:not(.active)",
     foregroundKey: "headerText", foregroundOpacity: 0.65, backgroundLayers: ["#FFFFFF", { colorKey: "mainBackground", alpha: 0.72 }], imageStates: mainImage, kind: "ui-component",
     guarantee: "opaque-backing", protectedImageKeys: ["mainBackground"], foregroundProperty: "background-color",
+    requiresOpaqueColorKeys: ["mainBackground"],
     backgroundSource: "parent",
     evidence: "불투명 service panel 위 65% headerText 페이지 상태",
   }),
@@ -578,6 +585,7 @@ export const CONTRAST_CONTEXTS = Object.freeze([
     id: "more-page-dot-selected", pageId: "more", label: "더보기 선택 페이지 점", selector: "#preview-panel-more .more-page-dots span.active",
     foregroundKey: "headerText", backgroundLayers: ["#FFFFFF", { colorKey: "mainBackground", alpha: 0.72 }], imageStates: mainImage, kind: "ui-component",
     guarantee: "opaque-backing", protectedImageKeys: ["mainBackground"], foregroundProperty: "background-color",
+    requiresOpaqueColorKeys: ["mainBackground"],
     backgroundSource: "parent",
     state: "selected", evidence: "불투명 service panel 위 headerText 선택 상태",
   }),
@@ -925,6 +933,14 @@ export function evaluateContrastContext(context, colors, options = {}) {
     return unknown;
   }
 
+  const hasNonOpaqueRequiredColor = (context.requiresOpaqueColorKeys ?? []).some((key) => {
+    const color = parseThemeArgb(colors?.[key]);
+    return !color || color.a < 1;
+  });
+  if (hasNonOpaqueRequiredColor) {
+    return unknown;
+  }
+
   const protectedImageKeys = new Set(context.protectedImageKeys ?? []);
   const hasUnresolvedRaster = (context.imageKeys ?? []).some((key) => {
     const state = options.imageStates?.[key] ?? context.imageStates?.[key] ?? context.imageState;
@@ -964,6 +980,9 @@ function getContextColorKeys(context) {
   addKey(context.backgroundKey);
   for (const layer of context.backgroundLayers ?? []) {
     addKey(layer?.colorKey);
+  }
+  for (const key of context.requiresOpaqueColorKeys ?? []) {
+    addKey(key);
   }
 
   return keys;
@@ -1022,6 +1041,7 @@ export function evaluateThemeContrast({
       ...context,
       imageKeys: [...(context.imageKeys ?? [])],
       protectedImageKeys: [...(context.protectedImageKeys ?? [])],
+      requiresOpaqueColorKeys: [...(context.requiresOpaqueColorKeys ?? [])],
       colorKeys: getContextColorKeys(context),
       effectiveImageStates: getEffectiveImageStates(context, imageStates),
       ...evaluation,
