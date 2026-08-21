@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 import { IMAGE_TARGETS } from "../src/theme-model.js";
 
 async function createPngBuffer(page, width, height) {
@@ -209,6 +210,37 @@ test("@task2 gives every active preview upload and color row one contextual name
       }
     }
   }
+});
+
+test("@task2 uses valid full-text naming nodes for compact tab icon rows", async ({ page }) => {
+  await page.goto("/");
+
+  const results = await new AxeBuilder({ page })
+    .include("#upload-controls")
+    .withRules(["aria-prohibited-attr"])
+    .analyze();
+  expect(results.violations).toEqual([]);
+  await expect(page.locator("#upload-controls strong[aria-label]")).toHaveCount(0);
+
+  for (const [key, visibleTitle] of [
+    ["tabFriendIcon", "친구1"],
+    ["tabFriendIconSelected", "친구2"],
+  ]) {
+    const semanticTitle = IMAGE_TARGETS[key].label;
+    const row = page.locator(`#upload-controls > .upload-item[aria-labelledby="upload-title-${key}"]`);
+    const namingNode = row.locator(`#upload-title-${key}`);
+    const visibleNode = row.locator(".upload-visible-title");
+
+    await expect(visibleNode).toHaveText(visibleTitle);
+    await expect(visibleNode).toHaveAttribute("aria-hidden", "true");
+    await expect(namingNode).toHaveText(semanticTitle);
+    await expect(namingNode).not.toHaveAttribute("aria-label");
+    await expect(row).toHaveAccessibleName(semanticTitle);
+    await expect(row.locator(`#upload-input-${key}`)).toHaveAccessibleName(`${semanticTitle} 업로드`);
+    await expect(row.getByRole("checkbox", { name: `${semanticTitle} 색상 적용`, exact: true })).toHaveCount(1);
+    await expect(row.locator('input[type="color"]')).toHaveAccessibleName(`${semanticTitle} 색상`);
+  }
+
 });
 
 test("@task2 keeps color control names independent and updates the picker HEX name", async ({ page }) => {

@@ -623,7 +623,6 @@ function renderUploadControls() {
   uploadControlRoot.replaceChildren(
     ...visibleUploadKeys.map((key) => {
       const target = IMAGE_TARGETS[key];
-      const { accessibleName } = getUploadDisplayLabel(key, target);
       const item = document.createElement("div");
       item.className = "upload-item";
       item.setAttribute("role", "group");
@@ -651,12 +650,12 @@ function renderUploadControls() {
 
       const button = document.createElement("label");
       button.className = "file-button";
-      button.textContent = "업로드";
+      const uploadActionLabel = createUploadActionLabel(key, "upload", "업로드");
       const input = document.createElement("input");
       input.id = `upload-input-${key}`;
       input.type = "file";
       input.accept = "image/png,image/jpeg,image/webp";
-      input.ariaLabel = `${accessibleName} 업로드`;
+      input.setAttribute("aria-labelledby", `upload-title-${key} upload-action-upload-${key}`);
       input.setAttribute("aria-describedby", `upload-description-${key}`);
       button.htmlFor = input.id;
       input.addEventListener("change", () => {
@@ -668,7 +667,7 @@ function renderUploadControls() {
         handleUpload(key, file);
       });
       input.addEventListener("cancel", () => input.focus());
-      button.append(input);
+      button.append(uploadActionLabel, input);
 
       const actions = document.createElement("div");
       actions.className = "upload-actions";
@@ -681,9 +680,10 @@ function renderUploadControls() {
         detailButton.className = "detail-upload-button";
         detailButton.type = "button";
         detailButton.dataset.bubbleDetail = key;
-        detailButton.textContent = "상세";
-        detailButton.ariaLabel = `${accessibleName} 상세`;
+        const detailActionLabel = createUploadActionLabel(key, "detail", "상세");
+        detailButton.setAttribute("aria-labelledby", `upload-title-${key} ${detailActionLabel.id}`);
         detailButton.addEventListener("click", () => openBubbleDetail(key));
+        detailButton.append(detailActionLabel);
         actions.append(detailButton);
       }
       if (clearableImageKeys.has(key)) {
@@ -691,10 +691,11 @@ function renderUploadControls() {
         clearButton.className = "clear-upload-button";
         clearButton.type = "button";
         clearButton.dataset.uploadClear = key;
-        clearButton.textContent = "삭제";
-        clearButton.ariaLabel = `${accessibleName} 삭제`;
+        const clearActionLabel = createUploadActionLabel(key, "clear", "삭제");
+        clearButton.setAttribute("aria-labelledby", `upload-title-${key} ${clearActionLabel.id}`);
         clearButton.disabled = isClearedImageUpload(key);
         clearButton.addEventListener("click", () => handleClearUpload(key));
+        clearButton.append(clearActionLabel);
         actions.append(clearButton);
       }
 
@@ -713,11 +714,16 @@ function getUploadDisplayLabel(key, target) {
 
 function appendUploadLabel(label, target, key) {
   const displayLabel = getUploadDisplayLabel(key, target);
-  const title = document.createElement("strong");
+  const visibleTitle = document.createElement("strong");
+  visibleTitle.className = "upload-visible-title";
+  visibleTitle.textContent = displayLabel.text;
+  visibleTitle.setAttribute("aria-hidden", "true");
+
+  const title = document.createElement("span");
   title.id = `upload-title-${key}`;
-  title.textContent = displayLabel.text;
-  title.ariaLabel = displayLabel.accessibleName;
-  label.append(title);
+  title.className = "visually-hidden";
+  title.textContent = displayLabel.accessibleName;
+  label.append(visibleTitle, title);
 
   const description = document.createElement("span");
   description.id = `upload-description-${key}`;
@@ -740,6 +746,16 @@ function appendUploadLabel(label, target, key) {
     }),
   );
   description.append(sizeList);
+}
+
+function createUploadActionLabel(key, action, text, { visuallyHidden = false } = {}) {
+  const actionLabel = document.createElement("span");
+  actionLabel.id = `upload-action-${action}-${key}`;
+  actionLabel.textContent = text;
+  if (visuallyHidden) {
+    actionLabel.className = "visually-hidden";
+  }
+  return actionLabel;
 }
 
 function getUploadStateText(key) {
@@ -823,25 +839,26 @@ function createUploadTintControl(key, target) {
   const control = document.createElement("div");
   control.className = "upload-tint-control";
   control.title = "아이콘 색상 적용";
-  const { accessibleName } = getUploadDisplayLabel(key, target);
 
   const checkbox = document.createElement("input");
   checkbox.id = `upload-tint-enabled-${key}`;
   checkbox.type = "checkbox";
   checkbox.checked = Boolean(uploadTints[key]);
-  checkbox.ariaLabel = `${accessibleName} 색상 적용`;
+  const checkboxActionLabel = createUploadActionLabel(key, "tint", "색상 적용", { visuallyHidden: true });
+  checkbox.setAttribute("aria-labelledby", `upload-title-${key} ${checkboxActionLabel.id}`);
 
   const checkboxLabel = document.createElement("label");
   checkboxLabel.className = "upload-tint-checkbox-label";
   checkboxLabel.htmlFor = checkbox.id;
-  checkboxLabel.append(checkbox);
+  checkboxLabel.append(checkbox, checkboxActionLabel);
 
   const input = document.createElement("input");
   input.type = "color";
   input.className = "upload-tint-color";
   input.value = normalizeTintColor(uploadTints[key]) || defaultUploadTintColor;
   input.disabled = !checkbox.checked;
-  input.ariaLabel = `${accessibleName} 색상`;
+  const colorActionLabel = createUploadActionLabel(key, "tint-color", "색상", { visuallyHidden: true });
+  input.setAttribute("aria-labelledby", `upload-title-${key} ${colorActionLabel.id}`);
 
   checkbox.addEventListener("change", async () => {
     if (checkbox.checked) {
@@ -863,6 +880,7 @@ function createUploadTintControl(key, target) {
     await refreshUploadImage(key);
   });
 
+  control.append(colorActionLabel);
   control.append(checkboxLabel, input);
   return control;
 }

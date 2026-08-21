@@ -296,7 +296,7 @@ test("background image uploads expose a delete action that falls back to the sel
   assert.match(app, /tabBackground: "tabBackground"/);
   assert.match(app, /splashImage: "mainBackground"/);
   assert.match(app, /clearButton\.dataset\.uploadClear = key;/);
-  assert.match(app, /clearButton\.textContent = "삭제";/);
+  assert.match(app, /createUploadActionLabel\(key, "clear", "삭제"\)/);
   assert.match(app, /uploads\[key\] = \{ cleared: true \};/);
   assert.match(app, /documentRoot\.style\.setProperty\(variableName, "none"\);/);
 });
@@ -416,8 +416,14 @@ test("upload rows keep stable contextual relationships and persistent file state
   assert.match(app, /const uploadUiState = \{\};/);
   assert.match(app, /function getUploadDisplayLabel\(key, target\)/);
   assert.match(app, /accessibleName: target\.label,/);
+  assert.match(app, /visibleTitle\.className = "upload-visible-title";/);
+  assert.match(app, /visibleTitle\.setAttribute\("aria-hidden", "true"\);/);
   assert.match(app, /title\.id = `upload-title-\$\{key\}`;/);
-  assert.match(app, /title\.ariaLabel = displayLabel\.accessibleName;/);
+  assert.match(app, /title\.className = "visually-hidden";/);
+  assert.match(app, /title\.textContent = displayLabel\.accessibleName;/);
+  assert.doesNotMatch(app, /title\.ariaLabel/);
+  assert.match(app, /function createUploadActionLabel\(key, action, text/);
+  assert.match(app, /input\.setAttribute\("aria-labelledby", `upload-title-\$\{key\} upload-action-upload-\$\{key\}`\);/);
   assert.match(app, /description\.id = `upload-description-\$\{key\}`;/);
   assert.match(app, /item\.setAttribute\("role", "group"\);/);
   assert.match(app, /item\.setAttribute\("aria-labelledby", `upload-title-\$\{key\}`\);/);
@@ -454,9 +460,10 @@ test("color and tint controls have independent contextual naming sources", async
   assert.match(app, /picker\.setAttribute\("aria-labelledby", `\$\{text\.id\} \$\{valueText\.id\}`\);/);
   assert.match(app, /resetButton\.ariaLabel = `\$\{label\} 초기화`;/);
   assert.match(app, /const control = document\.createElement\("div"\);/);
-  assert.match(app, /const \{ accessibleName \} = getUploadDisplayLabel\(key, target\);/);
+  assert.match(app, /checkbox\.setAttribute\("aria-labelledby", `upload-title-\$\{key\} \$\{checkboxActionLabel\.id\}`\);/);
+  assert.match(app, /input\.setAttribute\("aria-labelledby", `upload-title-\$\{key\} \$\{colorActionLabel\.id\}`\);/);
   assert.match(app, /checkboxLabel\.htmlFor = checkbox\.id;/);
-  assert.match(app, /checkboxLabel\.append\(checkbox\);/);
+  assert.match(app, /checkboxLabel\.append\(checkbox, checkboxActionLabel\);/);
   assert.match(app, /control\.append\(checkboxLabel, input\);/);
 });
 
@@ -1460,7 +1467,7 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(app, /updateNinePatchPair/);
   assert.match(app, /let activeBubbleDetailKey = "sendBubbleNormal";/);
   assert.match(app, /detailButton\.dataset\.bubbleDetail = key;/);
-  assert.match(app, /detailButton\.textContent = "상세";/);
+  assert.match(app, /createUploadActionLabel\(key, "detail", "상세"\)/);
   assert.match(app, /detailButton\.addEventListener\("click", \(\) => openBubbleDetail\(key\)\);/);
   assert.match(app, /function openBubbleDetail\(key\)/);
   assert.match(app, /function cycleActiveBubbleDetail\(\)/);
