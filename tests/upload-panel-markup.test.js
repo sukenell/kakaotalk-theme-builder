@@ -372,7 +372,7 @@ test("tab icon uploads expose optional PNG tinting before theme export", async (
   assert.match(app, /input\.type = "color";/);
   assert.match(app, /checkbox\.type = "checkbox";/);
   assert.doesNotMatch(app, /text\.textContent = "색";/);
-  assert.match(app, /control\.append\(checkbox, input\);/);
+  assert.match(app, /control\.append\(checkboxLabel, input\);/);
   assert.match(app, /await refreshUploadImage\(key\);/);
   assert.match(app, /await getDefaultUploadSource\(key\);/);
   assert.match(app, /sourceKind = "default";/);
@@ -387,7 +387,7 @@ test("uploaded tab icon images are not recolored by tab tint settings", async ()
   assert.match(app, /sourceKind === "upload"/);
   assert.match(app, /const requestedTintColor = tintableUploadKeys\.has\(key\) \? normalizeTintColor\(uploadTints\[key\]\) : "";/);
   assert.match(app, /const tintColor = getUploadTintColor\(key, sourceKind\);/);
-  assert.match(app, /const tintColor = getUploadTintColor\(key, sourceKind\);[\s\S]*createUploadImageVariants\(key, image, \{ tintColor \}\)/);
+  assert.match(app, /const tintColor = getUploadTintColor\(key, sourceKind\);[\s\S]*createUploadImageVariants\(key, image, \{ tintColor, bubbleLayout \}\)/);
 });
 
 test("tab icon preview uses the uploaded normal or selected pair when one side is missing", async () => {
@@ -415,7 +415,9 @@ test("upload rows keep stable contextual relationships and persistent file state
 
   assert.match(app, /const uploadUiState = \{\};/);
   assert.match(app, /function getUploadDisplayLabel\(key, target\)/);
+  assert.match(app, /accessibleName: target\.label,/);
   assert.match(app, /title\.id = `upload-title-\$\{key\}`;/);
+  assert.match(app, /title\.ariaLabel = displayLabel\.accessibleName;/);
   assert.match(app, /description\.id = `upload-description-\$\{key\}`;/);
   assert.match(app, /item\.setAttribute\("role", "group"\);/);
   assert.match(app, /item\.setAttribute\("aria-labelledby", `upload-title-\$\{key\}`\);/);
@@ -430,11 +432,16 @@ test("upload rows keep stable contextual relationships and persistent file state
 test("upload mutations invalidate stale async work and clear the live native input", async () => {
   const app = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
 
-  assert.match(app, /const uploadOperationVersions = \{\};/);
-  assert.match(app, /function beginUploadOperation\(key\)/);
-  assert.match(app, /const operationVersion = beginUploadOperation\(key\);/);
-  assert.match(app, /if \(!isUploadOperationCurrent\(key, operationVersion\)\) \{[\s\S]*return;/);
-  assert.match(app, /handleClearUpload\(key\)[\s\S]*beginUploadOperation\(key\);/);
+  assert.match(app, /const uploadSourceVersions = \{\};/);
+  assert.match(app, /const uploadRefreshVersions = \{\};/);
+  assert.match(app, /const bubbleSettingsVersions = \{\};/);
+  assert.match(app, /function beginUploadSourceOperation\(key\)/);
+  assert.match(app, /function beginUploadRefreshOperation\(key\)/);
+  assert.match(app, /function isUploadSourceOperationCurrent\(key, sourceVersion\)/);
+  assert.match(app, /function isUploadRefreshOperationCurrent\(key, operation\)/);
+  assert.match(app, /function markBubbleSettingsChanged\(key\)/);
+  assert.match(app, /while \(bubbleUploadKeys\.has\(key\) && getBubbleSettingsVersion\(key\) !== bubbleSettingsVersion\)/);
+  assert.match(app, /handleClearUpload\(key\)[\s\S]*invalidateUploadOperations\(key\);/);
   assert.match(app, /const input = document\.querySelector\(`#upload-input-\$\{key\}`\);/);
   assert.match(app, /input\.value = "";/);
 });
@@ -447,7 +454,10 @@ test("color and tint controls have independent contextual naming sources", async
   assert.match(app, /picker\.setAttribute\("aria-labelledby", `\$\{text\.id\} \$\{valueText\.id\}`\);/);
   assert.match(app, /resetButton\.ariaLabel = `\$\{label\} 초기화`;/);
   assert.match(app, /const control = document\.createElement\("div"\);/);
-  assert.match(app, /const displayLabel = getUploadDisplayLabel\(key, target\);/);
+  assert.match(app, /const \{ accessibleName \} = getUploadDisplayLabel\(key, target\);/);
+  assert.match(app, /checkboxLabel\.htmlFor = checkbox\.id;/);
+  assert.match(app, /checkboxLabel\.append\(checkbox\);/);
+  assert.match(app, /control\.append\(checkboxLabel, input\);/);
 });
 
 test("the clipped file input exposes a three-pixel wrapper focus ring", async () => {
@@ -455,6 +465,13 @@ test("the clipped file input exposes a three-pixel wrapper focus ring", async ()
 
   assert.match(css, /\.file-button:focus-within\s*\{[\s\S]*outline: 3px solid #075c52;/);
   assert.match(css, /\.file-button input\s*\{[\s\S]*width: 1px;[\s\S]*height: 1px;[\s\S]*clip: rect\(0, 0, 0, 0\);/);
+});
+
+test("upload state text is constrained and the tint checkbox label owns the padded hit target", async () => {
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+
+  assert.match(css, /\[data-upload-state\]\s*\{[\s\S]*overflow: hidden;[\s\S]*text-overflow: ellipsis;[\s\S]*white-space: nowrap;/);
+  assert.match(css, /\.upload-tint-checkbox-label\s*\{[\s\S]*min-height: 34px;[\s\S]*padding:/);
 });
 
 test("tab icon upload labels stay compact and only expose previewed bottom tabs", async () => {
@@ -1483,11 +1500,15 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(app, /await refreshUploadImage\(key\);/);
   assert.match(app, /function getBubbleNinePatchSettings\(key\)/);
   assert.match(app, /bubbleLayout: bubbleLayout \? cloneBubbleNinePatchSettings\(bubbleLayout\) : undefined,/);
-  assert.match(app, /const bubbleLayout = bubbleUploadKeys\.has\(key\) \? getBubbleNinePatchSettings\(key\) : undefined;/);
-  assert.match(app, /const renderSize = getUploadVariantRenderSize\(key, image, name, size\);/);
+  assert.match(app, /const bubbleLayout = getProposedBubbleNinePatchSettings\(key, image\);/);
+  assert.match(app, /createUploadImageVariants\(key, image, \{ tintColor, bubbleLayout \}\)/);
+  assert.match(app, /const renderSize = getUploadVariantRenderSize\(key, image, name, size, bubbleLayout\);/);
   assert.match(app, /renderImageToPngBytes\(image, renderSize\[0\], renderSize\[1\], \{ tintColor, bubbleLayout \}\)/);
   assert.match(app, /renderImageToNinePatchPngBytes\(image, renderSize\[0\], renderSize\[1\], \{ tintColor, ninePatchMarkers: bubbleLayout \}\)/);
-  assert.match(app, /function getUploadVariantRenderSize\(key, image, name, fallbackSize\)/);
+  assert.match(app, /function getUploadVariantRenderSize\(key, image, name, fallbackSize, bubbleLayout\)/);
+  assert.doesNotMatch(app, /syncBubbleNinePatchSettingsForImage/);
+  assert.match(app, /function commitUploadRecord\(key, upload\)/);
+  assert.match(app, /bubbleNinePatchSettings\[key\] = cloneBubbleNinePatchSettings\(upload\.bubbleLayout\);/);
   assert.match(app, /return getNinePatchAxisControlMax\(axis, referenceSize\);/);
   assert.match(app, /function drawBubbleImage\(context, image, width, height, bubbleLayout\)/);
   assert.match(app, /drawNinePatchMarkers\(context, width, height, ninePatchMarkers\);/);
@@ -1529,7 +1550,7 @@ test("tab icon uploads use a 3x source and generate 2x plus 3x outputs", async (
   assert.match(app, /"Images\/maintabIcoCall@2x\.png": \[76, 76\]/);
   assert.match(app, /"Images\/maintabIcoPiccoma@3x\.png": \[114, 114\]/);
   assert.match(app, /createUploadRecord\(key, file, bytes, file\.type\)/);
-  assert.match(app, /createUploadImageVariants\(key, image, \{ tintColor \}\)/);
+  assert.match(app, /createUploadImageVariants\(key, image, \{ tintColor, bubbleLayout \}\)/);
   assert.match(model, /previewIos: ios3x/);
   assert.match(model, /displaySize: \[114, 114\]/);
 });

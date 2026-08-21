@@ -275,7 +275,9 @@ const previews = {};
 const uploadTints = {};
 const uploadUiState = {};
 const bubbleNinePatchSettings = {};
-const uploadOperationVersions = {};
+const bubbleSettingsVersions = {};
+const uploadSourceVersions = {};
+const uploadRefreshVersions = {};
 const templateCache = new Map();
 let currentPreviewIndex = 1;
 let currentPreviewDevice = "phone";
@@ -621,7 +623,7 @@ function renderUploadControls() {
   uploadControlRoot.replaceChildren(
     ...visibleUploadKeys.map((key) => {
       const target = IMAGE_TARGETS[key];
-      const displayLabel = getUploadDisplayLabel(key, target);
+      const { accessibleName } = getUploadDisplayLabel(key, target);
       const item = document.createElement("div");
       item.className = "upload-item";
       item.setAttribute("role", "group");
@@ -654,7 +656,7 @@ function renderUploadControls() {
       input.id = `upload-input-${key}`;
       input.type = "file";
       input.accept = "image/png,image/jpeg,image/webp";
-      input.ariaLabel = `${displayLabel} 업로드`;
+      input.ariaLabel = `${accessibleName} 업로드`;
       input.setAttribute("aria-describedby", `upload-description-${key}`);
       button.htmlFor = input.id;
       input.addEventListener("change", () => {
@@ -680,7 +682,7 @@ function renderUploadControls() {
         detailButton.type = "button";
         detailButton.dataset.bubbleDetail = key;
         detailButton.textContent = "상세";
-        detailButton.ariaLabel = `${displayLabel} 상세`;
+        detailButton.ariaLabel = `${accessibleName} 상세`;
         detailButton.addEventListener("click", () => openBubbleDetail(key));
         actions.append(detailButton);
       }
@@ -690,7 +692,7 @@ function renderUploadControls() {
         clearButton.type = "button";
         clearButton.dataset.uploadClear = key;
         clearButton.textContent = "삭제";
-        clearButton.ariaLabel = `${displayLabel} 삭제`;
+        clearButton.ariaLabel = `${accessibleName} 삭제`;
         clearButton.disabled = isClearedImageUpload(key);
         clearButton.addEventListener("click", () => handleClearUpload(key));
         actions.append(clearButton);
@@ -703,13 +705,18 @@ function renderUploadControls() {
 }
 
 function getUploadDisplayLabel(key, target) {
-  return tabIconUploadLabels[key] ?? target.label;
+  return {
+    text: tabIconUploadLabels[key] ?? target.label,
+    accessibleName: target.label,
+  };
 }
 
 function appendUploadLabel(label, target, key) {
+  const displayLabel = getUploadDisplayLabel(key, target);
   const title = document.createElement("strong");
   title.id = `upload-title-${key}`;
-  title.textContent = getUploadDisplayLabel(key, target);
+  title.textContent = displayLabel.text;
+  title.ariaLabel = displayLabel.accessibleName;
   label.append(title);
 
   const description = document.createElement("span");
@@ -744,14 +751,39 @@ function getUploadStateText(key) {
   return isClearedImageUpload(key) ? "이미지 삭제됨" : "기본 이미지";
 }
 
-function beginUploadOperation(key) {
-  const operationVersion = (uploadOperationVersions[key] ?? 0) + 1;
-  uploadOperationVersions[key] = operationVersion;
-  return operationVersion;
+function invalidateUploadRefreshOperation(key) {
+  uploadRefreshVersions[key] = (uploadRefreshVersions[key] ?? 0) + 1;
 }
 
-function isUploadOperationCurrent(key, operationVersion) {
-  return uploadOperationVersions[key] === operationVersion;
+function beginUploadSourceOperation(key) {
+  const sourceVersion = (uploadSourceVersions[key] ?? 0) + 1;
+  uploadSourceVersions[key] = sourceVersion;
+  invalidateUploadRefreshOperation(key);
+  return sourceVersion;
+}
+
+function isUploadSourceOperationCurrent(key, sourceVersion) {
+  return uploadSourceVersions[key] === sourceVersion;
+}
+
+function beginUploadRefreshOperation(key) {
+  const operation = {
+    sourceVersion: uploadSourceVersions[key] ?? 0,
+    refreshVersion: (uploadRefreshVersions[key] ?? 0) + 1,
+  };
+  uploadRefreshVersions[key] = operation.refreshVersion;
+  return operation;
+}
+
+function isUploadRefreshOperationCurrent(key, operation) {
+  return (
+    (uploadSourceVersions[key] ?? 0) === operation.sourceVersion &&
+    uploadRefreshVersions[key] === operation.refreshVersion
+  );
+}
+
+function invalidateUploadOperations(key) {
+  beginUploadSourceOperation(key);
 }
 
 function formatUploadSizeLines(target) {
@@ -791,19 +823,25 @@ function createUploadTintControl(key, target) {
   const control = document.createElement("div");
   control.className = "upload-tint-control";
   control.title = "아이콘 색상 적용";
-  const displayLabel = getUploadDisplayLabel(key, target);
+  const { accessibleName } = getUploadDisplayLabel(key, target);
 
   const checkbox = document.createElement("input");
+  checkbox.id = `upload-tint-enabled-${key}`;
   checkbox.type = "checkbox";
   checkbox.checked = Boolean(uploadTints[key]);
-  checkbox.ariaLabel = `${displayLabel} 색상 적용`;
+  checkbox.ariaLabel = `${accessibleName} 색상 적용`;
+
+  const checkboxLabel = document.createElement("label");
+  checkboxLabel.className = "upload-tint-checkbox-label";
+  checkboxLabel.htmlFor = checkbox.id;
+  checkboxLabel.append(checkbox);
 
   const input = document.createElement("input");
   input.type = "color";
   input.className = "upload-tint-color";
   input.value = normalizeTintColor(uploadTints[key]) || defaultUploadTintColor;
   input.disabled = !checkbox.checked;
-  input.ariaLabel = `${displayLabel} 색상`;
+  input.ariaLabel = `${accessibleName} 색상`;
 
   checkbox.addEventListener("change", async () => {
     if (checkbox.checked) {
@@ -825,7 +863,7 @@ function createUploadTintControl(key, target) {
     await refreshUploadImage(key);
   });
 
-  control.append(checkbox, input);
+  control.append(checkboxLabel, input);
   return control;
 }
 
@@ -912,6 +950,7 @@ function renderBubbleDetailControls() {
     button.classList.toggle("is-active", settings.fit === mode);
     button.addEventListener("click", async () => {
       getBubbleNinePatchSettings(key).fit = mode;
+      markBubbleSettingsChanged(key);
       renderBubbleDetailControls();
       updateBubbleDetailPreview();
       await refreshUploadImage(key);
@@ -975,6 +1014,7 @@ function updateNinePatchPairValue(key, field, index, value) {
     minSpan,
     containPair,
   });
+  markBubbleSettingsChanged(key);
 }
 
 function getNinePatchInputBounds(key, field, index, axis) {
@@ -1152,6 +1192,7 @@ async function resetActiveBubbleDetail() {
   const key = activeBubbleDetailKey;
   const referenceSize = getBubbleNinePatchSourceReferenceSize(getBubbleNinePatchSettings(key));
   bubbleNinePatchSettings[key] = createDefaultBubbleNinePatchSettings(referenceSize);
+  markBubbleSettingsChanged(key);
   renderBubbleDetailControls();
   updateBubbleDetailPreview();
   await refreshUploadImage(key);
@@ -1163,6 +1204,14 @@ function createDefaultBubbleNinePatchSettings(referenceSize = bubbleNinePatchPre
     referenceSize,
     bubbleNinePatchPreviewSize,
   );
+}
+
+function markBubbleSettingsChanged(key) {
+  bubbleSettingsVersions[key] = (bubbleSettingsVersions[key] ?? 0) + 1;
+}
+
+function getBubbleSettingsVersion(key) {
+  return bubbleSettingsVersions[key] ?? 0;
 }
 
 function setPreviewDevice(device) {
@@ -1206,18 +1255,28 @@ async function handleUpload(key, file) {
     return;
   }
 
-  const operationVersion = beginUploadOperation(key);
+  const sourceVersion = beginUploadSourceOperation(key);
   const bytes = new Uint8Array(await file.arrayBuffer());
-  if (!isUploadOperationCurrent(key, operationVersion)) {
+  if (!isUploadSourceOperationCurrent(key, sourceVersion)) {
     return;
   }
 
-  const nextUpload = await createUploadRecord(key, file, bytes, file.type);
-  if (!isUploadOperationCurrent(key, operationVersion)) {
+  let bubbleSettingsVersion = getBubbleSettingsVersion(key);
+  let nextUpload = await createUploadRecord(key, file, bytes, file.type);
+  while (bubbleUploadKeys.has(key) && getBubbleSettingsVersion(key) !== bubbleSettingsVersion) {
+    if (!isUploadSourceOperationCurrent(key, sourceVersion)) {
+      return;
+    }
+
+    bubbleSettingsVersion = getBubbleSettingsVersion(key);
+    nextUpload = await createUploadRecord(key, file, bytes, file.type);
+  }
+  if (!isUploadSourceOperationCurrent(key, sourceVersion)) {
     return;
   }
 
-  uploads[key] = nextUpload;
+  invalidateUploadRefreshOperation(key);
+  commitUploadRecord(key, nextUpload);
   uploadUiState[key] = { fileName: file.name };
 
   if (previews[key]) {
@@ -1242,7 +1301,7 @@ async function refreshUploadImage(key) {
     return;
   }
 
-  const operationVersion = beginUploadOperation(key);
+  const operation = beginUploadRefreshOperation(key);
   if (upload && getUploadSourceKind(upload) === "default" && !requestedTintColor) {
     clearGeneratedTintUpload(key);
     return;
@@ -1254,7 +1313,7 @@ async function refreshUploadImage(key) {
 
   if (!sourceData && requestedTintColor) {
     const defaultSource = await getDefaultUploadSource(key);
-    if (!defaultSource || !isUploadOperationCurrent(key, operationVersion)) {
+    if (!defaultSource || !isUploadRefreshOperationCurrent(key, operation)) {
       return;
     }
 
@@ -1270,11 +1329,11 @@ async function refreshUploadImage(key) {
   const sourceBlob = new Blob([sourceData], { type: sourceType || "image/png" });
   const nextUpload = await createUploadRecord(key, sourceBlob, sourceData, sourceType, { sourceKind });
 
-  if (!isUploadOperationCurrent(key, operationVersion)) {
+  if (!isUploadRefreshOperationCurrent(key, operation)) {
     return;
   }
 
-  uploads[key] = nextUpload;
+  commitUploadRecord(key, nextUpload);
   if (previews[key]) {
     URL.revokeObjectURL(previews[key]);
   }
@@ -1305,7 +1364,7 @@ function handleClearUpload(key) {
     return;
   }
 
-  beginUploadOperation(key);
+  invalidateUploadOperations(key);
   if (previews[key]) {
     URL.revokeObjectURL(previews[key]);
   }
@@ -1442,9 +1501,10 @@ async function createUploadRecord(
 
   const image = await loadImage(source);
   try {
-    syncBubbleNinePatchSettingsForImage(key, image);
-    const bubbleLayout = bubbleUploadKeys.has(key) ? getBubbleNinePatchSettings(key) : undefined;
-    const variants = shouldGenerateUploadVariants(key) ? await createUploadImageVariants(key, image, { tintColor }) : undefined;
+    const bubbleLayout = getProposedBubbleNinePatchSettings(key, image);
+    const variants = shouldGenerateUploadVariants(key)
+      ? await createUploadImageVariants(key, image, { tintColor, bubbleLayout })
+      : undefined;
     const data = tintColor
       ? await renderImageToPngBytes(image, image.width, image.height, { tintColor })
       : sourceBytes;
@@ -1462,6 +1522,13 @@ async function createUploadRecord(
   }
 }
 
+function commitUploadRecord(key, upload) {
+  uploads[key] = upload;
+  if (upload?.bubbleLayout) {
+    bubbleNinePatchSettings[key] = cloneBubbleNinePatchSettings(upload.bubbleLayout);
+  }
+}
+
 function shouldGenerateUploadVariants(key) {
   const target = IMAGE_TARGETS[key];
   return (
@@ -1472,17 +1539,16 @@ function shouldGenerateUploadVariants(key) {
   );
 }
 
-async function createUploadImageVariants(key, image, { tintColor = "" } = {}) {
+async function createUploadImageVariants(key, image, { tintColor = "", bubbleLayout } = {}) {
   const target = IMAGE_TARGETS[key];
   const variants = {};
-  const bubbleLayout = bubbleUploadKeys.has(key) ? getBubbleNinePatchSettings(key) : undefined;
 
   for (const name of target.ios || []) {
     const size = iosImageSizes[name];
     if (!size) {
       continue;
     }
-    const renderSize = getUploadVariantRenderSize(key, image, name, size);
+    const renderSize = getUploadVariantRenderSize(key, image, name, size, bubbleLayout);
     variants[name] = await renderImageToPngBytes(image, renderSize[0], renderSize[1], { tintColor, bubbleLayout });
   }
 
@@ -1491,30 +1557,32 @@ async function createUploadImageVariants(key, image, { tintColor = "" } = {}) {
     if (!size) {
       continue;
     }
-    const renderSize = getUploadVariantRenderSize(key, image, name, size);
+    const renderSize = getUploadVariantRenderSize(key, image, name, size, bubbleLayout);
     variants[name] = await renderImageToNinePatchPngBytes(image, renderSize[0], renderSize[1], { tintColor, ninePatchMarkers: bubbleLayout });
   }
 
   return variants;
 }
 
-function syncBubbleNinePatchSettingsForImage(key, image) {
+function getProposedBubbleNinePatchSettings(key, image) {
   if (!bubbleUploadKeys.has(key)) {
-    return;
+    return undefined;
   }
 
   const referenceSize = getNinePatchReferenceSizeForSource(image);
-  const settings = getBubbleNinePatchSettings(key);
-  bubbleNinePatchSettings[key] = rebaseNinePatchSettingsForReferenceSize(settings, referenceSize);
+  const settings = bubbleNinePatchSettings[key]
+    ? cloneBubbleNinePatchSettings(bubbleNinePatchSettings[key])
+    : createDefaultBubbleNinePatchSettings();
+  return rebaseNinePatchSettingsForReferenceSize(settings, referenceSize);
 }
 
-function getUploadVariantRenderSize(key, image, name, fallbackSize) {
+function getUploadVariantRenderSize(key, image, name, fallbackSize, bubbleLayout) {
   if (!bubbleUploadKeys.has(key)) {
     return fallbackSize;
   }
 
   if (name.endsWith(".9.png")) {
-    const { width, height } = getBubbleNinePatchReferenceSize(getBubbleNinePatchSettings(key));
+    const { width, height } = getBubbleNinePatchReferenceSize(bubbleLayout);
     return [Math.max(fallbackSize[0], width), Math.max(fallbackSize[1], height)];
   }
 

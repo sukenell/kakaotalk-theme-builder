@@ -1,4 +1,52 @@
 import { expect, test } from "@playwright/test";
+import { IMAGE_TARGETS } from "../src/theme-model.js";
+
+async function createPngBuffer(page, width, height) {
+  const base64 = await page.evaluate(async ({ width, height }) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#f78da7";
+    context.fillRect(0, 0, width, height);
+    return canvas.toDataURL("image/png").split(",")[1];
+  }, { width, height });
+
+  return Buffer.from(base64, "base64");
+}
+
+async function delayImageBitmapForFile(page, fileName) {
+  await page.addInitScript((delayedFileName) => {
+    const originalCreateImageBitmap = window.createImageBitmap.bind(window);
+    const originalClose = window.ImageBitmap.prototype.close;
+
+    window.ImageBitmap.prototype.close = function (...args) {
+      if (this === window.__delayedImageBitmap) {
+        window.__delayedImageBitmapClosed = true;
+      }
+      return originalClose.apply(this, args);
+    };
+
+    window.createImageBitmap = (source, ...args) => {
+      if (!(source instanceof File) || source.name !== delayedFileName) {
+        return originalCreateImageBitmap(source, ...args);
+      }
+
+      window.__delayedImageBitmapStarted = true;
+      return new Promise((resolve, reject) => {
+        window.__releaseDelayedImageBitmap = async () => {
+          try {
+            const image = await originalCreateImageBitmap(source, ...args);
+            window.__delayedImageBitmap = image;
+            resolve(image);
+          } catch (error) {
+            reject(error);
+          }
+        };
+      });
+    };
+  }, fileName);
+}
 
 test("@task0 loads the builder", async ({ page }) => {
   const stylesheetResponse = page.waitForResponse((response) => response.url().endsWith("/styles.css"));
@@ -95,6 +143,7 @@ test("@task2 gives every active preview upload and color row one contextual name
         return {
           key: title.id.replace("upload-title-", ""),
           title: title.textContent.trim(),
+          accessibleTitle: title.getAttribute("aria-label") || title.textContent.trim(),
           hasClear: Boolean(row.querySelector("[data-upload-clear]")),
           hasDetail: Boolean(row.querySelector("[data-bubble-detail]")),
           hasTint: Boolean(row.querySelector(".upload-tint-control")),
@@ -108,21 +157,22 @@ test("@task2 gives every active preview upload and color row one contextual name
     await expect(uploadControls.getByRole("button", { name: "상세", exact: true })).toHaveCount(0);
     await expect(uploadControls.getByRole("button", { name: "삭제", exact: true })).toHaveCount(0);
 
-    for (const { key, title, hasClear, hasDetail, hasTint } of uploadRows) {
+    for (const { key, title, accessibleTitle, hasClear, hasDetail, hasTint } of uploadRows) {
       const row = uploadControls.locator(`:scope > .upload-item[aria-labelledby="upload-title-${key}"]`);
-      await expect(uploadControls.getByRole("group", { name: title, exact: true })).toHaveCount(1);
-      await expect(row.getByRole("button", { name: `${title} 업로드`, exact: true })).toHaveCount(1);
+      expect(accessibleTitle).toBe(IMAGE_TARGETS[key].label);
+      await expect(uploadControls.getByRole("group", { name: accessibleTitle, exact: true })).toHaveCount(1);
+      await expect(row.getByRole("button", { name: `${accessibleTitle} 업로드`, exact: true })).toHaveCount(1);
       if (hasDetail) {
-        await expect(row.getByRole("button", { name: `${title} 상세`, exact: true })).toHaveCount(1);
+        await expect(row.getByRole("button", { name: `${accessibleTitle} 상세`, exact: true })).toHaveCount(1);
       }
       if (hasClear) {
-        await expect(row.getByRole("button", { name: `${title} 삭제`, exact: true })).toHaveCount(1);
+        await expect(row.getByRole("button", { name: `${accessibleTitle} 삭제`, exact: true })).toHaveCount(1);
       }
       if (hasTint) {
-        const tintCheckbox = row.getByRole("checkbox", { name: `${title} 색상 적용`, exact: true });
+        const tintCheckbox = row.getByRole("checkbox", { name: `${accessibleTitle} 색상 적용`, exact: true });
         await expect(tintCheckbox).toHaveCount(1);
-        await expect(row.locator('.upload-tint-control input[type="color"]')).toHaveAccessibleName(`${title} 색상`);
-        expect(await tintCheckbox.evaluate((element) => element.closest("label") === null)).toBe(true);
+        await expect(row.locator('.upload-tint-control input[type="color"]')).toHaveAccessibleName(`${accessibleTitle} 색상`);
+        expect(await tintCheckbox.evaluate((element) => Boolean(element.closest("label")?.querySelector('input[type="color"]')))).toBe(false);
       }
     }
 
@@ -336,4 +386,166 @@ test("@task2 reaches the clipped file input by Tab and keeps a visible focus pat
 
   await page.keyboard.press("Tab");
   expect(await nextUploadInput.evaluate((element) => document.activeElement === element)).toBe(true);
+});
+
+test("@task2 commits a delayed tab icon selection after a tint refresh", async ({ page }) => {
+  const fileName = "custom-friend.png";
+  await delayImageBitmapForFile(page, fileName);
+  await page.goto("/");
+
+  const input = page.locator("#upload-input-tabFriendIcon");
+  await input.setInputFiles({
+    name: fileName,
+    mimeType: "image/png",
+    buffer: await createPngBuffer(page, 114, 114),
+  });
+  await expect.poll(() => page.evaluate(() => window.__delayedImageBitmapStarted)).toBe(true);
+
+  await page.locator('[aria-labelledby="upload-title-tabFriendIcon"] input[type="checkbox"]').check();
+  await expect(page.locator('[data-upload-thumb="tabFriendIcon"]')).toHaveCSS("background-image", /blob:/);
+
+  await page.evaluate(() => window.__releaseDelayedImageBitmap());
+  await expect.poll(() => page.evaluate(() => window.__delayedImageBitmapClosed)).toBe(true);
+  await expect(page.locator("#upload-description-tabFriendIcon")).toContainText(`선택한 파일: ${fileName}`);
+  expect(await input.evaluate((element) => element.files?.[0]?.name)).toBe(fileName);
+});
+
+test("@task2 ignores stale bubble layout changes from an older decoded upload", async ({ page }) => {
+  const olderFileName = "older-360.png";
+  const newerFileName = "newer-120x105.png";
+  await delayImageBitmapForFile(page, olderFileName);
+  await page.goto("/");
+  await page.getByRole("tab", { name: "채팅방", exact: true }).click();
+
+  const input = page.locator("#upload-input-sendBubbleNormal");
+  await input.setInputFiles({
+    name: olderFileName,
+    mimeType: "image/png",
+    buffer: await createPngBuffer(page, 360, 360),
+  });
+  await expect.poll(() => page.evaluate(() => window.__delayedImageBitmapStarted)).toBe(true);
+
+  await input.setInputFiles({
+    name: newerFileName,
+    mimeType: "image/png",
+    buffer: await createPngBuffer(page, 120, 105),
+  });
+  await expect(page.locator("#upload-description-sendBubbleNormal")).toContainText(newerFileName);
+
+  const detailButton = page.getByRole("button", { name: "나의 말풍선 - 기본 상세", exact: true });
+  await detailButton.click();
+  const stretchStart = page.locator('input[data-nine-patch-field="stretchX"][data-nine-patch-index="0"]');
+  await expect(stretchStart).toHaveAttribute("max", "41");
+
+  await page.evaluate(() => window.__releaseDelayedImageBitmap());
+  await expect.poll(() => page.evaluate(() => window.__delayedImageBitmapClosed)).toBe(true);
+  await detailButton.click();
+  await expect(page.locator("#upload-description-sendBubbleNormal")).toContainText(newerFileName);
+  await expect(stretchStart).toHaveAttribute("max", "41");
+});
+
+test("@task2 preserves a nine-patch edit made while a bubble upload is rendering", async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalToBlob = HTMLCanvasElement.prototype.toBlob;
+    HTMLCanvasElement.prototype.toBlob = function (callback, ...args) {
+      if (!window.__holdNextCanvasBlob || window.__delayedCanvasBlobStarted) {
+        return originalToBlob.call(this, callback, ...args);
+      }
+
+      const canvas = this;
+      window.__delayedCanvasBlobStarted = true;
+      window.__releaseDelayedCanvasBlob = () => originalToBlob.call(canvas, callback, ...args);
+      return undefined;
+    };
+  });
+  await page.goto("/");
+  await page.getByRole("tab", { name: "채팅방", exact: true }).click();
+  await page.evaluate(() => {
+    window.__holdNextCanvasBlob = true;
+  });
+
+  const fileName = "pending-bubble.png";
+  await page.locator("#upload-input-sendBubbleNormal").setInputFiles({
+    name: fileName,
+    mimeType: "image/png",
+    buffer: await createPngBuffer(page, 120, 105),
+  });
+  await expect.poll(() => page.evaluate(() => window.__delayedCanvasBlobStarted)).toBe(true);
+
+  const detailButton = page.getByRole("button", { name: "나의 말풍선 - 기본 상세", exact: true });
+  await detailButton.click();
+  const stretchStart = page.locator('input[data-nine-patch-field="stretchX"][data-nine-patch-index="0"]');
+  await stretchStart.evaluate((input) => {
+    input.value = "10";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await expect(stretchStart).toHaveValue("10");
+
+  await page.evaluate(() => window.__releaseDelayedCanvasBlob());
+  await expect(page.locator("#upload-description-sendBubbleNormal")).toContainText(fileName);
+  await detailButton.click();
+  await expect(stretchStart).toHaveValue("10");
+});
+
+test("@task2 gives the tint checkbox a separate full-height pointer target", async ({ page }) => {
+  await page.goto("/");
+
+  const row = page.locator('[aria-labelledby="upload-title-tabFriendIcon"]');
+  const checkbox = row.getByRole("checkbox", { name: "친구 탭 아이콘 - 기본 색상 적용", exact: true });
+  const checkboxLabel = row.locator("label.upload-tint-checkbox-label");
+  await expect(checkboxLabel).toHaveCount(1);
+  expect(await checkboxLabel.locator('input[type="checkbox"]').count()).toBe(1);
+  expect(await checkboxLabel.locator('input[type="color"]').count()).toBe(0);
+
+  const labelBox = await checkboxLabel.boundingBox();
+  const checkboxBox = await checkbox.boundingBox();
+  expect(labelBox.height).toBeGreaterThanOrEqual(34);
+  expect(labelBox.width).toBeGreaterThan(checkboxBox.width + 6);
+  const clickPosition = { x: 2, y: labelBox.height / 2 };
+  expect(labelBox.x + clickPosition.x).toBeLessThan(checkboxBox.x);
+  await checkboxLabel.click({ position: clickPosition });
+  await expect(checkbox).toBeChecked();
+});
+
+test("@task2 keeps a long valid upload filename inside its row", async ({ page }) => {
+  await page.goto("/");
+
+  const fileName = `${"a".repeat(220)}.png`;
+  await page.locator("#upload-input-mainBackground").setInputFiles({
+    name: fileName,
+    mimeType: "image/png",
+    buffer: await createPngBuffer(page, 16, 16),
+  });
+  const row = page.getByRole("group", { name: "메인 배경", exact: true });
+  const state = row.locator('[data-upload-state="mainBackground"]');
+  await expect(state).toContainText(fileName);
+
+  const geometry = await row.evaluate((element) => {
+    const state = element.querySelector('[data-upload-state="mainBackground"]');
+    const actions = element.querySelector(".upload-actions");
+    const stateBounds = state.getBoundingClientRect();
+    const actionsBounds = actions.getBoundingClientRect();
+    const rowBounds = element.getBoundingClientRect();
+    const panelBounds = element.closest(".upload-controls").getBoundingClientRect();
+    const style = getComputedStyle(state);
+    return {
+      stateRight: stateBounds.right,
+      actionsLeft: actionsBounds.left,
+      rowRight: rowBounds.right,
+      panelRight: panelBounds.right,
+      overflowX: style.overflowX,
+      whiteSpace: style.whiteSpace,
+      textOverflow: style.textOverflow,
+      clientWidth: state.clientWidth,
+      scrollWidth: state.scrollWidth,
+    };
+  });
+  expect(geometry.stateRight).toBeLessThanOrEqual(geometry.actionsLeft + 1);
+  expect(geometry.rowRight).toBeLessThanOrEqual(geometry.panelRight + 1);
+  expect(geometry).toMatchObject({
+    overflowX: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
+  });
+  expect(geometry.scrollWidth).toBeGreaterThan(geometry.clientWidth);
 });
