@@ -37,6 +37,71 @@ test("default theme name uses the requested Korean wording", () => {
   assert.equal(defaultThemeState.appName, "나의 테마");
 });
 
+test("default native contrast tokens use the approved palette without changing preserved tokens", () => {
+  assert.deepEqual(
+    {
+      sectionTitle: defaultThemeState.colors.sectionTitle,
+      titlePressed: defaultThemeState.colors.titlePressed,
+      sendButton: defaultThemeState.colors.sendButton,
+      inputMenu: defaultThemeState.colors.inputMenu,
+    },
+    {
+      sectionTitle: "#9B3F49",
+      titlePressed: "#664242",
+      sendButton: "#B23A48",
+      inputMenu: "#B23A48",
+    },
+  );
+  assert.deepEqual(
+    {
+      unreadCount: defaultThemeState.colors.unreadCount,
+      bodyPressed: defaultThemeState.colors.bodyPressed,
+      sendButtonPressed: defaultThemeState.colors.sendButtonPressed,
+    },
+    {
+      unreadCount: "#FF7F7F",
+      bodyPressed: "#FFB3B3",
+      sendButtonPressed: "#F27979",
+    },
+  );
+});
+
+test("approved contrast tokens patch the intended iOS and Android native bindings", () => {
+  const iosCss = `
+SectionTitleStyle-Main { -ios-text-color: #F66C6C; border-color: #F66C6C; }
+MainViewStyle-Primary { -ios-highlighted-text-color: #B06B6B; }
+InputBarStyle-Chat {
+  -ios-send-normal-background-color: #FF7F7F;
+  -ios-send-highlighted-background-color: #F27979;
+  -ios-button-normal-foreground-color: #E86464;
+}
+MessageCellStyle-Send { -ios-unread-text-color: #FF7F7F; }
+`;
+  const androidXml = `<resources>
+    <color name="theme_section_title_color">#F66C6C</color>
+    <color name="theme_title_pressed_color">#B06B6B</color>
+    <color name="theme_chatroom_input_bar_menu_icon_color">#E86464</color>
+    <color name="theme_chatroom_input_bar_send_button_color">#FF7F7F</color>
+    <color name="theme_chatroom_unread_count_color">#FF7F7F</color>
+  </resources>`;
+
+  const patchedCss = patchIosThemeCss(iosCss, defaultThemeState);
+  const patchedXml = patchAndroidColorsXml(androidXml, defaultThemeState);
+
+  assert.match(patchedCss, /SectionTitleStyle-Main[\s\S]*-ios-text-color: #9B3F49;/);
+  assert.match(patchedCss, /MainViewStyle-Primary[\s\S]*-ios-highlighted-text-color: #664242;/);
+  assert.match(patchedCss, /-ios-send-normal-background-color: #B23A48;/);
+  assert.match(patchedCss, /-ios-send-highlighted-background-color: #F27979;/);
+  assert.match(patchedCss, /-ios-button-normal-foreground-color: #B23A48;/);
+  assert.match(patchedCss, /-ios-unread-text-color: #FF7F7F;/);
+
+  assert.match(patchedXml, /name="theme_section_title_color">#9B3F49</);
+  assert.match(patchedXml, /name="theme_title_pressed_color">#664242</);
+  assert.match(patchedXml, /name="theme_chatroom_input_bar_menu_icon_color">#B23A48</);
+  assert.match(patchedXml, /name="theme_chatroom_input_bar_send_button_color">#B23A48</);
+  assert.match(patchedXml, /name="theme_chatroom_unread_count_color">#FF7F7F</);
+});
+
 test("default tab background color is white in preview and downloaded themes", () => {
   assert.equal(defaultThemeState.colors.tabBackground, "#FFFFFF");
 

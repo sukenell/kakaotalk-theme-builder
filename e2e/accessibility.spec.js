@@ -1,6 +1,7 @@
 import { expect, test as base } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
+import { CONTRAST_CONTEXTS } from "../src/color-contrast.js";
 import { IMAGE_TARGETS } from "../src/theme-model.js";
 import { PREVIEW_PAGES } from "../src/preview-pages.js";
 
@@ -2203,3 +2204,152 @@ test("@task6 carousel announces only a newly settled product position", async ({
   await page.waitForTimeout(250);
   expect(await page.evaluate(() => window.__task6CarouselAnnouncements)).toEqual(["2/4, 스탠딩 이미지 작업"]);
 });
+
+test("@task8-default contrast ledger selectors resolve in their declared preview panels", async ({ page }) => {
+  await page.goto("/");
+
+  for (const previewPage of PREVIEW_PAGES) {
+    await page.locator(`#preview-tab-${previewPage.id}`).click();
+    const contexts = CONTRAST_CONTEXTS.filter(({ pageId }) => pageId === previewPage.id);
+    expect(contexts.length, `${previewPage.id} has contrast contexts`).toBeGreaterThan(0);
+
+    for (const context of contexts) {
+      await expect(page.locator(context.selector).first(), context.id).toBeAttached();
+    }
+  }
+});
+
+test("@task8-default rendered default text and controls meet their declared contrast", async ({ page }) => {
+  await page.goto("/");
+
+  const cases = [
+    ["home", ".friends-section-label"],
+    ["home", ".friend-segment.is-active"],
+    ["chat-list", ".unread-badge"],
+    ["shopping", ".shopping-tab.is-active"],
+    ["chat", ".date-chip"],
+    ["chat", ".send-button"],
+    ["passcode", ".passcode-intro > span"],
+    ["theme-list", ".theme-list-copy > span"],
+  ];
+
+  for (const [pageId, selector] of cases) {
+    await page.locator(`#preview-tab-${pageId}`).click();
+    const result = await renderedContrast(page.locator(`#preview-panel-${pageId} ${selector}`).first());
+    expect(result.ratio, `${pageId} ${selector}: ${result.foreground} on ${result.background}`).toBeGreaterThanOrEqual(4.5);
+  }
+
+  await page.locator("#preview-tab-shopping").click();
+  const orderColors = await page.locator("#preview-panel-shopping .shopping-order-icon").evaluate((element) => {
+    const style = getComputedStyle(element, "::before");
+    return { color: style.color, background: style.backgroundColor };
+  });
+  expect(orderColors).toEqual({ color: "rgb(155, 63, 73)", background: "rgb(222, 222, 222)" });
+  await expect(page.locator("#preview-panel-shopping .shop-card-content").first()).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0.72)",
+  );
+
+  await page.locator("#preview-tab-chat").click();
+  const bubbleBackings = await page.locator("#preview-panel-chat .bubble").evaluateAll((elements) =>
+    [...new Set(elements.map((element) => getComputedStyle(element, "::before").backgroundColor))],
+  );
+  expect(bubbleBackings.sort()).toEqual(["rgb(248, 248, 248)", "rgba(0, 0, 0, 0.72)"].sort());
+});
+
+test("@task8-default bubble backing is painted above the bundled border image", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#preview-tab-chat").click();
+  await page.evaluate(() => {
+    const source = document.querySelector("#preview-panel-chat .send-bubble");
+    const probe = source.cloneNode(false);
+    probe.id = "bubble-paint-probe";
+    probe.textContent = "";
+    Object.assign(probe.style, {
+      position: "fixed",
+      top: "8px",
+      left: "8px",
+      zIndex: "9999",
+      width: "120px",
+      height: "80px",
+    });
+    document.body.append(probe);
+  });
+
+  const probe = page.locator("#bubble-paint-probe");
+  await expect(probe).toBeVisible();
+  const backedPixel = await screenshotCenterPixel(page, probe);
+  await page.locator("html").evaluate((root) => root.style.setProperty("--preview-send-text-backing", "transparent"));
+  const rasterPixel = await screenshotCenterPixel(page, probe);
+
+  expect(backedPixel.a).toBe(255);
+  expect(rasterPixel.a).toBe(255);
+  expect(backedPixel.r).toBeLessThan(rasterPixel.r * 0.5);
+  expect(backedPixel.g).toBeLessThan(rasterPixel.g * 0.5);
+  expect(backedPixel.b).toBeLessThan(rasterPixel.b * 0.5);
+});
+
+async function screenshotCenterPixel(page, locator) {
+  const screenshot = await locator.screenshot({ animations: "disabled" });
+  return page.evaluate(async (base64) => {
+    const response = await fetch(`data:image/png;base64,${base64}`);
+    const bitmap = await createImageBitmap(await response.blob());
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d");
+    context.drawImage(bitmap, 0, 0);
+    const [r, g, b, a] = context.getImageData(Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2), 1, 1).data;
+    bitmap.close();
+    return { r, g, b, a };
+  }, screenshot.toString("base64"));
+}
+
+async function renderedContrast(locator) {
+  return locator.evaluate((element) => {
+    const parseColor = (value) => {
+      const channels = value.match(/[\d.]+/g)?.map(Number) ?? [];
+      return { r: channels[0], g: channels[1], b: channels[2], a: channels[3] ?? 1 };
+    };
+    const composite = (foreground, background) => ({
+      r: foreground.r * foreground.a + background.r * (1 - foreground.a),
+      g: foreground.g * foreground.a + background.g * (1 - foreground.a),
+      b: foreground.b * foreground.a + background.b * (1 - foreground.a),
+      a: 1,
+    });
+    const luminance = ({ r, g, b }) => {
+      const channel = (value) => {
+        const srgb = value / 255;
+        return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+    };
+
+    const foreground = parseColor(getComputedStyle(element).color);
+    let background = { r: 255, g: 255, b: 255, a: 1 };
+    const layers = [];
+    for (let current = element; current instanceof Element; current = current.parentElement) {
+      const layer = parseColor(getComputedStyle(current).backgroundColor);
+      if (layer.a > 0) {
+        layers.push(layer);
+      }
+      if (layer.a === 1) {
+        break;
+      }
+    }
+    for (const layer of layers.reverse()) {
+      background = composite(layer, background);
+    }
+    const effectiveForeground = composite(foreground, background);
+    const foregroundLuminance = luminance(effectiveForeground);
+    const backgroundLuminance = luminance(background);
+    const ratio = (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+      (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
+
+    return {
+      foreground: getComputedStyle(element).color,
+      background: `rgb(${background.r}, ${background.g}, ${background.b})`,
+      ratio,
+    };
+  });
+}

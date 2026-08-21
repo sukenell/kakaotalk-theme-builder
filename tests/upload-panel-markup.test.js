@@ -338,7 +338,7 @@ test("color controls show hex values on the picker and expose reset buttons", as
     ["paragraphText", "서브 글자색"],
     ["titlePressed", "선택 메뉴 글자 색"],
     ["bodyPressed", "선택 메뉴 배경 색"],
-    ["unreadCount", "레드닷 알림 색"],
+    ["unreadCount", "읽지 않은 메시지 수 글자 색"],
     ["sendText", "나의 글자 색"],
     ["receiveText", "상대 글자 색"],
   ]) {
@@ -593,7 +593,7 @@ test("chat list headers use local default action icons tinted by the active head
   assert.doesNotMatch(css, /\.chat-compose-icon::after/);
 });
 
-test("unread badges center the white count inside the red pill", async () => {
+test("unread badges center the native unread color inside the web-only pill", async () => {
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 
   assert.match(css, /\.unread-badge\s*\{[\s\S]*display: inline-flex;[\s\S]*align-items: center;[\s\S]*justify-content: center;[\s\S]*height: 18px;[\s\S]*line-height: 18px;/);
@@ -1196,7 +1196,8 @@ test("preview color variables use the same color keys as downloadable themes", a
   assert.match(app, /setPreviewColorVariable\("--preview-passcode-keypad-text", colors\.passcodeKeypadText\);/);
   assert.match(app, /setPreviewColorVariable\("--preview-input-menu-button", colors\.inputMenuButton\);/);
   assert.match(css, /\.input-bar-content > \.preview-mock-control:first-child\s*\{[\s\S]*background: var\(--preview-input-menu-button, #0a000000\);/);
-  assert.match(css, /\.unread-badge\s*\{[\s\S]*background: var\(--preview-unread-count, #ff7f7f\);/);
+  assert.match(css, /\.unread-badge\s*\{[\s\S]*background: var\(--preview-unread-badge-background, #552020\);/);
+  assert.match(css, /\.unread-badge\s*\{[\s\S]*color: var\(--preview-unread-count, #ff7f7f\);/);
   assert.match(themeModel, /\["MessageCellStyle-Send", "-ios-unread-text-color", "unreadCount"\]/);
   assert.match(themeModel, /\["BackgroundStyle-ChatRoom", "background-color", "mainBackground"\]/);
   assert.match(themeModel, /\["BackgroundStyle-Passcode", "background-color", "mainBackground"\]/);
@@ -1556,7 +1557,7 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(css, /\.nine-patch-guide\.stretch-y\s*\{[\s\S]*border-top: 1px dashed/);
   assert.match(css, /\.nine-patch-guide\.padding-x\s*\{[\s\S]*border-left: 1px solid/);
   assert.match(css, /\.nine-patch-guide\.padding-y\s*\{[\s\S]*border-top: 1px solid/);
-  assert.match(css, /\.nine-patch-sample\s*\{[\s\S]*background: rgba\(95, 82, 218, 0\.34\);/);
+  assert.match(css, /\.nine-patch-sample\s*\{[\s\S]*background: var\(--preview-bubble-detail-backing, var\(--preview-send-text-backing\)\);/);
   assert.match(css, /\.nine-patch-sample\s*\{[\s\S]*box-shadow: inset 0 0 0 1px rgba\(69, 58, 181, 0\.38\);/);
 
   assert.match(app, /const bubbleNinePatchSettings = \{\};/);

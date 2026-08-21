@@ -1,14 +1,19 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
+  CONTRAST_CONTEXTS,
   compositeColors,
   contrastRatio,
+  evaluateContrastContext,
   evaluateContrastPair,
   parseCssHex,
   parseThemeArgb,
   relativeLuminance,
 } from "../src/color-contrast.js";
+import { PREVIEW_PAGES } from "../src/preview-pages.js";
+import { defaultThemeState } from "../src/theme-model.js";
 
 const assertClose = (actual, expected, epsilon = 1e-12) => {
   assert.ok(
@@ -192,4 +197,121 @@ test("evaluateContrastPair resolves translucent foreground on an opaque backgrou
   assert.equal(result.status, "fail");
   assert.equal(result.required, 4.5);
   assertClose(result.ratio, 3.976653024912438);
+});
+
+test("CONTRAST_CONTEXTS covers exactly every preview page with auditable fields", () => {
+  const previewPageIds = PREVIEW_PAGES.map(({ id }) => id).sort();
+  const contextPageIds = [...new Set(CONTRAST_CONTEXTS.map(({ pageId }) => pageId))].sort();
+
+  assert.deepEqual(contextPageIds, previewPageIds);
+  assert.ok(CONTRAST_CONTEXTS.length >= PREVIEW_PAGES.length * 2);
+
+  const contextIds = new Set();
+  for (const context of CONTRAST_CONTEXTS) {
+    assert.equal(typeof context.id, "string");
+    assert.ok(context.id.length > 0);
+    assert.equal(contextIds.has(context.id), false, `duplicate context id: ${context.id}`);
+    contextIds.add(context.id);
+
+    assert.equal(typeof context.label, "string", `${context.id} has a label`);
+    assert.match(context.selector, new RegExp(`^#preview-panel-${context.pageId}(?:\\s|$)`));
+    assert.ok(["default", "hover", "pressed", "selected"].includes(context.state));
+    assert.ok(["text", "large-text", "ui-component", "image"].includes(context.kind));
+    assert.ok([3, 4.5].includes(context.required));
+    assert.ok(["cleared", "bundled", "user", "none"].includes(context.imageState));
+    assert.ok(Array.isArray(context.imageKeys));
+    assert.equal(typeof context.evidence, "string");
+    assert.ok(context.evidence.length > 0);
+
+    assert.notEqual(Boolean(context.foregroundKey), Boolean(context.foreground), `${context.id} has one foreground source`);
+    assert.equal(
+      [context.backgroundKey, context.background, context.backgroundLayers].filter(Boolean).length,
+      1,
+      `${context.id} has one background source`,
+    );
+  }
+});
+
+test("default contrast contexts pass raw thresholds or stay unknown only for real image dependence", () => {
+  const results = CONTRAST_CONTEXTS.map((context) => ({
+    context,
+    result: evaluateContrastContext(context, defaultThemeState.colors),
+  }));
+  const failures = results.filter(({ result }) => result.status === "fail");
+  const unknown = results.filter(({ result }) => result.status === "unknown");
+
+  assert.deepEqual(
+    failures.map(({ context, result }) => ({ id: context.id, ratio: result.ratio, required: result.required })),
+    [],
+  );
+  assert.ok(results.some(({ result }) => result.status === "pass"));
+  assert.ok(unknown.length > 0, "bundled decorative/icon rasters remain manual evidence");
+
+  for (const { context, result } of unknown) {
+    assert.equal(result.ratio, null);
+    assert.ok(context.imageKeys.length > 0, `${context.id} names the unresolved image dependency`);
+    assert.ok(["bundled", "user"].includes(context.imageState));
+    assert.match(context.evidence, /수동|manual|이미지|image/i);
+  }
+});
+
+test("context evaluation composites ordered static layers without rounding", () => {
+  const productText = CONTRAST_CONTEXTS.find(({ id }) => id === "shopping-product-title");
+  assert.ok(productText);
+  assert.deepEqual(productText.backgroundLayers, ["#FFFFFF", "#000000B8"]);
+
+  const result = evaluateContrastContext(productText, defaultThemeState.colors);
+  assert.equal(result.status, "pass");
+  assert.ok(result.ratio >= 4.5);
+  assert.ok(result.ratio < 10);
+});
+
+test("image-backed text contexts use a guaranteed backing instead of pretending the raster was computed", () => {
+  const protectedContexts = CONTRAST_CONTEXTS.filter(({ id }) =>
+    [
+      "chat-send-bubble",
+      "chat-receive-bubble",
+      "bubble-detail-send-default",
+      "bubble-detail-send-selected",
+      "bubble-detail-receive-default",
+      "bubble-detail-receive-selected",
+      "shopping-product-title",
+      "shopping-product-price",
+    ].includes(id),
+  );
+
+  assert.equal(protectedContexts.length, 8);
+  for (const context of protectedContexts) {
+    assert.equal(context.imageState, "bundled");
+    assert.ok(context.imageKeys.length > 0);
+    assert.ok(context.background || context.backgroundLayers, `${context.id} has a backing or scrim`);
+    assert.equal(evaluateContrastContext(context, defaultThemeState.colors).status, "pass");
+    assert.match(context.evidence, /backing|scrim/i);
+  }
+});
+
+test("static secondary gray is limited to opaque white-backed contexts", () => {
+  const staticSecondaryContexts = CONTRAST_CONTEXTS.filter(({ foreground }) => foreground === "#687078");
+
+  assert.deepEqual(
+    staticSecondaryContexts.map(({ id }) => id).sort(),
+    ["more-ad-mark", "theme-list-manage", "theme-list-secondary"],
+  );
+  for (const context of staticSecondaryContexts) {
+    assert.equal(context.background, "#FFFFFF");
+    assert.equal(evaluateContrastContext(context, defaultThemeState.colors).status, "pass");
+  }
+  assert.ok(contrastRatio(parseCssHex("#687078"), parseCssHex("#FFDEDE")) < 4.5);
+});
+
+test("the human-readable contrast ledger records every selector, state, threshold, and evidence mode", async () => {
+  const ledger = await readFile(new URL("../docs/accessibility-contrast-ledger.md", import.meta.url), "utf8");
+
+  assert.match(ledger, /자동 판정은 색상 토큰과 명시된 합성 레이어만 계산/);
+  assert.match(ledger, /axe[^\n]*이미지[^\n]*판정하지/);
+  assert.match(ledger, /cleared[^\n]*bundled[^\n]*user/i);
+  for (const context of CONTRAST_CONTEXTS) {
+    assert.match(ledger, new RegExp(`\\| ${context.id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \\|`));
+    assert.match(ledger, new RegExp(context.selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
 });

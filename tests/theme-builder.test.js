@@ -3,6 +3,7 @@ import test from "node:test";
 import zlib from "node:zlib";
 
 import { buildAndroidEntries, buildIosEntries, getSkippedAndroidUploads } from "../src/theme-builder.js";
+import { defaultThemeState } from "../src/theme-model.js";
 
 function readUInt32(data, offset) {
   return data.readUInt32BE(offset);
@@ -221,6 +222,39 @@ test("build entries preserve bundled default tab icons when no icon is uploaded"
       .data,
     androidIcon,
   );
+});
+
+test("web-only contrast backings never alter bundled native image bytes or native output", () => {
+  const iosBubble = new Uint8Array([10, 20, 30, 40]);
+  const androidBubble = new Uint8Array([50, 60, 70, 80]);
+  const iosResult = buildIosEntries(
+    [
+      { name: "Images/chatroomBubbleSend01@3x.png", data: iosBubble },
+      { name: "KakaoTalkTheme.css", data: "MessageCellStyle-Send { -ios-text-color: #FFFFFF; }" },
+    ],
+    { state: defaultThemeState, uploads: {} },
+  );
+  const androidResult = buildAndroidEntries(
+    [
+      {
+        name: "src/main/theme/drawable-xxhdpi/theme_chatroom_bubble_me_01_image.9.png",
+        data: androidBubble,
+      },
+      { name: "src/main/theme/values/colors.xml", data: "<resources></resources>" },
+    ],
+    { state: defaultThemeState, uploads: {} },
+  );
+
+  assert.deepEqual(iosResult.find(({ name }) => name.endsWith("chatroomBubbleSend01@3x.png")).data, iosBubble);
+  assert.deepEqual(
+    androidResult.find(({ name }) => name.endsWith("theme_chatroom_bubble_me_01_image.9.png")).data,
+    androidBubble,
+  );
+
+  for (const entry of [...iosResult, ...androidResult]) {
+    const output = typeof entry.data === "string" ? entry.data : new TextDecoder().decode(entry.data);
+    assert.doesNotMatch(output, /preview-unread-badge-background|preview-(?:send|receive)-text-backing|preview-product-scrim/);
+  }
 });
 
 test("buildAndroidEntries makes tab icon colors transparent when an uploaded tab image exists", () => {

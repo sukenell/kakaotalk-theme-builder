@@ -59,7 +59,7 @@ const colorControls = [
   ["bodyPressed", "선택 메뉴 배경 색"],
   ["sendText", "나의 글자 색"],
   ["receiveText", "상대 글자 색"],
-  ["unreadCount", "레드닷 알림 색"],
+  ["unreadCount", "읽지 않은 메시지 수 글자 색"],
   ["inputBarBackground", "입력창 배경"],
   ["inputBarText", "입력창 텍스트"],
   ["inputMenu", "입력창 메뉴"],
@@ -1497,9 +1497,14 @@ function updateBubbleDetailPreview() {
   setNinePatchGuideVariables(settings);
 
   if (ninePatchSample) {
-    ninePatchSample.style.color = key.startsWith("receive")
+    const isReceiveBubble = key.startsWith("receive");
+    ninePatchSample.style.color = isReceiveBubble
       ? "var(--preview-receive-text, #4d4d4d)"
       : "var(--preview-send-text, #ffffff)";
+    ninePatchSample.style.setProperty(
+      "--preview-bubble-detail-backing",
+      isReceiveBubble ? "var(--preview-receive-text-backing)" : "var(--preview-send-text-backing)",
+    );
   }
 }
 
