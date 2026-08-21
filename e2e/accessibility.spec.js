@@ -56,6 +56,13 @@ async function liveMessageCount(page, channel, message) {
   );
 }
 
+async function nonEmptyLiveMessages(page, channel) {
+  return page.evaluate(
+    (selectedChannel) => window.__liveRegionMutations[selectedChannel].filter(Boolean),
+    channel,
+  );
+}
+
 async function createPngBuffer(page, width, height) {
   const base64 = await page.evaluate(async ({ width, height }) => {
     const canvas = document.createElement("canvas");
@@ -419,6 +426,82 @@ for (const downloadCase of [
     expect(await button.evaluate((element) => document.activeElement === element)).toBe(true);
   });
 }
+
+test("@task3 cached iOS success announces start before completion exactly once", async ({ page }) => {
+  let manifestRequestCount = 0;
+  await page.route("**/assets/template-manifest.json", async (route) => {
+    manifestRequestCount += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ios: [], android: [] }),
+    });
+  });
+  await page.goto("/");
+
+  const button = page.locator("#download-ios");
+  const warmDownloadPromise = page.waitForEvent("download");
+  await button.click();
+  await warmDownloadPromise;
+  await expect(page.locator("#status-text")).toHaveText("iOS 다운로드 준비 완료");
+
+  await installLiveRegionRecorder(page);
+  const cachedDownloadPromise = page.waitForEvent("download");
+  await button.click();
+  await cachedDownloadPromise;
+
+  await expect.poll(() => nonEmptyLiveMessages(page, "status")).toEqual([
+    "iOS 생성 중",
+    "iOS 다운로드 준비 완료",
+  ]);
+  expect(manifestRequestCount).toBe(1);
+  await expect(page.locator("#error-status")).toBeEmpty();
+});
+
+test("@task3 post-cache iOS failure announces start before failure exactly once", async ({ page }) => {
+  let manifestRequestCount = 0;
+  await page.route("**/assets/template-manifest.json", async (route) => {
+    manifestRequestCount += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ios: [], android: [] }),
+    });
+  });
+  await page.goto("/");
+
+  const button = page.locator("#download-ios");
+  const warmDownloadPromise = page.waitForEvent("download");
+  await button.click();
+  await warmDownloadPromise;
+  await expect(page.locator("#status-text")).toHaveText("iOS 다운로드 준비 완료");
+
+  await page.evaluate(() => {
+    const originalCreateObjectUrl = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = (...args) => {
+      URL.createObjectURL = originalCreateObjectUrl;
+      throw new Error(`forced cached download failure for ${args[0]?.type || "unknown type"}`);
+    };
+  });
+  await installLiveRegionRecorder(page);
+  let failedAttemptDownloadCount = 0;
+  page.on("download", () => {
+    failedAttemptDownloadCount += 1;
+  });
+
+  await button.click();
+
+  await expect.poll(() => nonEmptyLiveMessages(page, "status")).toEqual([
+    "iOS 생성 중",
+    "iOS 생성 실패",
+  ]);
+  await expect.poll(() => nonEmptyLiveMessages(page, "alert")).toEqual([
+    "iOS 테마를 생성하지 못했습니다. 다시 시도해 주세요.",
+  ]);
+  await expect(page.locator(".download-actions")).toHaveAttribute("aria-busy", "false");
+  expect(manifestRequestCount).toBe(1);
+  expect(failedAttemptDownloadCount).toBe(0);
+});
 
 for (const failureCase of [
   {

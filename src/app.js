@@ -285,8 +285,6 @@ let currentPreviewDevice = "phone";
 let activeBubbleDetailKey = "sendBubbleNormal";
 let passcodeCount = 0;
 let isDownloadBusy = false;
-let statusAnnouncementSequence = 0;
-let errorAnnouncementSequence = 0;
 
 const settingsForm = document.querySelector("#settings-form");
 const colorControlRoot = document.querySelector("#color-controls");
@@ -318,6 +316,8 @@ const bubbleDetailNextButton = document.querySelector("[data-bubble-detail-next]
 const previewDateElements = document.querySelectorAll("[data-preview-date]");
 const previewTimeElements = document.querySelectorAll("[data-preview-time]");
 const documentRoot = document.documentElement;
+const announceStatusMessage = createDiscreteLiveAnnouncer(statusText);
+const announceErrorMessage = createDiscreteLiveAnnouncer(errorStatus);
 
 applyPreviewDefaultImages(documentRoot);
 applyShoppingPreviewImages();
@@ -326,27 +326,56 @@ enableHorizontalDragScroll(".shopping-pick-carousel");
 renderPhoneStatusWidgets();
 applyFriendAdCaptionVisibility();
 
-function announceLiveMessage(element, message, sequence, getCurrentSequence) {
-  element.textContent = "";
-  if (!message) {
-    return;
-  }
+function createDiscreteLiveAnnouncer(element) {
+  let generation = 0;
+  let isProcessing = false;
+  let messages = [];
 
-  window.setTimeout(() => {
-    if (sequence === getCurrentSequence()) {
-      element.textContent = message;
+  const drain = () => {
+    if (isProcessing || messages.length === 0) {
+      return;
     }
-  }, 0);
+
+    isProcessing = true;
+    const item = messages.shift();
+    element.textContent = "";
+    window.setTimeout(() => {
+      if (item.generation !== generation) {
+        return;
+      }
+
+      element.textContent = item.message;
+      window.setTimeout(() => {
+        if (item.generation !== generation) {
+          return;
+        }
+
+        isProcessing = false;
+        drain();
+      }, 0);
+    }, 0);
+  };
+
+  return (message) => {
+    if (!message) {
+      generation += 1;
+      messages = [];
+      isProcessing = false;
+      element.textContent = "";
+      return;
+    }
+
+    messages.push({ message, generation });
+    drain();
+  };
 }
 
 function setStatus(message) {
-  statusAnnouncementSequence += 1;
-  announceLiveMessage(statusText, message, statusAnnouncementSequence, () => statusAnnouncementSequence);
+  announceStatusMessage(message);
 }
 
 function setErrorStatus(message) {
-  errorAnnouncementSequence += 1;
-  announceLiveMessage(errorStatus, message, errorAnnouncementSequence, () => errorAnnouncementSequence);
+  announceErrorMessage(message);
 }
 
 function createPhoneStatusWidget() {
