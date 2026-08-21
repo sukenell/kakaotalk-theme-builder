@@ -9,7 +9,9 @@ const root = process.cwd();
 const port = Number(process.env.PORT || 4173);
 const host = "127.0.0.1";
 
-await writeRuntimeEnvConfig({ rootDirectory: root });
+if (process.env.SKIP_ENV_CONFIG !== "1") {
+  await writeRuntimeEnvConfig({ rootDirectory: root });
+}
 
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
