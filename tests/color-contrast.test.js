@@ -255,6 +255,14 @@ const EXPECTED_IMAGE_DEPENDENCIES = Object.freeze({
   "theme-list-user-icon": Object.freeze({ themeIcon: "bundled" }),
 });
 
+const HEADER_ACTION_CONTEXT_IDS = Object.freeze([
+  "home-header-actions",
+  "chat-list-header-actions",
+  "open-chat-header-actions",
+  "shopping-header-actions",
+  "more-header-actions",
+]);
+
 test("parseCssHex reads CSS RRGGBB and RRGGBBAA channels", () => {
   assert.deepEqual(parseCssHex("#664242"), {
     r: 102,
@@ -453,6 +461,7 @@ test("CONTRAST_CONTEXTS covers exactly every preview page with auditable fields"
     assert.ok([3, 4.5].includes(context.required));
     assert.ok(["cleared", "bundled", "user", "none"].includes(context.imageState));
     assert.ok(Array.isArray(context.imageKeys));
+    assert.ok(Array.isArray(context.protectedImageKeys));
     assert.equal(typeof context.imageStates, "object", `${context.id} declares per-image default states`);
     assert.deepEqual(
       Object.keys(context.imageStates).sort(),
@@ -462,6 +471,16 @@ test("CONTRAST_CONTEXTS covers exactly every preview page with auditable fields"
     for (const imageState of Object.values(context.imageStates)) {
       assert.ok(["cleared", "bundled", "user"].includes(imageState), `${context.id} has a valid image state`);
     }
+    assert.equal(
+      context.protectedImageKeys.every((key) => context.imageKeys.includes(key)),
+      true,
+      `${context.id} only protects declared image dependencies`,
+    );
+    assert.equal(
+      Boolean(context.guarantee),
+      context.protectedImageKeys.length > 0,
+      `${context.id} pairs its guarantee with explicit protected image keys`,
+    );
     assert.equal(typeof context.evidence, "string");
     assert.ok(context.evidence.length > 0);
 
@@ -569,6 +588,64 @@ test("effective image state overrides affect only relevant unprotected raster de
   );
 });
 
+test("header mask guarantees never exempt their raster-backed main surface", () => {
+  for (const id of HEADER_ACTION_CONTEXT_IDS) {
+    const context = CONTRAST_CONTEXTS.find(({ id: contextId }) => contextId === id);
+    assert.ok(context, id);
+    const protectedImageKeys = context.protectedImageKeys ?? [];
+
+    for (const imageState of ["bundled", "user"]) {
+      assert.equal(
+        evaluateContrastContext(context, defaultThemeState.colors, {
+          imageStates: { mainBackground: imageState },
+        }).status,
+        "unknown",
+        `${id} ${imageState} main background stays unresolved`,
+      );
+    }
+
+    for (const protectedKey of protectedImageKeys) {
+      assert.equal(
+        evaluateContrastContext(context, defaultThemeState.colors, {
+          imageStates: { [protectedKey]: "user" },
+        }).status,
+        "pass",
+        `${id} ${protectedKey} remains a currentColor mask`,
+      );
+    }
+
+    assert.equal(
+      evaluateContrastContext(context, defaultThemeState.colors, {
+        imageStates: { readingLogAd: "user" },
+      }).status,
+      "pass",
+      `${id} ignores unrelated image state`,
+    );
+
+    assert.deepEqual(
+      [...protectedImageKeys].sort(),
+      context.imageKeys.filter((key) => key !== "mainBackground").sort(),
+      `${id} protects only its CSS mask assets`,
+    );
+  }
+});
+
+test("every backing and scrim guarantee names each protected dependency", () => {
+  const guaranteedContexts = CONTRAST_CONTEXTS.filter(({ guarantee }) => guarantee);
+  assert.ok(guaranteedContexts.length > HEADER_ACTION_CONTEXT_IDS.length);
+
+  for (const context of guaranteedContexts) {
+    if (HEADER_ACTION_CONTEXT_IDS.includes(context.id)) {
+      continue;
+    }
+    assert.deepEqual(
+      [...(context.protectedImageKeys ?? [])].sort(),
+      [...context.imageKeys].sort(),
+      `${context.id} protects every raster behind its opaque or worst-case backing`,
+    );
+  }
+});
+
 test("context evaluation composites ordered static layers without rounding", () => {
   const productText = CONTRAST_CONTEXTS.find(({ id }) => id === "shopping-product-title");
   assert.ok(productText);
@@ -632,7 +709,11 @@ test("the human-readable contrast ledger records every selector, state, threshol
   assert.match(ledger, /axe[^\n]*이미지[^\n]*판정하지/);
   assert.match(ledger, /cleared[^\n]*bundled[^\n]*user/i);
   for (const context of CONTRAST_CONTEXTS) {
-    assert.match(ledger, new RegExp(`\\| ${context.id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \\|`));
-    assert.match(ledger, new RegExp(context.selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    const row = ledger.split("\n").find((line) => line.startsWith(`| ${context.id} |`));
+    assert.ok(row, `${context.id} has a ledger row`);
+    assert.match(row, new RegExp(context.selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    if ((context.protectedImageKeys ?? []).length > 0) {
+      assert.match(row, new RegExp(`보호 키: ${context.protectedImageKeys.join(", ")}`));
+    }
   }
 });

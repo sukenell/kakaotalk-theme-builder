@@ -235,6 +235,7 @@ const contrastContext = (definition) => {
   );
   const imageStates = Object.freeze({ ...declaredImageStates });
   const imageKeys = Object.freeze(Object.keys(imageStates));
+  const protectedImageKeys = Object.freeze([...(definition.protectedImageKeys ?? [])]);
   const states = Object.values(imageStates);
   const imageState = states.length === 0
     ? "none"
@@ -252,6 +253,7 @@ const contrastContext = (definition) => {
     imageKeys,
     imageState,
     imageStates,
+    protectedImageKeys,
   });
 };
 
@@ -276,8 +278,8 @@ const productImages = Object.freeze({
 /**
  * Auditable default-preview contrast ledger. Static colors use CSS hex syntax;
  * theme color keys use KakaoTalk's ARGB syntax. `backgroundLayers` are ordered
- * back-to-front. Raster-dependent rows remain unknown unless `guarantee`
- * identifies a CSS backing/scrim that is independent from raster pixels.
+ * back-to-front. Raster-dependent rows remain unknown unless each dependency
+ * is named in `protectedImageKeys` and covered by the declared CSS guarantee.
  */
 export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
@@ -292,7 +294,8 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
     id: "home-header-actions", pageId: "home", label: "홈 헤더 아이콘", selector: "#preview-panel-home .friend-action-icon",
     foregroundKey: "headerText", backgroundKey: "mainBackground", imageStates: headerImages("headerSearch", "headerFriendTab", "headerSettings"),
-    kind: "ui-component", guarantee: "css-currentcolor-mask", foregroundProperty: "background-color", backgroundSource: "parent",
+    kind: "ui-component", guarantee: "css-currentcolor-mask", protectedImageKeys: ["headerSearch", "headerFriendTab", "headerSettings"],
+    foregroundProperty: "background-color", backgroundSource: "parent",
     evidence: "bundled raster는 마스크 모양만 제공하고 CSS currentColor가 실제 전경을 보장",
   }),
   contrastContext({
@@ -348,7 +351,8 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
     id: "chat-list-header-actions", pageId: "chat-list", label: "대화 목록 헤더 아이콘", selector: "#preview-panel-chat-list .chat-list-actions :is(.friend-action-icon, .chat-compose-icon)",
     foregroundKey: "headerText", backgroundKey: "mainBackground", imageStates: headerImages("headerSearch", "headerCompose", "headerSettings"),
-    kind: "ui-component", guarantee: "css-currentcolor-mask", foregroundProperty: "background-color", backgroundSource: "parent",
+    kind: "ui-component", guarantee: "css-currentcolor-mask", protectedImageKeys: ["headerSearch", "headerCompose", "headerSettings"],
+    foregroundProperty: "background-color", backgroundSource: "parent",
     evidence: "bundled raster 마스크와 CSS currentColor 전경",
   }),
   contrastContext({
@@ -394,7 +398,8 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
     id: "open-chat-header-actions", pageId: "open-chat", label: "지금 헤더 아이콘", selector: "#preview-panel-open-chat .chat-list-actions :is(.friend-action-icon, .chat-compose-icon)",
     foregroundKey: "headerText", backgroundKey: "mainBackground", imageStates: headerImages("headerSearch", "headerCompose", "headerSettings"),
-    kind: "ui-component", guarantee: "css-currentcolor-mask", foregroundProperty: "background-color", backgroundSource: "parent",
+    kind: "ui-component", guarantee: "css-currentcolor-mask", protectedImageKeys: ["headerSearch", "headerCompose", "headerSettings"],
+    foregroundProperty: "background-color", backgroundSource: "parent",
     evidence: "bundled raster 마스크와 CSS currentColor 전경",
   }),
   contrastContext({
@@ -440,7 +445,8 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
     id: "shopping-header-actions", pageId: "shopping", label: "쇼핑 헤더 아이콘", selector: "#preview-panel-shopping .chat-list-actions :is(.friend-action-icon, .shopping-action-icon)",
     foregroundKey: "headerText", backgroundKey: "mainBackground", imageStates: headerImages("headerSearch", "headerShopping", "headerSettings"),
-    kind: "ui-component", guarantee: "css-currentcolor-mask", foregroundProperty: "background-color", backgroundSource: "parent",
+    kind: "ui-component", guarantee: "css-currentcolor-mask", protectedImageKeys: ["headerSearch", "headerShopping", "headerSettings"],
+    foregroundProperty: "background-color", backgroundSource: "parent",
     evidence: "bundled raster 마스크와 CSS currentColor 전경",
   }),
   contrastContext({
@@ -464,7 +470,8 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
     id: "shopping-summary-heart", pageId: "shopping", label: "찜한 상품 하트", selector: "#preview-panel-shopping .shopping-summary-thumb.has-heart",
     foreground: "#FFFFFF", background: "#FF3B6B", imageStates: productImages, kind: "ui-component", guarantee: "opaque-backing",
-    foregroundPseudo: "::after", backgroundSource: "foreground-pseudo", evidence: "상품 raster 위 실제 ::after 하트와 불투명 원형 CSS backing",
+    protectedImageKeys: Object.keys(productImages), foregroundPseudo: "::after", backgroundSource: "foreground-pseudo",
+    evidence: "상품 raster 위 실제 ::after 하트와 불투명 원형 CSS backing",
   }),
   contrastContext({
     id: "shopping-order-glyph", pageId: "shopping", label: "주문 내역 원화 기호", selector: "#preview-panel-shopping .shopping-order-icon",
@@ -496,17 +503,20 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
     id: "shopping-product-badge", pageId: "shopping", label: "상품 배지", selector: "#preview-panel-shopping .shop-badge",
     foreground: "#FFE936", backgroundLayers: ["#FFFFFF", "#222222BD"], imageStates: productImages,
-    guarantee: "worst-case-backing", backingSelector: ".shop-badge", evidence: "worst-case white raster + fixed 74% #222 badge backing",
+    guarantee: "worst-case-backing", protectedImageKeys: Object.keys(productImages), backingSelector: ".shop-badge",
+    evidence: "worst-case white raster + fixed 74% #222 badge backing",
   }),
   contrastContext({
     id: "shopping-product-title", pageId: "shopping", label: "상품 제목", selector: "#preview-panel-shopping .shop-card-content strong",
     foreground: "#FFFFFF", backgroundLayers: ["#FFFFFF", "#000000B8"], imageStates: productImages,
-    guarantee: "worst-case-scrim", backingSelector: ".shop-card-content", evidence: "worst-case white raster + fixed 72% black scrim backing",
+    guarantee: "worst-case-scrim", protectedImageKeys: Object.keys(productImages), backingSelector: ".shop-card-content",
+    evidence: "worst-case white raster + fixed 72% black scrim backing",
   }),
   contrastContext({
     id: "shopping-product-price", pageId: "shopping", label: "상품 가격", selector: "#preview-panel-shopping .shop-price",
     foreground: "#FFFFFF", backgroundLayers: ["#FFFFFF", "#000000B8"], imageStates: productImages,
-    guarantee: "worst-case-scrim", backingSelector: ".shop-card-content", evidence: "worst-case white raster + fixed 72% black scrim backing",
+    guarantee: "worst-case-scrim", protectedImageKeys: Object.keys(productImages), backingSelector: ".shop-card-content",
+    evidence: "worst-case white raster + fixed 72% black scrim backing",
   }),
   contrastContext({
     id: "shopping-tab-icons-default", pageId: "shopping", label: "선택되지 않은 하단 탭 아이콘", selector: "#preview-panel-shopping .bottom-tabs .preview-mock-control:not(.is-selected) .tab-icon",
@@ -531,7 +541,8 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
     id: "more-header-actions", pageId: "more", label: "더보기 헤더 아이콘", selector: "#preview-panel-more .chat-list-actions :is(.friend-action-icon, .scan-action-icon)",
     foregroundKey: "headerText", backgroundKey: "mainBackground", imageStates: headerImages("headerSearch", "headerScan", "headerSettings"),
-    kind: "ui-component", guarantee: "css-currentcolor-mask", foregroundProperty: "background-color", backgroundSource: "parent",
+    kind: "ui-component", guarantee: "css-currentcolor-mask", protectedImageKeys: ["headerSearch", "headerScan", "headerSettings"],
+    foregroundProperty: "background-color", backgroundSource: "parent",
     evidence: "bundled raster 마스크와 CSS currentColor 전경",
   }),
   contrastContext({
@@ -545,40 +556,46 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
     id: "more-service-icon", pageId: "more", label: "더보기 서비스 아이콘", selector: "#preview-panel-more .more-service-icon",
     foregroundKey: "headerText", background: "#FFE7E7", imageStates: mainImage, kind: "ui-component", guarantee: "opaque-backing",
-    foregroundProperty: "border-top-color", backgroundSource: "parent", backingSelector: ".more-service-panel",
+    protectedImageKeys: ["mainBackground"], foregroundProperty: "border-top-color", backgroundSource: "parent", backingSelector: ".more-service-panel",
     evidence: "main raster 위 불투명 service panel과 headerText 경계",
   }),
   contrastContext({
     id: "more-service-title", pageId: "more", label: "더보기 서비스 이름", selector: "#preview-panel-more .more-service-item strong",
-    foregroundKey: "titleText", background: "#FFE7E7", imageStates: mainImage, guarantee: "opaque-backing", backingSelector: ".more-service-panel",
+    foregroundKey: "titleText", background: "#FFE7E7", imageStates: mainImage, guarantee: "opaque-backing",
+    protectedImageKeys: ["mainBackground"], backingSelector: ".more-service-panel",
     evidence: "main raster를 차단하는 불투명 mainBackground 72% + white color-mix",
   }),
   contrastContext({
     id: "more-page-dot-default", pageId: "more", label: "더보기 기본 페이지 점", selector: "#preview-panel-more .more-page-dots span:not(.active)",
     foregroundKey: "headerText", foregroundOpacity: 0.65, background: "#FFE7E7", imageStates: mainImage, kind: "ui-component",
-    guarantee: "opaque-backing", foregroundProperty: "background-color", backgroundSource: "parent", backingSelector: ".more-service-panel",
+    guarantee: "opaque-backing", protectedImageKeys: ["mainBackground"], foregroundProperty: "background-color",
+    backgroundSource: "parent", backingSelector: ".more-service-panel",
     evidence: "불투명 service panel 위 65% headerText 페이지 상태",
   }),
   contrastContext({
     id: "more-page-dot-selected", pageId: "more", label: "더보기 선택 페이지 점", selector: "#preview-panel-more .more-page-dots span.active",
     foregroundKey: "headerText", background: "#FFE7E7", imageStates: mainImage, kind: "ui-component",
-    guarantee: "opaque-backing", foregroundProperty: "background-color", backgroundSource: "parent", backingSelector: ".more-service-panel",
+    guarantee: "opaque-backing", protectedImageKeys: ["mainBackground"], foregroundProperty: "background-color",
+    backgroundSource: "parent", backingSelector: ".more-service-panel",
     state: "selected", evidence: "불투명 service panel 위 headerText 선택 상태",
   }),
   contrastContext({
     id: "more-ad-title", pageId: "more", label: "광고 제목", selector: "#preview-panel-more .more-ad-art strong",
     foreground: "#23406D", backgroundLayers: ["#000000", "#FFFFFFBD"], imageKeys: ["readingLogAd"], imageState: "bundled",
-    guarantee: "worst-case-scrim", backingSelector: ".more-ad-art strong", evidence: "worst-case black raster + fixed 74% white scrim backing",
+    guarantee: "worst-case-scrim", protectedImageKeys: ["readingLogAd"], backingSelector: ".more-ad-art strong",
+    evidence: "worst-case black raster + fixed 74% white scrim backing",
   }),
   contrastContext({
     id: "more-ad-description", pageId: "more", label: "광고 설명", selector: "#preview-panel-more .more-ad-art span:not(.ad-mark)",
     foreground: "#23406D", backgroundLayers: ["#000000", "#FFFFFFB3"], imageKeys: ["readingLogAd"], imageState: "bundled",
-    guarantee: "worst-case-scrim", backingSelector: ".more-ad-art span", evidence: "worst-case black raster + fixed 70% white scrim backing",
+    guarantee: "worst-case-scrim", protectedImageKeys: ["readingLogAd"], backingSelector: ".more-ad-art span",
+    evidence: "worst-case black raster + fixed 70% white scrim backing",
   }),
   contrastContext({
     id: "more-ad-mark", pageId: "more", label: "광고 표시", selector: "#preview-panel-more .ad-mark",
     foreground: "#687078", background: "#FFFFFF", imageKeys: ["readingLogAd"], imageState: "bundled",
-    guarantee: "opaque-backing", backingSelector: ".ad-mark", evidence: "번들 광고 이미지와 분리된 opaque white backing",
+    guarantee: "opaque-backing", protectedImageKeys: ["readingLogAd"], backingSelector: ".ad-mark",
+    evidence: "번들 광고 이미지와 분리된 opaque white backing",
   }),
   contrastContext({
     id: "more-ad-footer-title", pageId: "more", label: "광고 푸터 제목", selector: "#preview-panel-more .more-ad-footer strong",
@@ -620,7 +637,8 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
     id: "chat-date", pageId: "chat", label: "채팅 날짜", selector: "#preview-panel-chat .date-chip",
     foreground: "#FFFFFF", backgroundLayers: ["#FFFFFF", "#0000008C"], imageStates: chatImage,
-    guarantee: "worst-case-scrim", backingSelector: ".date-chip", evidence: "모든 chat raster에서 최악 흰색을 기준으로 한 55% 검정 scrim 칩",
+    guarantee: "worst-case-scrim", protectedImageKeys: ["chatBackground"], backingSelector: ".date-chip",
+    evidence: "모든 chat raster에서 최악 흰색을 기준으로 한 55% 검정 scrim 칩",
   }),
   contrastContext({
     id: "chat-sender", pageId: "chat", label: "발신자 이름", selector: "#preview-panel-chat .sender",
@@ -635,27 +653,32 @@ export const CONTRAST_CONTEXTS = Object.freeze([
   contrastContext({
     id: "chat-send-bubble-normal", pageId: "chat", label: "보낸 기본 말풍선", selector: "#preview-panel-chat .send-bubble:not(.additional-bubble)",
     foregroundKey: "sendText", backgroundLayers: ["#FFFFFF", "#000000B8"], imageStates: { chatBackground: "cleared", sendBubbleNormal: "bundled" },
-    guarantee: "worst-case-scrim", backingPseudo: "::before", evidence: "worst-case white raster + fixed 72% black CSS backing",
+    guarantee: "worst-case-scrim", protectedImageKeys: ["chatBackground", "sendBubbleNormal"], backingPseudo: "::before",
+    evidence: "worst-case white raster + fixed 72% black CSS backing",
   }),
   contrastContext({
     id: "chat-send-bubble-additional", pageId: "chat", label: "보낸 추가 말풍선", selector: "#preview-panel-chat .send-bubble.additional-bubble",
     foregroundKey: "sendText", backgroundLayers: ["#FFFFFF", "#000000B8"], imageStates: { chatBackground: "cleared", sendBubbleTailless: "bundled" },
-    guarantee: "worst-case-scrim", backingPseudo: "::before", evidence: "tailless raster 위 fixed 72% black CSS backing",
+    guarantee: "worst-case-scrim", protectedImageKeys: ["chatBackground", "sendBubbleTailless"], backingPseudo: "::before",
+    evidence: "tailless raster 위 fixed 72% black CSS backing",
   }),
   contrastContext({
     id: "chat-receive-bubble-normal", pageId: "chat", label: "받은 기본 말풍선", selector: "#preview-panel-chat .receive-bubble:not(.additional-bubble):not(.typing-bubble)",
     foregroundKey: "receiveText", background: "#F8F8F8", imageStates: { chatBackground: "cleared", receiveBubbleNormal: "bundled" },
-    guarantee: "opaque-backing", backingPseudo: "::before", evidence: "번들 raster 위 불투명 CSS backing",
+    guarantee: "opaque-backing", protectedImageKeys: ["chatBackground", "receiveBubbleNormal"], backingPseudo: "::before",
+    evidence: "번들 raster 위 불투명 CSS backing",
   }),
   contrastContext({
     id: "chat-receive-bubble-additional", pageId: "chat", label: "받은 추가 말풍선", selector: "#preview-panel-chat .receive-bubble.additional-bubble",
     foregroundKey: "receiveText", background: "#F8F8F8", imageStates: { chatBackground: "cleared", receiveBubbleTailless: "bundled" },
-    guarantee: "opaque-backing", backingPseudo: "::before", evidence: "tailless raster 위 불투명 CSS backing",
+    guarantee: "opaque-backing", protectedImageKeys: ["chatBackground", "receiveBubbleTailless"], backingPseudo: "::before",
+    evidence: "tailless raster 위 불투명 CSS backing",
   }),
   contrastContext({
     id: "chat-receive-bubble-typing", pageId: "chat", label: "입력 중 말풍선", selector: "#preview-panel-chat .receive-bubble.typing-bubble",
     foregroundKey: "receiveText", background: "#F8F8F8", imageStates: { chatBackground: "cleared", receiveBubbleNormal: "bundled" },
-    guarantee: "opaque-backing", backingPseudo: "::before", evidence: "입력 중 bundled raster 위 불투명 CSS backing",
+    guarantee: "opaque-backing", protectedImageKeys: ["chatBackground", "receiveBubbleNormal"], backingPseudo: "::before",
+    evidence: "입력 중 bundled raster 위 불투명 CSS backing",
   }),
   contrastContext({
     id: "chat-input", pageId: "chat", label: "메시지 입력 안내", selector: "#preview-panel-chat .input-pill",
@@ -883,11 +906,12 @@ export function evaluateContrastContext(context, colors, options = {}) {
     return unknown;
   }
 
-  const effectiveImageStates = (context.imageKeys ?? []).map((key) =>
-    options.imageStates?.[key] ?? context.imageStates?.[key] ?? context.imageState,
-  );
-  const hasUnresolvedRaster = effectiveImageStates.some((state) => ["bundled", "user"].includes(state));
-  if (context.kind === "image" || (hasUnresolvedRaster && !context.guarantee)) {
+  const protectedImageKeys = new Set(context.protectedImageKeys ?? []);
+  const hasUnresolvedRaster = (context.imageKeys ?? []).some((key) => {
+    const state = options.imageStates?.[key] ?? context.imageStates?.[key] ?? context.imageState;
+    return ["bundled", "user"].includes(state) && !protectedImageKeys.has(key);
+  });
+  if (context.kind === "image" || hasUnresolvedRaster) {
     return unknown;
   }
 
