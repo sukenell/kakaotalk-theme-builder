@@ -1101,11 +1101,12 @@
       <div class="download-copy">
         <div>
           <strong id="download-title">나의 테마</strong>
-          <span id="status-text">템플릿 준비 완료</span>
+          <span id="status-text" role="status" aria-live="polite" aria-atomic="true">템플릿 준비 완료</span>
+          <span id="error-status" role="alert" aria-atomic="true"></span>
         </div>
         <p class="site-disclaimer">본 사이트는 [카카오톡]과 관련이 없는 비공식 테마 제작 도구입니다.</p>
       </div>
-      <div class="download-actions">
+      <div class="download-actions" aria-busy="false">
         <button id="download-ios" type="button" aria-label="iOS 테마 다운로드">IOS</button>
         <button id="download-android" type="button" aria-label="Android 소스 다운로드">Android</button>
       </div>

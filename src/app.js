@@ -14,9 +14,8 @@ import {
   defaultThemeState,
   getActiveColors,
   IMAGE_TARGETS,
+  isValidThemeIdSegment,
   isValidThemeVersion,
-  normalizeThemeVersion,
-  sanitizeThemeIdSegment,
   setActiveColor,
 } from "./theme-model.js";
 import {
@@ -274,6 +273,8 @@ const uploads = Object.fromEntries([...defaultClearedImageUploadKeys].map((key) 
 const previews = {};
 const uploadTints = {};
 const uploadUiState = {};
+const colorInputDrafts = {};
+const colorInputErrorKeys = new Set();
 const bubbleNinePatchSettings = {};
 const bubbleSettingsVersions = {};
 const uploadSourceVersions = {};
@@ -284,15 +285,22 @@ let currentPreviewDevice = "phone";
 let activeBubbleDetailKey = "sendBubbleNormal";
 let passcodeCount = 0;
 let isDownloadBusy = false;
+let statusAnnouncementSequence = 0;
+let errorAnnouncementSequence = 0;
 
 const settingsForm = document.querySelector("#settings-form");
 const colorControlRoot = document.querySelector("#color-controls");
 const uploadControlRoot = document.querySelector("#upload-controls");
 const statusText = document.querySelector("#status-text");
+const errorStatus = document.querySelector("#error-status");
+const themeIdInput = document.querySelector("#theme-id-segment");
+const themeIdError = document.querySelector("#theme-id-error");
 const downloadTitle = document.querySelector("#download-title");
 const downloadIosButton = document.querySelector("#download-ios");
 const downloadAndroidButton = document.querySelector("#download-android");
 const versionInput = document.querySelector("#version");
+const versionError = document.querySelector("#version-error");
+const downloadActions = document.querySelector(".download-actions");
 const chatScreen = document.querySelector("#chat-screen");
 const previewTrack = document.querySelector("#preview-track");
 const previewTabs = document.querySelector("#preview-tabs");
@@ -318,8 +326,27 @@ enableHorizontalDragScroll(".shopping-pick-carousel");
 renderPhoneStatusWidgets();
 applyFriendAdCaptionVisibility();
 
+function announceLiveMessage(element, message, sequence, getCurrentSequence) {
+  element.textContent = "";
+  if (!message) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (sequence === getCurrentSequence()) {
+      element.textContent = message;
+    }
+  }, 0);
+}
+
 function setStatus(message) {
-  statusText.textContent = message;
+  statusAnnouncementSequence += 1;
+  announceLiveMessage(statusText, message, statusAnnouncementSequence, () => statusAnnouncementSequence);
+}
+
+function setErrorStatus(message) {
+  errorAnnouncementSequence += 1;
+  announceLiveMessage(errorStatus, message, errorAnnouncementSequence, () => errorAnnouncementSequence);
 }
 
 function createPhoneStatusWidget() {
@@ -425,33 +452,75 @@ function applyGroupAvatarImages() {
 
 function setBusy(isBusy) {
   isDownloadBusy = isBusy;
+  downloadActions.setAttribute("aria-busy", String(isBusy));
   updateDownloadButtons();
 }
 
-function updateDownloadButtons() {
-  const isVersionValid = isValidThemeVersion(state.version);
-  const isDownloadDisabled = isDownloadBusy || !isVersionValid;
-  const invalidVersionMessage = "버전은 숫자.숫자.숫자 형식으로 입력해주세요";
+function getThemeValidation() {
+  const themeIdValue = String(state.themeIdSegment ?? "");
+  const versionValue = String(state.version ?? "");
+  const themeIdMessage = themeIdValue
+    ? "테마 ID는 영문자만 입력해 주세요."
+    : "테마 ID를 입력해 주세요.";
+  const versionMessage = versionValue
+    ? "버전은 숫자.숫자.숫자 형식으로 입력해 주세요."
+    : "버전을 입력해 주세요.";
+  const themeId = {
+    input: themeIdInput,
+    error: themeIdError,
+    errorId: "theme-id-error",
+    isValid: isValidThemeIdSegment(themeIdValue),
+    message: themeIdMessage,
+  };
+  const version = {
+    input: versionInput,
+    error: versionError,
+    errorId: "version-error",
+    isValid: isValidThemeVersion(versionValue),
+    message: versionMessage,
+  };
+
+  return {
+    themeId,
+    version,
+    isValid: themeId.isValid && version.isValid,
+  };
+}
+
+function syncFieldValidation({ input, error, errorId, isValid, message }) {
+  if (!input || !error) {
+    return;
+  }
+
+  input.setCustomValidity(isValid ? "" : message);
+  error.hidden = isValid;
+
+  if (isValid) {
+    input.removeAttribute("aria-invalid");
+    input.removeAttribute("aria-errormessage");
+    return;
+  }
+
+  error.textContent = message;
+  input.setAttribute("aria-invalid", "true");
+  input.setAttribute("aria-errormessage", errorId);
+}
+
+function updateDownloadButtons(validation = getThemeValidation()) {
+  const isDownloadDisabled = isDownloadBusy || !validation.isValid;
+  const invalidMessage = [validation.themeId, validation.version].find((field) => !field.isValid)?.message ?? "";
 
   downloadIosButton.disabled = isDownloadDisabled;
   downloadAndroidButton.disabled = isDownloadDisabled;
-  downloadIosButton.title = isVersionValid ? "" : invalidVersionMessage;
-  downloadAndroidButton.title = isVersionValid ? "" : invalidVersionMessage;
-
-  if (versionInput) {
-    versionInput.setAttribute("aria-invalid", String(!isVersionValid));
-    versionInput.setCustomValidity(isVersionValid ? "" : invalidVersionMessage);
-  }
+  downloadIosButton.title = invalidMessage;
+  downloadAndroidButton.title = invalidMessage;
+  syncFieldValidation(validation.themeId);
+  syncFieldValidation(validation.version);
 }
 
-function canDownloadTheme() {
-  if (isValidThemeVersion(state.version)) {
-    return true;
-  }
-
-  setStatus("버전은 숫자.숫자.숫자 형식으로 입력해주세요");
-  updateDownloadButtons();
-  return false;
+function canDownloadTheme(validation = getThemeValidation()) {
+  updateDownloadButtons(validation);
+  return validation.isValid;
 }
 
 function sanitizeFileName(value) {
@@ -520,22 +589,46 @@ function renderColorControls() {
       hexInput.ariaLabel = `${label} HEX 컬러 코드`;
       hexInput.placeholder = "#RRGGBB";
 
+      const hexError = document.createElement("p");
+      hexError.id = `color-hex-error-${key}`;
+      hexError.className = "field-error color-hex-error";
+      hexError.textContent = "HEX 색상은 #RRGGBB 또는 #AARRGGBB 형식으로 입력해 주세요.";
+      hexError.hidden = true;
+
+      const syncHexError = (hasError) => {
+        hexError.hidden = !hasError;
+        hexInput.setCustomValidity(hasError ? hexError.textContent : "");
+        if (hasError) {
+          hexInput.setAttribute("aria-invalid", "true");
+          hexInput.setAttribute("aria-errormessage", hexError.id);
+        } else {
+          hexInput.removeAttribute("aria-invalid");
+          hexInput.removeAttribute("aria-errormessage");
+        }
+      };
+
       const syncResetState = (value) => {
         resetButton.disabled = normalizeHexColorInput(value) === normalizeHexColorInput(defaultThemeState.colors[key]);
       };
 
-      const syncPickerState = (value) => {
+      const syncPickerState = (value, { clearDraft = true } = {}) => {
         const normalizedValue = normalizeHexColorInput(value) || normalizeHexColorInput(defaultThemeState.colors[key]);
         valueText.textContent = normalizedValue;
         hexInput.value = normalizedValue;
         input.value = normalizeColorPickerValue(normalizedValue);
         picker.style.setProperty("--color-picker-swatch", toPreviewCssColor(normalizedValue));
         syncResetState(normalizedValue);
+        if (clearDraft) {
+          delete colorInputDrafts[key];
+          colorInputErrorKeys.delete(key);
+          syncHexError(false);
+        }
       };
 
       const applyColorValue = (value) => {
         const normalizedValue = normalizeHexColorInput(value);
         if (!normalizedValue) {
+          colorInputDrafts[key] = String(value);
           return false;
         }
 
@@ -543,6 +636,16 @@ function renderColorControls() {
         syncPickerState(normalizedValue);
         updatePreview();
         return true;
+      };
+
+      const confirmHexDraft = () => {
+        if (applyColorValue(hexInput.value)) {
+          return true;
+        }
+
+        colorInputErrorKeys.add(key);
+        syncHexError(true);
+        return false;
       };
 
       const closeColorPopover = () => {
@@ -578,20 +681,21 @@ function renderColorControls() {
         }
       });
       hexInput.addEventListener("input", () => {
-        applyColorValue(hexInput.value);
+        if (!applyColorValue(hexInput.value) && colorInputErrorKeys.has(key)) {
+          syncHexError(true);
+        }
       });
-      hexInput.addEventListener("change", () => {
-        const colors = getActiveColors(state);
-        syncPickerState(colors[key]);
-      });
+      hexInput.addEventListener("blur", confirmHexDraft);
       hexInput.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
           closeColorPopover();
           picker.focus();
         }
-        if (event.key === "Enter" && applyColorValue(hexInput.value)) {
-          closeColorPopover();
-          picker.focus();
+        if (event.key === "Enter") {
+          if (confirmHexDraft()) {
+            closeColorPopover();
+            picker.focus();
+          }
         }
       });
       input.addEventListener("input", () => {
@@ -601,7 +705,11 @@ function renderColorControls() {
         applyColorValue(defaultThemeState.colors[key]);
       });
 
-      syncPickerState(colors[key]);
+      syncPickerState(colors[key], { clearDraft: false });
+      if (colorInputDrafts[key] !== undefined) {
+        hexInput.value = colorInputDrafts[key];
+      }
+      syncHexError(colorInputErrorKeys.has(key));
       picker.append(swatch, valueText);
       colorPopover.append(hexInput, input);
 
@@ -609,7 +717,7 @@ function renderColorControls() {
       inputs.className = "color-inputs";
       inputs.append(picker, resetButton, colorPopover);
 
-      row.append(text, inputs);
+      row.append(text, inputs, hexError);
       return row;
     }),
   );
@@ -664,7 +772,7 @@ function renderUploadControls() {
           input.focus();
           return;
         }
-        handleUpload(key, file);
+        void handleUpload(key, file, input);
       });
       input.addEventListener("cancel", () => input.focus());
       button.append(uploadActionLabel, input);
@@ -1268,27 +1376,46 @@ function applyUploadThumb(element, key) {
   }
 }
 
-async function handleUpload(key, file) {
+async function handleUpload(key, file, input) {
   if (!file) {
     return;
   }
 
   const sourceVersion = beginUploadSourceOperation(key);
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  if (!isUploadSourceOperationCurrent(key, sourceVersion)) {
-    return;
-  }
+  const label = IMAGE_TARGETS[key].label;
+  setErrorStatus("");
+  setStatus(`${label} 업로드 중`);
 
+  let nextUpload;
   let bubbleSettingsVersion = getBubbleSettingsVersion(key);
-  let nextUpload = await createUploadRecord(key, file, bytes, file.type);
-  while (bubbleUploadKeys.has(key) && getBubbleSettingsVersion(key) !== bubbleSettingsVersion) {
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
     if (!isUploadSourceOperationCurrent(key, sourceVersion)) {
       return;
     }
 
-    bubbleSettingsVersion = getBubbleSettingsVersion(key);
     nextUpload = await createUploadRecord(key, file, bytes, file.type);
+    while (bubbleUploadKeys.has(key) && getBubbleSettingsVersion(key) !== bubbleSettingsVersion) {
+      if (!isUploadSourceOperationCurrent(key, sourceVersion)) {
+        return;
+      }
+
+      bubbleSettingsVersion = getBubbleSettingsVersion(key);
+      nextUpload = await createUploadRecord(key, file, bytes, file.type);
+    }
+  } catch {
+    if (!isUploadSourceOperationCurrent(key, sourceVersion)) {
+      return;
+    }
+
+    if (input) {
+      input.value = "";
+    }
+    setStatus(`${label} 업로드 실패`);
+    setErrorStatus(`${label} 이미지를 읽을 수 없습니다. PNG, JPEG 또는 WebP 파일을 다시 선택해 주세요.`);
+    return;
   }
+
   if (!isUploadSourceOperationCurrent(key, sourceVersion)) {
     return;
   }
@@ -1396,6 +1523,7 @@ function handleClearUpload(key) {
 
   updatePreview();
   updateUploadControlsState();
+  setErrorStatus("");
   setStatus(`${IMAGE_TARGETS[key].label} 삭제`);
   input?.focus();
 }
@@ -1513,12 +1641,12 @@ async function createUploadRecord(
   { sourceKind = "upload" } = {},
 ) {
   const tintColor = getUploadTintColor(key, sourceKind);
-  if (!shouldGenerateUploadVariants(key) && !tintColor) {
-    return sourceBytes;
-  }
-
   const image = await loadImage(source);
   try {
+    if (!shouldGenerateUploadVariants(key) && !tintColor) {
+      return sourceBytes;
+    }
+
     const bubbleLayout = getProposedBubbleNinePatchSettings(key, image);
     const variants = shouldGenerateUploadVariants(key)
       ? await createUploadImageVariants(key, image, { tintColor, bubbleLayout })
@@ -1956,17 +2084,8 @@ function handleSettingsInput(event) {
   }
 
   if (target.name && target.name in state) {
-    if (target.name === "themeIdSegment") {
-      target.value = sanitizeThemeIdSegment(target.value);
-    }
-    if (target.name === "version") {
-      target.value = normalizeThemeVersion(target.value);
-    }
     state[target.name] = target.value;
     updatePreview();
-    if (target.name === "version") {
-      setStatus(isValidThemeVersion(state.version) ? "템플릿 준비 완료" : "버전은 숫자.숫자.숫자 형식으로 입력해주세요");
-    }
   }
 }
 
@@ -2088,25 +2207,43 @@ function downloadBytes(bytes, filename, type) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function restoreDownloadFocus(button, shouldRestoreFocus) {
+  if (
+    shouldRestoreFocus &&
+    (!document.activeElement || document.activeElement === document.body || document.activeElement === document.documentElement)
+  ) {
+    button.focus();
+  }
+}
+
 async function downloadIosTheme() {
-  if (!canDownloadTheme()) {
+  const validation = getThemeValidation();
+  setErrorStatus("");
+  if (!canDownloadTheme(validation)) {
     return;
   }
 
+  const shouldRestoreFocus = document.activeElement === downloadIosButton;
   setBusy(true);
-  setStatus("IOS 생성 중");
+  setStatus("iOS 생성 중");
 
   try {
     const entries = await getTemplateEntries("ios");
+    if (!canDownloadTheme(getThemeValidation())) {
+      setStatus("iOS 생성 취소");
+      return;
+    }
+
     const patchedEntries = buildIosEntries(entries, { state, uploads });
     const zip = createStoredZip(patchedEntries);
     downloadBytes(zip, `${sanitizeFileName(state.appName)}.ktheme`, "application/zip");
-    setStatus("IOS 다운로드 준비 완료");
-  } catch (error) {
-    console.error(error);
+    setStatus("iOS 다운로드 준비 완료");
+  } catch {
     setStatus("iOS 생성 실패");
+    setErrorStatus("iOS 테마를 생성하지 못했습니다. 다시 시도해 주세요.");
   } finally {
     setBusy(false);
+    restoreDownloadFocus(downloadIosButton, shouldRestoreFocus);
   }
 }
 
@@ -2190,16 +2327,29 @@ async function createGeneratedSplashUpload() {
 }
 
 async function downloadAndroidSource() {
-  if (!canDownloadTheme()) {
+  const validation = getThemeValidation();
+  setErrorStatus("");
+  if (!canDownloadTheme(validation)) {
     return;
   }
 
+  const shouldRestoreFocus = document.activeElement === downloadAndroidButton;
   setBusy(true);
   setStatus("Android 생성 중");
 
   try {
     const entries = await getTemplateEntries("android");
+    if (!canDownloadTheme(getThemeValidation())) {
+      setStatus("Android 생성 취소");
+      return;
+    }
+
     const generatedSplashUpload = await createGeneratedSplashUpload();
+    if (!canDownloadTheme(getThemeValidation())) {
+      setStatus("Android 생성 취소");
+      return;
+    }
+
     const androidUploads = generatedSplashUpload ? { ...uploads, splashImage: generatedSplashUpload } : uploads;
     const patchedEntries = buildAndroidEntries(entries, { state, uploads: androidUploads });
     const zip = createStoredZip(patchedEntries);
@@ -2207,11 +2357,12 @@ async function downloadAndroidSource() {
 
     const skipped = getSkippedAndroidUploads(uploads);
     setStatus(skipped.length ? `Android 생성 완료, 9-patch 제외: ${skipped.join(", ")}` : "Android 다운로드 준비 완료");
-  } catch (error) {
-    console.error(error);
+  } catch {
     setStatus("Android 생성 실패");
+    setErrorStatus("Android 소스를 생성하지 못했습니다. 다시 시도해 주세요.");
   } finally {
     setBusy(false);
+    restoreDownloadFocus(downloadAndroidButton, shouldRestoreFocus);
   }
 }
 

@@ -1,6 +1,60 @@
-import { expect, test } from "@playwright/test";
+import { expect, test as base } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { IMAGE_TARGETS } from "../src/theme-model.js";
+
+const onePixelPng = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64",
+);
+
+const allowedBrowserDiagnostics = new WeakMap();
+
+function allowBrowserDiagnostic(page, message) {
+  const allowlist = allowedBrowserDiagnostics.get(page) ?? new Set();
+  allowlist.add(message);
+  allowedBrowserDiagnostics.set(page, allowlist);
+}
+
+const test = base.extend({
+  page: async ({ page }, use) => {
+    const diagnostics = [];
+    const recordDiagnostic = (kind, message) => {
+      if (!allowedBrowserDiagnostics.get(page)?.has(message)) {
+        diagnostics.push(`${kind}: ${message}`);
+      }
+    };
+
+    page.on("console", (message) => {
+      if (message.type() === "error") {
+        recordDiagnostic("console.error", message.text());
+      }
+    });
+    page.on("pageerror", (error) => recordDiagnostic("pageerror", error.message));
+
+    await use(page);
+
+    expect(diagnostics, "unexpected browser console/page errors").toEqual([]);
+  },
+});
+
+async function installLiveRegionRecorder(page) {
+  await page.evaluate(() => {
+    window.__liveRegionMutations = { status: [], alert: [] };
+    for (const [key, selector] of [["status", "#status-text"], ["alert", "#error-status"]]) {
+      const element = document.querySelector(selector);
+      new MutationObserver(() => {
+        window.__liveRegionMutations[key].push(element.textContent);
+      }).observe(element, { childList: true, characterData: true, subtree: true });
+    }
+  });
+}
+
+async function liveMessageCount(page, channel, message) {
+  return page.evaluate(
+    ({ channel, message }) => window.__liveRegionMutations[channel].filter((value) => value === message).length,
+    { channel, message },
+  );
+}
 
 async function createPngBuffer(page, width, height) {
   const base64 = await page.evaluate(async ({ width, height }) => {
@@ -109,6 +163,350 @@ test("@task1 gives download buttons exact platform-specific accessible names", a
   await expect(iosDownload).toHaveText("IOS");
   await expect(androidDownload).toHaveText("Android");
 });
+
+test("@task3 retains raw invalid theme metadata and exposes field-specific native errors", async ({ page }) => {
+  await page.goto("/");
+
+  const themeId = page.locator("#theme-id-segment");
+  const version = page.locator("#version");
+  const themeIdError = page.locator("#theme-id-error");
+  const versionError = page.locator("#version-error");
+  const downloadButtons = page.locator("#download-ios, #download-android");
+
+  await themeId.fill(" 테마1 ");
+  await expect(themeId).toHaveValue(" 테마1 ");
+  expect(await themeId.evaluate((input) => document.activeElement === input)).toBe(true);
+  await expect(themeId).toHaveAttribute("aria-invalid", "true");
+  await expect(themeId).toHaveAttribute("aria-errormessage", "theme-id-error");
+  await expect(themeId).toHaveAttribute("aria-describedby", "theme-id-help");
+  await expect(themeIdError).toBeVisible();
+  await expect(themeIdError).toHaveText("테마 ID는 영문자만 입력해 주세요.");
+  expect(await themeId.evaluate((input) => ({ valid: input.checkValidity(), patternMismatch: input.validity.patternMismatch }))).toEqual({
+    valid: false,
+    patternMismatch: true,
+  });
+
+  await version.fill(" 1.2.3 ");
+  await expect(version).toHaveValue(" 1.2.3 ");
+  expect(await version.evaluate((input) => document.activeElement === input)).toBe(true);
+  await expect(version).toHaveAttribute("aria-invalid", "true");
+  await expect(version).toHaveAttribute("aria-errormessage", "version-error");
+  await expect(version).toHaveAttribute("aria-describedby", "version-help");
+  await expect(versionError).toBeVisible();
+  await expect(versionError).toHaveText("버전은 숫자.숫자.숫자 형식으로 입력해 주세요.");
+  expect(await version.evaluate((input) => ({ valid: input.checkValidity(), patternMismatch: input.validity.patternMismatch }))).toEqual({
+    valid: false,
+    patternMismatch: true,
+  });
+  for (const button of await downloadButtons.all()) {
+    await expect(button).toBeDisabled();
+  }
+
+  const statusBeforeBlockedDownload = await page.locator("#status-text").textContent();
+  await page.locator("#download-ios").evaluate((button) => {
+    button.disabled = false;
+    button.click();
+  });
+  await expect(page.locator(".download-actions")).not.toHaveAttribute("aria-busy", "true");
+  await expect(page.locator("#status-text")).toHaveText(statusBeforeBlockedDownload);
+});
+
+test("@task3 clears field errors after valid recovery and handles empty required values precisely", async ({ page }) => {
+  await page.goto("/");
+
+  const themeId = page.locator("#theme-id-segment");
+  const version = page.locator("#version");
+  const downloadButtons = page.locator("#download-ios, #download-android");
+
+  await themeId.fill("");
+  await version.fill("");
+  await expect(page.locator("#theme-id-error")).toHaveText("테마 ID를 입력해 주세요.");
+  await expect(page.locator("#version-error")).toHaveText("버전을 입력해 주세요.");
+  expect(await themeId.evaluate((input) => input.validity.valueMissing)).toBe(true);
+  expect(await version.evaluate((input) => input.validity.valueMissing)).toBe(true);
+  for (const button of await downloadButtons.all()) {
+    await expect(button).toBeDisabled();
+  }
+
+  await themeId.fill("Theme");
+  await version.fill("2.10.0");
+  await expect(themeId).toHaveValue("Theme");
+  await expect(version).toHaveValue("2.10.0");
+  await expect(themeId).not.toHaveAttribute("aria-invalid");
+  await expect(version).not.toHaveAttribute("aria-invalid");
+  await expect(themeId).not.toHaveAttribute("aria-errormessage");
+  await expect(version).not.toHaveAttribute("aria-errormessage");
+  await expect(page.locator("#theme-id-error")).toBeHidden();
+  await expect(page.locator("#version-error")).toBeHidden();
+  expect(await themeId.evaluate((input) => ({ valid: input.checkValidity(), customError: input.validity.customError }))).toEqual({
+    valid: true,
+    customError: false,
+  });
+  expect(await version.evaluate((input) => ({ valid: input.checkValidity(), customError: input.validity.customError }))).toEqual({
+    valid: true,
+    customError: false,
+  });
+  for (const button of await downloadButtons.all()) {
+    await expect(button).toBeEnabled();
+  }
+});
+
+test("@task3 preserves invalid HEX drafts through confirmation and rerender, then recovers", async ({ page }) => {
+  await page.goto("/");
+
+  const colorRow = () => page.locator(".color-row").filter({ has: page.locator("#color-label-mainBackground") });
+  await colorRow().locator(".color-picker-control").click();
+  let hexInput = colorRow().locator("#color-hex-mainBackground");
+  const originalColor = await colorRow().locator("#color-value-mainBackground").textContent();
+
+  await hexInput.fill("#12GG");
+  await expect(hexInput).toHaveValue("#12GG");
+  await expect(colorRow().locator("#color-value-mainBackground")).toHaveText(originalColor);
+  await hexInput.press("Enter");
+  await expect(hexInput).toHaveValue("#12GG");
+  expect(await hexInput.evaluate((input) => document.activeElement === input)).toBe(true);
+  await expect(hexInput).toHaveAttribute("aria-invalid", "true");
+  await expect(hexInput).toHaveAttribute("aria-errormessage", "color-hex-error-mainBackground");
+  await expect(colorRow().locator("#color-hex-error-mainBackground")).toBeVisible();
+  await expect(colorRow().locator("#color-hex-error-mainBackground")).toHaveText(
+    "HEX 색상은 #RRGGBB 또는 #AARRGGBB 형식으로 입력해 주세요.",
+  );
+
+  await page.getByRole("tab", { name: "채팅방", exact: true }).click();
+  hexInput = colorRow().locator("#color-hex-mainBackground");
+  await expect(hexInput).toHaveValue("#12GG");
+  await expect(hexInput).toHaveAttribute("aria-invalid", "true");
+  await expect(colorRow().locator("#color-hex-error-mainBackground")).toBeVisible();
+
+  await colorRow().locator(".color-picker-control").click();
+  await hexInput.fill("not-a-color");
+  await page.locator("#theme-id-segment").click();
+  await expect(hexInput).toHaveValue("not-a-color");
+  await expect(hexInput).toHaveAttribute("aria-invalid", "true");
+  await expect(colorRow().locator("#color-hex-error-mainBackground")).toBeVisible();
+
+  await colorRow().locator(".color-picker-control").click();
+  await hexInput.fill("#123456");
+  await expect(colorRow().locator("#color-value-mainBackground")).toHaveText("#123456");
+  await expect(hexInput).not.toHaveAttribute("aria-invalid");
+  await expect(hexInput).not.toHaveAttribute("aria-errormessage");
+  await expect(colorRow().locator("#color-hex-error-mainBackground")).toBeHidden();
+  expect(await hexInput.evaluate((input) => ({ valid: input.checkValidity(), customError: input.validity.customError }))).toEqual({
+    valid: true,
+    customError: false,
+  });
+});
+
+test("@task3 reannounces repeated upload success and decode failure without losing state or focus", async ({ page }) => {
+  await page.goto("/");
+  await installLiveRegionRecorder(page);
+
+  const input = page.locator("#upload-input-mainBackground");
+  const description = page.locator("#upload-description-mainBackground");
+  const status = page.locator("#status-text");
+  const alert = page.locator("#error-status");
+  const successMessage = `${IMAGE_TARGETS.mainBackground.label} 반영`;
+  const failureMessage = `${IMAGE_TARGETS.mainBackground.label} 이미지를 읽을 수 없습니다. PNG, JPEG 또는 WebP 파일을 다시 선택해 주세요.`;
+  const goodFile = { name: "one-pixel.png", mimeType: "image/png", buffer: onePixelPng };
+  const badFile = { name: "broken.png", mimeType: "image/png", buffer: Buffer.from("not an image") };
+
+  await expect(status).toHaveAttribute("role", "status");
+  await expect(status).toHaveAttribute("aria-live", "polite");
+  await expect(status).toHaveAttribute("aria-atomic", "true");
+  await expect(alert).toHaveAttribute("role", "alert");
+  await expect(alert).toHaveAttribute("aria-atomic", "true");
+  await expect(alert).toBeEmpty();
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    await input.focus();
+    await input.setInputFiles(goodFile);
+    await expect.poll(() => liveMessageCount(page, "status", successMessage)).toBe(attempt);
+    await expect(description).toContainText("선택한 파일: one-pixel.png");
+    expect(await input.evaluate((element) => document.activeElement === element)).toBe(true);
+    await expect(alert).toBeEmpty();
+  }
+
+  const goodBackground = await page.locator('[data-upload-thumb="mainBackground"]').evaluate(
+    (element) => getComputedStyle(element).backgroundImage,
+  );
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    await input.focus();
+    await input.setInputFiles(badFile);
+    await expect.poll(() => liveMessageCount(page, "alert", failureMessage)).toBe(attempt);
+    await expect(alert).toHaveText(failureMessage);
+    await expect(description).toContainText("선택한 파일: one-pixel.png");
+    await expect(page.locator('[data-upload-thumb="mainBackground"]')).toHaveCSS("background-image", goodBackground);
+    expect(await input.evaluate((element) => document.activeElement === element)).toBe(true);
+    expect(await input.evaluate((element) => ({ files: element.files.length, value: element.value }))).toEqual({
+      files: 0,
+      value: "",
+    });
+  }
+
+  await page.getByRole("button", { name: "메인 배경 삭제", exact: true }).click();
+  await expect(alert).toBeEmpty();
+  await expect(status).toHaveText("메인 배경 삭제");
+});
+
+for (const downloadCase of [
+  {
+    platform: "iOS",
+    button: "#download-ios",
+    manifestKind: "ios",
+    startMessage: "iOS 생성 중",
+    successMessage: "iOS 다운로드 준비 완료",
+    fileName: "나의-테마.ktheme",
+  },
+  {
+    platform: "Android",
+    button: "#download-android",
+    manifestKind: "android",
+    startMessage: "Android 생성 중",
+    successMessage: "Android 다운로드 준비 완료",
+    fileName: "나의-테마-android-source.zip",
+  },
+]) {
+  test(`@task3 ${downloadCase.platform} download announces busy, start, and success`, async ({ page }) => {
+    if (downloadCase.platform === "Android") {
+      await page.addInitScript((pngBase64) => {
+        const bytes = Uint8Array.from(atob(pngBase64), (character) => character.charCodeAt(0));
+        HTMLCanvasElement.prototype.toBlob = function (callback) {
+          callback(new Blob([bytes], { type: "image/png" }));
+        };
+      }, onePixelPng.toString("base64"));
+    }
+
+    const heldRoutes = [];
+    await page.route("**/assets/template-manifest.json", async (route) => {
+      await new Promise((resolve) => heldRoutes.push({ route, resolve }));
+    });
+    await page.goto("/");
+
+    if (downloadCase.platform === "Android") {
+      await page.getByRole("tab", { name: "로딩화면", exact: true }).click();
+      await page.getByRole("button", { name: "테마 아이콘 삭제", exact: true }).click();
+    }
+
+    await installLiveRegionRecorder(page);
+    await page.locator("#error-status").evaluate((element) => {
+      element.textContent = "이전 오류";
+    });
+    const button = page.locator(downloadCase.button);
+    const downloadPromise = page.waitForEvent("download");
+    await button.focus();
+    await button.click();
+
+    await expect.poll(() => heldRoutes.length).toBe(1);
+    await expect(page.locator(".download-actions")).toHaveAttribute("aria-busy", "true");
+    await expect.poll(() => liveMessageCount(page, "status", downloadCase.startMessage)).toBe(1);
+    await expect(page.locator("#status-text")).toHaveText(downloadCase.startMessage);
+    await expect(page.locator("#error-status")).toBeEmpty();
+
+    const held = heldRoutes.shift();
+    await held.route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ios: [], android: [] }),
+    });
+    held.resolve();
+
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe(downloadCase.fileName);
+    await expect.poll(() => liveMessageCount(page, "status", downloadCase.successMessage)).toBe(1);
+    await expect(page.locator("#status-text")).toHaveText(downloadCase.successMessage);
+    await expect(page.locator(".download-actions")).toHaveAttribute("aria-busy", "false");
+    await expect(button).toBeEnabled();
+    expect(await button.evaluate((element) => document.activeElement === element)).toBe(true);
+  });
+}
+
+for (const failureCase of [
+  {
+    platform: "iOS",
+    button: "#download-ios",
+    startMessage: "iOS 생성 중",
+    statusMessage: "iOS 생성 실패",
+    alertMessage: "iOS 테마를 생성하지 못했습니다. 다시 시도해 주세요.",
+  },
+  {
+    platform: "Android",
+    button: "#download-android",
+    startMessage: "Android 생성 중",
+    statusMessage: "Android 생성 실패",
+    alertMessage: "Android 소스를 생성하지 못했습니다. 다시 시도해 주세요.",
+  },
+]) {
+  test(`@task3 ${failureCase.platform} download reannounces the same manifest failure twice`, async ({ page }) => {
+    const heldRoutes = [];
+    await page.route("**/assets/template-manifest.json", async (route) => {
+      await new Promise((resolve) => heldRoutes.push({ route, resolve }));
+    });
+    await page.goto("/");
+    await installLiveRegionRecorder(page);
+
+    const button = page.locator(failureCase.button);
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      await button.focus();
+      await button.click();
+      await expect.poll(() => heldRoutes.length).toBe(1);
+      await expect(page.locator(".download-actions")).toHaveAttribute("aria-busy", "true");
+      await expect.poll(() => liveMessageCount(page, "status", failureCase.startMessage)).toBe(attempt);
+
+      const held = heldRoutes.shift();
+      await held.route.fulfill({ status: 200, contentType: "application/json", body: "{" });
+      held.resolve();
+
+      await expect.poll(() => liveMessageCount(page, "status", failureCase.statusMessage)).toBe(attempt);
+      await expect.poll(() => liveMessageCount(page, "alert", failureCase.alertMessage)).toBe(attempt);
+      await expect(page.locator("#error-status")).toHaveText(failureCase.alertMessage);
+      await expect(page.locator(".download-actions")).toHaveAttribute("aria-busy", "false");
+      await expect(button).toBeEnabled();
+      expect(await button.evaluate((element) => document.activeElement === element)).toBe(true);
+    }
+  });
+}
+
+for (const invalidationCase of [
+  { platform: "iOS", button: "#download-ios", canceledMessage: "iOS 생성 취소" },
+  { platform: "Android", button: "#download-android", canceledMessage: "Android 생성 취소" },
+]) {
+  test(`@task3 ${invalidationCase.platform} download revalidates metadata after awaited work`, async ({ page }) => {
+    const heldRoutes = [];
+    let downloadCount = 0;
+    page.on("download", () => {
+      downloadCount += 1;
+    });
+    await page.route("**/assets/template-manifest.json", async (route) => {
+      await new Promise((resolve) => heldRoutes.push({ route, resolve }));
+    });
+    await page.goto("/");
+
+    const button = page.locator(invalidationCase.button);
+    await button.focus();
+    await button.click();
+    await expect.poll(() => heldRoutes.length).toBe(1);
+    await expect(page.locator(".download-actions")).toHaveAttribute("aria-busy", "true");
+
+    const version = page.locator("#version");
+    await version.fill(" 1.2.3 ");
+    await expect(version).toHaveValue(" 1.2.3 ");
+    await expect(version).toHaveAttribute("aria-invalid", "true");
+
+    const held = heldRoutes.shift();
+    await held.route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ios: [], android: [] }),
+    });
+    held.resolve();
+
+    await expect(page.locator("#status-text")).toHaveText(invalidationCase.canceledMessage);
+    await expect(page.locator(".download-actions")).toHaveAttribute("aria-busy", "false");
+    await expect(page.locator("#error-status")).toBeEmpty();
+    expect(downloadCount).toBe(0);
+    expect(await version.evaluate((element) => document.activeElement === element)).toBe(true);
+  });
+}
 
 test("@task2 gives every active preview upload and color row one contextual name", async ({ page }) => {
   await page.goto("/");
@@ -273,7 +671,7 @@ test("@task2 keeps uploaded filename state through upload-panel rerenders", asyn
   await uploadInput.setInputFiles({
     name: "pink-background.png",
     mimeType: "image/png",
-    buffer: Buffer.from([137, 80, 78, 71]),
+    buffer: onePixelPng,
   });
   await expect(page.locator("#upload-description-mainBackground")).toContainText("선택한 파일: pink-background.png");
 
@@ -311,7 +709,7 @@ test("@task2 ignores a delayed replacement upload after the row is deleted", asy
   const file = {
     name: "pink-background.png",
     mimeType: "image/png",
-    buffer: Buffer.from([137, 80, 78, 71]),
+    buffer: onePixelPng,
   };
   await uploadInput.setInputFiles(file);
   await expect(page.locator("#upload-description-mainBackground")).toContainText(file.name);
@@ -334,7 +732,7 @@ test("@task2 clears the live native file selection and accepts the same file aga
   const file = {
     name: "same-background.png",
     mimeType: "image/png",
-    buffer: Buffer.from([137, 80, 78, 71]),
+    buffer: onePixelPng,
   };
   await uploadInput.setInputFiles(file);
   await expect(page.locator("#upload-description-mainBackground")).toContainText(file.name);

@@ -131,11 +131,25 @@ test("visible defaults hide package affixes and use compact download labels", as
   assert.doesNotMatch(html, />\.kakaotalk\.theme<\/span>/);
   assert.match(html, /<button id="download-ios"[^>]*>IOS<\/button>/);
   assert.match(html, /<button id="download-android"[^>]*>Android<\/button>/);
-  assert.match(app, /normalizeThemeVersion/);
+  assert.match(app, /isValidThemeIdSegment/);
   assert.match(app, /isValidThemeVersion/);
+  assert.match(app, /function getThemeValidation\(\)/);
+  assert.ok((app.match(/getThemeValidation\(\)/g) ?? []).length >= 5);
   assert.match(app, /function updateDownloadButtons/);
   assert.match(app, /downloadIosButton\.disabled = isDownloadDisabled;/);
   assert.match(app, /downloadAndroidButton\.disabled = isDownloadDisabled;/);
+  assert.doesNotMatch(app, /target\.value = (?:sanitizeThemeIdSegment|normalizeThemeVersion)/);
+});
+
+test("footer exposes separate polite status and persistent alert channels", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+
+  assert.match(
+    html,
+    /<span id="status-text" role="status" aria-live="polite" aria-atomic="true">템플릿 준비 완료<\/span>/,
+  );
+  assert.match(html, /<span id="error-status" role="alert" aria-atomic="true"><\/span>/);
+  assert.match(html, /<div class="download-actions" aria-busy="false">/);
 });
 
 test("theme id and author wrapper inputs keep rounded focus treatment", async () => {

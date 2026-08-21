@@ -670,6 +670,10 @@ export function sanitizeThemeIdSegment(value) {
   return sanitized;
 }
 
+export function isValidThemeIdSegment(value) {
+  return /^[A-Za-z]+$/.test(String(value ?? ""));
+}
+
 export function normalizeThemeVersion(value) {
   return String(value ?? "")
     .trim()
@@ -682,7 +686,12 @@ export function normalizeThemeVersion(value) {
 }
 
 export function isValidThemeVersion(value) {
-  return /^\d+\.\d+\.\d+$/.test(String(value ?? "").trim());
+  return /^\d+\.\d+\.\d+$/.test(String(value ?? ""));
+}
+
+function getExportThemeVersion(state) {
+  const version = normalizeThemeVersion(state?.version);
+  return isValidThemeVersion(version) ? version : defaultThemeState.version;
 }
 
 export function getThemeId(state) {
@@ -727,7 +736,7 @@ function replaceManifestValue(css, property, value) {
 export function patchIosThemeCss(css, state, { bubbleEdgeInsets = {}, transparentTabBackground = false } = {}) {
   let nextCss = css;
   nextCss = replaceManifestValue(nextCss, "-kakaotalk-theme-name", state.appName);
-  nextCss = replaceManifestValue(nextCss, "-kakaotalk-theme-version", state.version);
+  nextCss = replaceManifestValue(nextCss, "-kakaotalk-theme-version", getExportThemeVersion(state));
   nextCss = replaceManifestValue(nextCss, "-kakaotalk-author-name", getAuthorName(state));
   nextCss = replaceManifestValue(nextCss, "-kakaotalk-theme-id", getThemeId(state));
 
@@ -821,7 +830,7 @@ export function patchAndroidBuildGradle(gradle, state) {
   return gradle
     .replace(/namespace\s*=\s*"[^"]*"/, `namespace = "${themeId}"`)
     .replace(/applicationId\s*=\s*"[^"]*"/, `applicationId = "${themeId}"`)
-    .replace(/versionName\s*=\s*"[^"]*"/, `versionName = "${state.version || defaultThemeState.version}"`);
+    .replace(/versionName\s*=\s*"[^"]*"/, `versionName = "${getExportThemeVersion(state)}"`);
 }
 
 export function patchAndroidManifestXml(manifest, state) {

@@ -3222,6 +3222,11 @@ h2 {
   font-size: 13px;
 }
 
+#error-status:not(:empty) {
+  color: #a33a3a;
+  font-weight: 700;
+}
+
 .site-disclaimer {
   margin: 0;
   color: var(--muted);

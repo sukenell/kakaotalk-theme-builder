@@ -10,6 +10,7 @@ import {
   getActiveColors,
   getThemeId,
   IMAGE_TARGETS,
+  isValidThemeIdSegment,
   isValidThemeVersion,
   normalizeThemeVersion,
   patchAndroidBuildGradle,
@@ -232,6 +233,27 @@ test("theme versions normalize to numeric triplets and validate strictly", () =>
   assert.equal(isValidThemeVersion("1.2"), false);
   assert.equal(isValidThemeVersion("1.2.3.4"), false);
   assert.equal(isValidThemeVersion("1.2.x"), false);
+  assert.equal(isValidThemeVersion(" 1.2.3"), false);
+  assert.equal(isValidThemeVersion("1.2.3 "), false);
+});
+
+test("theme id segments accept only one or more raw ASCII letters", () => {
+  assert.equal(isValidThemeIdSegment("example"), true);
+  assert.equal(isValidThemeIdSegment("Theme"), true);
+  assert.equal(isValidThemeIdSegment("테마"), false);
+  assert.equal(isValidThemeIdSegment("theme1"), false);
+  assert.equal(isValidThemeIdSegment(" theme"), false);
+  assert.equal(isValidThemeIdSegment("theme "), false);
+  assert.equal(isValidThemeIdSegment(""), false);
+});
+
+test("download patchers normalize raw version values as an export defense", () => {
+  const rawState = { ...cloneDefaultThemeState(), version: " v2..3.4-beta " };
+  const ios = patchIosThemeCss("", rawState);
+  const android = patchAndroidBuildGradle('versionName = "1.0.0"', rawState);
+
+  assert.match(ios, /-kakaotalk-theme-version: '2.3.4';/);
+  assert.match(android, /versionName = "2.3.4"/);
 });
 
 test("passcode title and keypad text colors can differ in downloaded themes", () => {
