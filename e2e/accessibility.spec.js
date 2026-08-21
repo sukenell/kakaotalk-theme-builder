@@ -1,8 +1,14 @@
 import { expect, test as base } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
-import { CONTRAST_CONTEXTS } from "../src/color-contrast.js";
-import { IMAGE_TARGETS } from "../src/theme-model.js";
+import {
+  CONTRAST_CONTEXTS,
+  compositeColors,
+  evaluateContrastContext,
+  parseCssHex,
+  parseThemeArgb,
+} from "../src/color-contrast.js";
+import { defaultThemeState, IMAGE_TARGETS } from "../src/theme-model.js";
 import { PREVIEW_PAGES } from "../src/preview-pages.js";
 
 const onePixelPng = Buffer.from(
@@ -2214,47 +2220,69 @@ test("@task8-default contrast ledger selectors resolve in their declared preview
     expect(contexts.length, `${previewPage.id} has contrast contexts`).toBeGreaterThan(0);
 
     for (const context of contexts) {
+      if (context.activation === "passcode-digit") {
+        await page.locator("#preview-panel-passcode [data-passcode-digit='1']").click();
+      }
       await expect(page.locator(context.selector).first(), context.id).toBeAttached();
     }
   }
 });
 
-test("@task8-default rendered default text and controls meet their declared contrast", async ({ page }) => {
+test("@task8-default every computable ledger context matches its activated rendered state", async ({ page }) => {
   await page.goto("/");
 
-  const cases = [
-    ["home", ".friends-section-label"],
-    ["home", ".friend-segment.is-active"],
-    ["chat-list", ".unread-badge"],
-    ["shopping", ".shopping-tab.is-active"],
-    ["chat", ".date-chip"],
-    ["chat", ".send-button"],
-    ["passcode", ".passcode-intro > span"],
-    ["theme-list", ".theme-list-copy > span"],
-  ];
+  for (const context of CONTRAST_CONTEXTS) {
+    const declared = evaluateContrastContext(context, defaultThemeState.colors);
+    if (declared.status !== "pass") {
+      continue;
+    }
 
-  for (const [pageId, selector] of cases) {
-    await page.locator(`#preview-tab-${pageId}`).click();
-    const result = await renderedContrast(page.locator(`#preview-panel-${pageId} ${selector}`).first());
-    expect(result.ratio, `${pageId} ${selector}: ${result.foreground} on ${result.background}`).toBeGreaterThanOrEqual(4.5);
+    await page.locator(`#preview-tab-${context.pageId}`).click();
+    await page.mouse.move(0, 0);
+    if (context.activation === "passcode-digit") {
+      await page.locator("#preview-panel-passcode [data-passcode-digit='1']").click();
+    }
+
+    const locator = page.locator(context.selector);
+    const count = await locator.count();
+    expect(count, `${context.id} resolves rendered nodes`).toBeGreaterThan(0);
+
+    if (["text", "large-text"].includes(context.kind)) {
+      const visibleText = await locator.evaluateAll((elements) => elements.map((element) => element.textContent.trim()));
+      expect(visibleText.every(Boolean), `${context.id} represents real visible text`).toBe(true);
+    }
+
+    if (context.state === "hover") {
+      await locator.first().hover();
+    }
+
+    let releasePressedState = false;
+    if (context.state === "pressed") {
+      const box = await locator.first().boundingBox();
+      expect(box, `${context.id} has a pressed-state hit target`).not.toBeNull();
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      releasePressedState = true;
+    }
+
+    const samples = await renderedContextSamples(locator, context);
+    if (releasePressedState) {
+      await page.mouse.up();
+    }
+
+    const expectedForeground = declaredForeground(context);
+    const expectedBackground = declaredBackground(context);
+    const expectedBacking = declaredBacking(context);
+    for (const sample of samples) {
+      expectRgbaClose(sample.foreground, expectedForeground, `${context.id} computed foreground`);
+      if (expectedBacking) {
+        expectRgbaClose(sample.backing, expectedBacking, `${context.id} CSS backing`);
+      } else {
+        expectRgbaClose(sample.background, expectedBackground, `${context.id} computed background`);
+        expect(sample.ratio, `${context.id}: ${sample.foregroundCss} on ${sample.backgroundCss}`).toBeGreaterThanOrEqual(context.required);
+      }
+    }
   }
-
-  await page.locator("#preview-tab-shopping").click();
-  const orderColors = await page.locator("#preview-panel-shopping .shopping-order-icon").evaluate((element) => {
-    const style = getComputedStyle(element, "::before");
-    return { color: style.color, background: style.backgroundColor };
-  });
-  expect(orderColors).toEqual({ color: "rgb(155, 63, 73)", background: "rgb(222, 222, 222)" });
-  await expect(page.locator("#preview-panel-shopping .shop-card-content").first()).toHaveCSS(
-    "background-color",
-    "rgba(0, 0, 0, 0.72)",
-  );
-
-  await page.locator("#preview-tab-chat").click();
-  const bubbleBackings = await page.locator("#preview-panel-chat .bubble").evaluateAll((elements) =>
-    [...new Set(elements.map((element) => getComputedStyle(element, "::before").backgroundColor))],
-  );
-  expect(bubbleBackings.sort()).toEqual(["rgb(248, 248, 248)", "rgba(0, 0, 0, 0.72)"].sort());
 });
 
 test("@task8-default bubble backing is painted above the bundled border image", async ({ page }) => {
@@ -2305,17 +2333,71 @@ async function screenshotCenterPixel(page, locator) {
   }, screenshot.toString("base64"));
 }
 
-async function renderedContrast(locator) {
-  return locator.evaluate((element) => {
+function resolveDeclaredColor(source) {
+  if (typeof source === "string") {
+    return parseCssHex(source);
+  }
+  return parseThemeArgb(defaultThemeState.colors[source.colorKey]);
+}
+
+function declaredForeground(context) {
+  const foreground = context.foregroundKey
+    ? parseThemeArgb(defaultThemeState.colors[context.foregroundKey])
+    : parseCssHex(context.foreground);
+  return context.foregroundOpacity === undefined
+    ? foreground
+    : { ...foreground, a: foreground.a * context.foregroundOpacity };
+}
+
+function declaredBackground(context) {
+  if (context.backgroundKey) {
+    return parseThemeArgb(defaultThemeState.colors[context.backgroundKey]);
+  }
+  if (context.background) {
+    return parseCssHex(context.background);
+  }
+
+  let background = resolveDeclaredColor(context.backgroundLayers[0]);
+  for (const layer of context.backgroundLayers.slice(1)) {
+    background = compositeColors(resolveDeclaredColor(layer), background);
+  }
+  return background;
+}
+
+function declaredBacking(context) {
+  if (!context.backingSelector && !context.backingPseudo) {
+    return null;
+  }
+  if (context.background) {
+    return parseCssHex(context.background);
+  }
+  return resolveDeclaredColor(context.backgroundLayers.at(-1));
+}
+
+function expectRgbaClose(actual, expected, label) {
+  expect(actual, `${label} exists`).not.toBeNull();
+  expect(expected, `${label} is declared`).not.toBeNull();
+  for (const channel of ["r", "g", "b"]) {
+    expect(Math.abs(actual[channel] - expected[channel]), `${label} ${channel}`).toBeLessThanOrEqual(1);
+  }
+  expect(Math.abs(actual.a - expected.a), `${label} alpha`).toBeLessThanOrEqual(0.01);
+}
+
+async function renderedContextSamples(locator, context) {
+  return locator.evaluateAll((elements, definition) => {
     const parseColor = (value) => {
       const channels = value.match(/[\d.]+/g)?.map(Number) ?? [];
-      return { r: channels[0], g: channels[1], b: channels[2], a: channels[3] ?? 1 };
+      if (channels.length < 3) {
+        return null;
+      }
+      const scale = value.trim().startsWith("color(srgb") ? 255 : 1;
+      return { r: channels[0] * scale, g: channels[1] * scale, b: channels[2] * scale, a: channels[3] ?? 1 };
     };
     const composite = (foreground, background) => ({
       r: foreground.r * foreground.a + background.r * (1 - foreground.a),
       g: foreground.g * foreground.a + background.g * (1 - foreground.a),
       b: foreground.b * foreground.a + background.b * (1 - foreground.a),
-      a: 1,
+      a: foreground.a + background.a * (1 - foreground.a),
     });
     const luminance = ({ r, g, b }) => {
       const channel = (value) => {
@@ -2324,32 +2406,60 @@ async function renderedContrast(locator) {
       };
       return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
     };
-
-    const foreground = parseColor(getComputedStyle(element).color);
-    let background = { r: 255, g: 255, b: 255, a: 1 };
-    const layers = [];
-    for (let current = element; current instanceof Element; current = current.parentElement) {
-      const layer = parseColor(getComputedStyle(current).backgroundColor);
-      if (layer.a > 0) {
-        layers.push(layer);
+    const effectiveBackground = (element) => {
+      const layers = [];
+      for (let current = element; current instanceof Element; current = current.parentElement) {
+        const layer = parseColor(getComputedStyle(current).backgroundColor);
+        if (layer?.a > 0) {
+          layers.push(layer);
+        }
+        if (layer?.a === 1) {
+          break;
+        }
       }
-      if (layer.a === 1) {
-        break;
+      let result = { r: 255, g: 255, b: 255, a: 1 };
+      for (const layer of layers.reverse()) {
+        result = composite(layer, result);
       }
-    }
-    for (const layer of layers.reverse()) {
-      background = composite(layer, background);
-    }
-    const effectiveForeground = composite(foreground, background);
-    const foregroundLuminance = luminance(effectiveForeground);
-    const backgroundLuminance = luminance(background);
-    const ratio = (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
-      (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
-
-    return {
-      foreground: getComputedStyle(element).color,
-      background: `rgb(${background.r}, ${background.g}, ${background.b})`,
-      ratio,
+      return result;
     };
-  });
+
+    return elements.map((element) => {
+      const foregroundStyle = getComputedStyle(element, definition.foregroundPseudo || null);
+      const foregroundProperty = definition.foregroundProperty || "color";
+      const foregroundCss = foregroundStyle.getPropertyValue(foregroundProperty);
+      const foreground = parseColor(foregroundCss);
+
+      let background;
+      if (definition.backgroundSource === "foreground-pseudo") {
+        background = parseColor(foregroundStyle.backgroundColor);
+      } else {
+        const start = definition.backgroundSource === "parent" ? element.parentElement : element;
+        background = effectiveBackground(start);
+      }
+
+      let backing = null;
+      if (definition.backingSelector || definition.backingPseudo) {
+        const backingElement = definition.backingSelector
+          ? element.closest(definition.backingSelector)
+          : element;
+        backing = parseColor(getComputedStyle(backingElement, definition.backingPseudo || null).backgroundColor);
+      }
+
+      const effectiveForeground = composite(foreground, background);
+      const foregroundLuminance = luminance(effectiveForeground);
+      const backgroundLuminance = luminance(background);
+      const ratio = (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+        (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
+
+      return {
+        foreground,
+        foregroundCss,
+        background,
+        backgroundCss: `rgb(${background.r}, ${background.g}, ${background.b})`,
+        backing,
+        ratio,
+      };
+    });
+  }, context);
 }

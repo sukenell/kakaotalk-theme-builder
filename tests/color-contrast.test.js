@@ -22,6 +22,239 @@ const assertClose = (actual, expected, epsilon = 1e-12) => {
   );
 };
 
+const AUDITED_CONTEXT_INVENTORY = Object.freeze({
+  home: [
+    "home-status",
+    "home-header-title",
+    "home-header-actions",
+    "home-segment-default",
+    "home-segment-selected",
+    "home-promo-title",
+    "home-promo-secondary",
+    "home-section",
+    "home-profile-name",
+    "home-secondary",
+    "home-tab-icons-default",
+    "home-tab-icon-selected",
+  ],
+  "chat-list": [
+    "chat-list-status",
+    "chat-list-header-title",
+    "chat-list-header-actions",
+    "chat-list-title",
+    "chat-list-member-count",
+    "chat-list-secondary",
+    "chat-list-time",
+    "chat-list-unread",
+    "chat-list-tab-icons-default",
+    "chat-list-tab-icon-selected",
+  ],
+  "open-chat": [
+    "open-chat-status",
+    "open-chat-header-title",
+    "open-chat-header-actions",
+    "open-chat-title",
+    "open-chat-member-count",
+    "open-chat-secondary",
+    "open-chat-time",
+    "open-chat-unread",
+    "open-chat-tab-icons-default",
+    "open-chat-tab-icon-selected",
+  ],
+  shopping: [
+    "shopping-status",
+    "shopping-header-title",
+    "shopping-header-actions",
+    "shopping-tab-default",
+    "shopping-tab-selected",
+    "shopping-summary-title",
+    "shopping-summary-secondary",
+    "shopping-summary-heart",
+    "shopping-order-glyph",
+    "shopping-pick-title",
+    "shopping-pick-info",
+    "shopping-carousel-default",
+    "shopping-carousel-hover",
+    "shopping-carousel-pressed",
+    "shopping-product-badge",
+    "shopping-product-title",
+    "shopping-product-price",
+    "shopping-tab-icons-default",
+    "shopping-tab-icon-selected",
+  ],
+  more: [
+    "more-status",
+    "more-header-title",
+    "more-header-actions",
+    "more-segment-default",
+    "more-segment-selected",
+    "more-service-icon",
+    "more-service-title",
+    "more-page-dot-default",
+    "more-page-dot-selected",
+    "more-ad-title",
+    "more-ad-description",
+    "more-ad-mark",
+    "more-ad-footer-title",
+    "more-ad-footer-link",
+    "more-section",
+    "more-tab-icons-default",
+    "more-tab-icon-selected",
+  ],
+  chat: [
+    "chat-status",
+    "chat-header-title",
+    "chat-header-actions",
+    "chat-date",
+    "chat-sender",
+    "chat-time",
+    "chat-send-bubble-normal",
+    "chat-send-bubble-additional",
+    "chat-receive-bubble-normal",
+    "chat-receive-bubble-additional",
+    "chat-receive-bubble-typing",
+    "chat-input",
+    "chat-input-menu",
+    "chat-send-button",
+  ],
+  "bubble-detail": [
+    "bubble-detail-status",
+    "bubble-detail-header",
+    "bubble-detail-action",
+    "bubble-detail-editor-crop",
+    "bubble-detail-stretch-guide",
+    "bubble-detail-padding-guide",
+    "bubble-detail-fit-legend",
+    "bubble-detail-fit-default",
+    "bubble-detail-fit-selected",
+    "bubble-detail-control-legend",
+    "bubble-detail-control-value",
+  ],
+  passcode: [
+    "passcode-status",
+    "passcode-title",
+    "passcode-description",
+    "passcode-keypad",
+    "passcode-cancel",
+    "passcode-delete",
+    "passcode-dot-default",
+    "passcode-dot-selected",
+  ],
+  splash: ["splash-status", "splash-theme-icon"],
+  "theme-list": [
+    "theme-list-status",
+    "theme-list-back",
+    "theme-list-header",
+    "theme-list-manage",
+    "theme-list-section",
+    "theme-list-title-default",
+    "theme-list-secondary-default",
+    "theme-list-title-selected",
+    "theme-list-secondary-selected",
+    "theme-list-choice-default",
+    "theme-list-choice-selected",
+    "theme-list-download",
+    "theme-list-user-icon",
+  ],
+});
+
+const mainImage = Object.freeze({ mainBackground: "cleared" });
+const tabSurfaceImages = (...iconKeys) => Object.freeze({
+  mainBackground: "cleared",
+  tabBackground: "cleared",
+  ...Object.fromEntries(iconKeys.map((key) => [key, "bundled"])),
+});
+
+const EXPECTED_IMAGE_DEPENDENCIES = Object.freeze({
+  "home-header-title": mainImage,
+  "home-header-actions": Object.freeze({ mainBackground: "cleared", headerSearch: "bundled", headerFriendTab: "bundled", headerSettings: "bundled" }),
+  "home-segment-default": mainImage,
+  "home-promo-title": mainImage,
+  "home-promo-secondary": mainImage,
+  "home-section": mainImage,
+  "home-profile-name": mainImage,
+  "home-secondary": mainImage,
+  "home-tab-icons-default": tabSurfaceImages("tabChatIcon", "tabOpenChatIcon", "tabShoppingIcon", "tabMoreIcon"),
+  "home-tab-icon-selected": tabSurfaceImages("tabFriendIconSelected"),
+
+  "chat-list-header-title": mainImage,
+  "chat-list-header-actions": Object.freeze({ mainBackground: "cleared", headerSearch: "bundled", headerCompose: "bundled", headerSettings: "bundled" }),
+  "chat-list-title": mainImage,
+  "chat-list-member-count": mainImage,
+  "chat-list-secondary": mainImage,
+  "chat-list-time": mainImage,
+  "chat-list-tab-icons-default": tabSurfaceImages("tabFriendIcon", "tabOpenChatIcon", "tabShoppingIcon", "tabMoreIcon"),
+  "chat-list-tab-icon-selected": tabSurfaceImages("tabChatIconSelected"),
+
+  "open-chat-header-title": mainImage,
+  "open-chat-header-actions": Object.freeze({ mainBackground: "cleared", headerSearch: "bundled", headerCompose: "bundled", headerSettings: "bundled" }),
+  "open-chat-title": mainImage,
+  "open-chat-member-count": mainImage,
+  "open-chat-secondary": mainImage,
+  "open-chat-time": mainImage,
+  "open-chat-tab-icons-default": tabSurfaceImages("tabFriendIcon", "tabChatIcon", "tabShoppingIcon", "tabMoreIcon"),
+  "open-chat-tab-icon-selected": tabSurfaceImages("tabOpenChatIconSelected"),
+
+  "shopping-header-title": mainImage,
+  "shopping-header-actions": Object.freeze({ mainBackground: "cleared", headerSearch: "bundled", headerShopping: "bundled", headerSettings: "bundled" }),
+  "shopping-tab-default": mainImage,
+  "shopping-summary-title": mainImage,
+  "shopping-summary-secondary": mainImage,
+  "shopping-summary-heart": Object.freeze({ shoppingImage_01: "bundled", shoppingImage_02: "bundled", shoppingImage_03: "bundled", shoppingImage_04: "bundled" }),
+  "shopping-pick-title": mainImage,
+  "shopping-pick-info": mainImage,
+  "shopping-carousel-default": mainImage,
+  "shopping-product-badge": Object.freeze({ shoppingImage_01: "bundled", shoppingImage_02: "bundled", shoppingImage_03: "bundled", shoppingImage_04: "bundled" }),
+  "shopping-product-title": Object.freeze({ shoppingImage_01: "bundled", shoppingImage_02: "bundled", shoppingImage_03: "bundled", shoppingImage_04: "bundled" }),
+  "shopping-product-price": Object.freeze({ shoppingImage_01: "bundled", shoppingImage_02: "bundled", shoppingImage_03: "bundled", shoppingImage_04: "bundled" }),
+  "shopping-tab-icons-default": tabSurfaceImages("tabFriendIcon", "tabChatIcon", "tabOpenChatIcon", "tabMoreIcon"),
+  "shopping-tab-icon-selected": tabSurfaceImages("tabShoppingIconSelected"),
+
+  "more-header-title": mainImage,
+  "more-header-actions": Object.freeze({ mainBackground: "cleared", headerSearch: "bundled", headerScan: "bundled", headerSettings: "bundled" }),
+  "more-segment-default": mainImage,
+  "more-service-icon": mainImage,
+  "more-service-title": mainImage,
+  "more-page-dot-default": mainImage,
+  "more-page-dot-selected": mainImage,
+  "more-ad-title": Object.freeze({ readingLogAd: "bundled" }),
+  "more-ad-description": Object.freeze({ readingLogAd: "bundled" }),
+  "more-ad-mark": Object.freeze({ readingLogAd: "bundled" }),
+  "more-ad-footer-title": mainImage,
+  "more-ad-footer-link": mainImage,
+  "more-section": mainImage,
+  "more-tab-icons-default": tabSurfaceImages("tabFriendIcon", "tabChatIcon", "tabOpenChatIcon", "tabShoppingIcon"),
+  "more-tab-icon-selected": tabSurfaceImages("tabMoreIconSelected"),
+
+  "chat-date": Object.freeze({ chatBackground: "cleared" }),
+  "chat-sender": Object.freeze({ chatBackground: "cleared" }),
+  "chat-time": Object.freeze({ chatBackground: "cleared" }),
+  "chat-send-bubble-normal": Object.freeze({ chatBackground: "cleared", sendBubbleNormal: "bundled" }),
+  "chat-send-bubble-additional": Object.freeze({ chatBackground: "cleared", sendBubbleTailless: "bundled" }),
+  "chat-receive-bubble-normal": Object.freeze({ chatBackground: "cleared", receiveBubbleNormal: "bundled" }),
+  "chat-receive-bubble-additional": Object.freeze({ chatBackground: "cleared", receiveBubbleTailless: "bundled" }),
+  "chat-receive-bubble-typing": Object.freeze({ chatBackground: "cleared", receiveBubbleNormal: "bundled" }),
+
+  "bubble-detail-editor-crop": Object.freeze({ chatBackground: "cleared", sendBubbleNormal: "bundled" }),
+  "bubble-detail-stretch-guide": Object.freeze({ chatBackground: "cleared", sendBubbleNormal: "bundled" }),
+  "bubble-detail-padding-guide": Object.freeze({ chatBackground: "cleared", sendBubbleNormal: "bundled" }),
+  "bubble-detail-fit-legend": Object.freeze({ chatBackground: "cleared" }),
+  "bubble-detail-fit-default": Object.freeze({ chatBackground: "cleared" }),
+  "bubble-detail-control-legend": Object.freeze({ chatBackground: "cleared" }),
+  "bubble-detail-control-value": Object.freeze({ chatBackground: "cleared" }),
+
+  "passcode-title": Object.freeze({ passcodeBackgroundImage: "cleared" }),
+  "passcode-description": Object.freeze({ passcodeBackgroundImage: "cleared" }),
+  "passcode-keypad": Object.freeze({ passcodeBackgroundImage: "cleared" }),
+  "passcode-cancel": Object.freeze({ passcodeBackgroundImage: "cleared" }),
+  "passcode-delete": Object.freeze({ passcodeBackgroundImage: "cleared" }),
+  "passcode-dot-default": Object.freeze({ passcodeBackgroundImage: "cleared", passcodeDot: "bundled", passcodeDot2: "bundled", passcodeDot3: "bundled", passcodeDot4: "bundled" }),
+  "passcode-dot-selected": Object.freeze({ passcodeBackgroundImage: "cleared", passcodeDotSelected: "bundled", passcodeDotSelected2: "bundled", passcodeDotSelected3: "bundled", passcodeDotSelected4: "bundled" }),
+  "splash-status": Object.freeze({ splashImage: "cleared" }),
+  "splash-theme-icon": Object.freeze({ splashImage: "cleared", themeIcon: "bundled" }),
+  "theme-list-user-icon": Object.freeze({ themeIcon: "bundled" }),
+});
+
 test("parseCssHex reads CSS RRGGBB and RRGGBBAA channels", () => {
   assert.deepEqual(parseCssHex("#664242"), {
     r: 102,
@@ -220,6 +453,15 @@ test("CONTRAST_CONTEXTS covers exactly every preview page with auditable fields"
     assert.ok([3, 4.5].includes(context.required));
     assert.ok(["cleared", "bundled", "user", "none"].includes(context.imageState));
     assert.ok(Array.isArray(context.imageKeys));
+    assert.equal(typeof context.imageStates, "object", `${context.id} declares per-image default states`);
+    assert.deepEqual(
+      Object.keys(context.imageStates).sort(),
+      [...context.imageKeys].sort(),
+      `${context.id} has one state for every relevant image`,
+    );
+    for (const imageState of Object.values(context.imageStates)) {
+      assert.ok(["cleared", "bundled", "user"].includes(imageState), `${context.id} has a valid image state`);
+    }
     assert.equal(typeof context.evidence, "string");
     assert.ok(context.evidence.length > 0);
 
@@ -229,6 +471,39 @@ test("CONTRAST_CONTEXTS covers exactly every preview page with auditable fields"
       1,
       `${context.id} has one background source`,
     );
+  }
+});
+
+test("contrast ledger matches the explicit visible text and UI inventory for all ten panels", () => {
+  assert.deepEqual(
+    Object.keys(AUDITED_CONTEXT_INVENTORY).sort(),
+    PREVIEW_PAGES.map(({ id }) => id).sort(),
+  );
+
+  for (const page of PREVIEW_PAGES) {
+    assert.deepEqual(
+      CONTRAST_CONTEXTS.filter(({ pageId }) => pageId === page.id).map(({ id }) => id).sort(),
+      [...AUDITED_CONTEXT_INVENTORY[page.id]].sort(),
+      `${page.id} inventory is exhaustive`,
+    );
+  }
+
+  const removedFakeSampleIds = [
+    "bubble-detail-send-default",
+    "bubble-detail-send-selected",
+    "bubble-detail-receive-default",
+    "bubble-detail-receive-selected",
+  ];
+  for (const id of removedFakeSampleIds) {
+    assert.equal(CONTRAST_CONTEXTS.some((context) => context.id === id), false, `${id} is not a rendered text context`);
+  }
+});
+
+test("every context declares its complete default raster dependency set", () => {
+  for (const context of CONTRAST_CONTEXTS) {
+    const expectedStates = EXPECTED_IMAGE_DEPENDENCIES[context.id] ?? {};
+    assert.deepEqual(context.imageStates, expectedStates, `${context.id} image dependency metadata`);
+    assert.deepEqual([...context.imageKeys].sort(), Object.keys(expectedStates).sort(), `${context.id} image keys`);
   }
 });
 
@@ -255,6 +530,45 @@ test("default contrast contexts pass raw thresholds or stay unknown only for rea
   }
 });
 
+test("effective image state overrides affect only relevant unprotected raster dependencies", () => {
+  const mainSurface = CONTRAST_CONTEXTS.find(({ id }) => id === "home-section");
+  const protectedProduct = CONTRAST_CONTEXTS.find(({ id }) => id === "shopping-product-title");
+  assert.ok(mainSurface);
+  assert.ok(protectedProduct);
+
+  assert.equal(evaluateContrastContext(mainSurface, defaultThemeState.colors).status, "pass");
+  assert.equal(
+    evaluateContrastContext(mainSurface, defaultThemeState.colors, {
+      imageStates: { mainBackground: "user" },
+    }).status,
+    "unknown",
+  );
+  assert.equal(
+    evaluateContrastContext(mainSurface, defaultThemeState.colors, {
+      imageStates: { mainBackground: "bundled" },
+    }).status,
+    "unknown",
+  );
+  assert.equal(
+    evaluateContrastContext(mainSurface, defaultThemeState.colors, {
+      imageStates: { chatBackground: "user" },
+    }).status,
+    "pass",
+  );
+  assert.equal(
+    evaluateContrastContext(mainSurface, defaultThemeState.colors, {
+      imageStates: { mainBackground: "cleared" },
+    }).status,
+    "pass",
+  );
+  assert.equal(
+    evaluateContrastContext(protectedProduct, defaultThemeState.colors, {
+      imageStates: { shoppingImage_01: "user" },
+    }).status,
+    "pass",
+  );
+});
+
 test("context evaluation composites ordered static layers without rounding", () => {
   const productText = CONTRAST_CONTEXTS.find(({ id }) => id === "shopping-product-title");
   assert.ok(productText);
@@ -269,20 +583,21 @@ test("context evaluation composites ordered static layers without rounding", () 
 test("image-backed text contexts use a guaranteed backing instead of pretending the raster was computed", () => {
   const protectedContexts = CONTRAST_CONTEXTS.filter(({ id }) =>
     [
-      "chat-send-bubble",
-      "chat-receive-bubble",
-      "bubble-detail-send-default",
-      "bubble-detail-send-selected",
-      "bubble-detail-receive-default",
-      "bubble-detail-receive-selected",
+      "chat-send-bubble-normal",
+      "chat-send-bubble-additional",
+      "chat-receive-bubble-normal",
+      "chat-receive-bubble-additional",
+      "chat-receive-bubble-typing",
+      "chat-date",
+      "shopping-summary-heart",
+      "shopping-product-badge",
       "shopping-product-title",
       "shopping-product-price",
     ].includes(id),
   );
 
-  assert.equal(protectedContexts.length, 8);
+  assert.equal(protectedContexts.length, 10);
   for (const context of protectedContexts) {
-    assert.equal(context.imageState, "bundled");
     assert.ok(context.imageKeys.length > 0);
     assert.ok(context.background || context.backgroundLayers, `${context.id} has a backing or scrim`);
     assert.equal(evaluateContrastContext(context, defaultThemeState.colors).status, "pass");
@@ -290,15 +605,21 @@ test("image-backed text contexts use a guaranteed backing instead of pretending 
   }
 });
 
-test("static secondary gray is limited to opaque white-backed contexts", () => {
+test("static secondary gray is limited to opaque passing contexts and never the pink main surface", () => {
   const staticSecondaryContexts = CONTRAST_CONTEXTS.filter(({ foreground }) => foreground === "#687078");
 
   assert.deepEqual(
     staticSecondaryContexts.map(({ id }) => id).sort(),
-    ["more-ad-mark", "theme-list-manage", "theme-list-secondary"],
+    [
+      "more-ad-mark",
+      "theme-list-choice-default",
+      "theme-list-manage",
+      "theme-list-secondary-default",
+      "theme-list-secondary-selected",
+    ],
   );
   for (const context of staticSecondaryContexts) {
-    assert.equal(context.background, "#FFFFFF");
+    assert.notEqual(context.background, "#FFDEDE");
     assert.equal(evaluateContrastContext(context, defaultThemeState.colors).status, "pass");
   }
   assert.ok(contrastRatio(parseCssHex("#687078"), parseCssHex("#FFDEDE")) < 4.5);

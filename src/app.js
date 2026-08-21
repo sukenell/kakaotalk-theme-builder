@@ -319,7 +319,6 @@ const passcodeStatus = document.querySelector("#passcode-status");
 const bubbleDetailTitle = document.querySelector("[data-bubble-detail-title]");
 const bubbleDetailPanel = document.querySelector("[data-bubble-detail-panel]");
 const ninePatchPreview = document.querySelector("[data-nine-patch-preview]");
-const ninePatchSample = document.querySelector("[data-nine-patch-sample]");
 const ninePatchResetButton = document.querySelector("[data-nine-patch-reset]");
 const bubbleDetailNextButton = document.querySelector("[data-bubble-detail-next]");
 const previewDateElements = document.querySelectorAll("[data-preview-date]");
@@ -1496,16 +1495,6 @@ function updateBubbleDetailPreview() {
   ninePatchPreview.style.setProperty("--nine-patch-preview-image", imageValue);
   setNinePatchGuideVariables(settings);
 
-  if (ninePatchSample) {
-    const isReceiveBubble = key.startsWith("receive");
-    ninePatchSample.style.color = isReceiveBubble
-      ? "var(--preview-receive-text, #4d4d4d)"
-      : "var(--preview-send-text, #ffffff)";
-    ninePatchSample.style.setProperty(
-      "--preview-bubble-detail-backing",
-      isReceiveBubble ? "var(--preview-receive-text-backing)" : "var(--preview-send-text-backing)",
-    );
-  }
 }
 
 function setNinePatchGuideVariables(settings) {

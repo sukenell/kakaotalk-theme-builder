@@ -1663,7 +1663,7 @@ h2 {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--preview-header, #664242) 50%, transparent);
+  background: color-mix(in srgb, var(--preview-header, #664242) 65%, transparent);
 }
 
 .more-page-dots span.active {
@@ -2629,29 +2629,6 @@ h2 {
   border-bottom: 1px solid rgba(95, 82, 218, 0.82);
 }
 
-.nine-patch-sample {
-  position: absolute;
-  inset:
-    var(--nine-padding-top)
-    var(--nine-padding-right)
-    var(--nine-padding-bottom)
-    var(--nine-padding-left);
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  min-width: 0;
-  margin: 0;
-  border-radius: 3px;
-  background: var(--preview-bubble-detail-backing, var(--preview-send-text-backing));
-  box-shadow: inset 0 0 0 1px rgba(69, 58, 181, 0.38);
-  color: var(--preview-send-text, #ffffff);
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.2;
-  text-align: center;
-  overflow-wrap: anywhere;
-}
-
 .bubble-detail-panel {
   display: grid;
   gap: 8px;
@@ -3269,7 +3246,7 @@ h2 {
 .theme-choice {
   width: 20px;
   height: 20px;
-  border: 2px solid #aeb3b8;
+  border: 2px solid #687078;
   border-radius: 50%;
 }
 
@@ -3290,7 +3267,7 @@ h2 {
 }
 
 .active-theme-row {
-  background: color-mix(in srgb, var(--preview-section-title, #f66c6c) 8%, #ffffff);
+  background: color-mix(in srgb, var(--preview-section-title, #f66c6c) 6%, #ffffff);
 }
 
 .theme-icon {

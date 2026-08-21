@@ -1557,8 +1557,10 @@ test("bubble uploads expose nine-patch detail controls that drive preview and ex
   assert.match(css, /\.nine-patch-guide\.stretch-y\s*\{[\s\S]*border-top: 1px dashed/);
   assert.match(css, /\.nine-patch-guide\.padding-x\s*\{[\s\S]*border-left: 1px solid/);
   assert.match(css, /\.nine-patch-guide\.padding-y\s*\{[\s\S]*border-top: 1px solid/);
-  assert.match(css, /\.nine-patch-sample\s*\{[\s\S]*background: var\(--preview-bubble-detail-backing, var\(--preview-send-text-backing\)\);/);
-  assert.match(css, /\.nine-patch-sample\s*\{[\s\S]*box-shadow: inset 0 0 0 1px rgba\(69, 58, 181, 0\.38\);/);
+  assert.doesNotMatch(html, /data-nine-patch-sample/);
+  assert.doesNotMatch(css, /\.nine-patch-sample\s*\{/);
+  assert.doesNotMatch(app, /ninePatchSample/);
+  assert.doesNotMatch(app, /--preview-bubble-detail-backing/);
 
   assert.match(app, /const bubbleNinePatchSettings = \{\};/);
   assert.match(app, /MINIMUM_NINE_PATCH_CONTENT_SIZE/);
