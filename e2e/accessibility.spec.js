@@ -1,4 +1,3 @@
-import { expect, test as base } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
 import { inflateSync } from "node:zlib";
@@ -13,41 +12,12 @@ import {
 } from "../src/color-contrast.js";
 import { defaultThemeState, IMAGE_TARGETS } from "../src/theme-model.js";
 import { PREVIEW_PAGES } from "../src/preview-pages.js";
+import { expect, test } from "./support/a11y-fixture.js";
 
 const onePixelPng = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
   "base64",
 );
-
-const allowedBrowserDiagnostics = new WeakMap();
-
-function allowBrowserDiagnostic(page, message) {
-  const allowlist = allowedBrowserDiagnostics.get(page) ?? new Set();
-  allowlist.add(message);
-  allowedBrowserDiagnostics.set(page, allowlist);
-}
-
-const test = base.extend({
-  page: async ({ page }, use) => {
-    const diagnostics = [];
-    const recordDiagnostic = (kind, message) => {
-      if (!allowedBrowserDiagnostics.get(page)?.has(message)) {
-        diagnostics.push(`${kind}: ${message}`);
-      }
-    };
-
-    page.on("console", (message) => {
-      if (message.type() === "error") {
-        recordDiagnostic("console.error", message.text());
-      }
-    });
-    page.on("pageerror", (error) => recordDiagnostic("pageerror", error.message));
-
-    await use(page);
-
-    expect(diagnostics, "unexpected browser console/page errors").toEqual([]);
-  },
-});
 
 async function installLiveRegionRecorder(page) {
   await page.evaluate(() => {
