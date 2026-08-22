@@ -5,13 +5,13 @@
 | 항목 | 값 |
 | --- | --- |
 | 검증일 | 2026-08-22 |
-| 로컬 기준 커밋 | `cafb24a977609f64da1a51b6bb3f4f8e83288511` |
-| Task 10 최종 커밋 | `PENDING` — 이 문서를 포함한 Task 10 변경은 아직 커밋되지 않음 |
+| 검증 대상 구현 커밋 | `121958399e52e7e4e567ef249d777d8524a2aa84` |
+| Task 10 구현 커밋 | `121958399e52e7e4e567ef249d777d8524a2aa84` |
 | GitHub Pages 배포 커밋 | `PENDING` |
 | GitHub Pages URL | `PENDING` |
 | 운영체제 | macOS 26.5.2 (25F84) |
 | 자동 검사 브라우저 | Playwright Desktop Chrome / Chromium, `@playwright/test` 1.62.1 |
-| 설치된 수동 검사 브라우저 | Google Chrome 151.0.7922.174, Safari 26.5.2 |
+| 설치된 수동 검사 브라우저 | Google Chrome 151.0.7922.174, Safari 26.5.2, Firefox 148.0.2 |
 | 설치된 보조기술 | VoiceOver 10 |
 | 자동 접근성 엔진 | axe-core 4.13.0 (`@axe-core/playwright` 4.13.0) |
 
@@ -23,6 +23,7 @@
 - `FAIL`: 실제 검사에서 결함을 확인했다.
 - `NOT RUN`: 이 환경에서 실행 가능하지만 아직 사람이 수행하지 않았다.
 - `BLOCKED`: 현재 운영체제, 보조기술 또는 장비로 실행할 수 없다.
+- `EXCLUDED`: 사용자가 완료 범위에서 명시적으로 제외했다.
 - `N/A`: 이 앱에 해당 콘텐츠나 기능이 없으며 그 근거를 함께 기록했다.
 
 ## 2. 자동 검증 결과
@@ -124,31 +125,43 @@ axe가 자동 판정하지 못하는 읽기 순서, 실제 화면낭독기 발�
 | WCAG text spacing | 위 viewport matrix에 spacing override 적용 | 자동 PASS | text spacing custom assertion |
 | 200% 실제 browser zoom | Safari 26.5.2 | PASS | Safari의 실제 크기에서 페이지 확대를 4회 적용해 검사 |
 | 300% 실제 browser zoom | Safari 26.5.2 | PASS — 보조 증거 | Safari가 제공하는 최대 단계이며 확대 메뉴 비활성 확인. 400% 증거로 사용하지 않음 |
-| 400% 실제 browser zoom | Safari 26.5.2 | BLOCKED | Safari의 페이지 확대 상한이 300%여서 실행할 수 없음 |
-| 200%/400% 실제 browser zoom | Chrome 151 | BLOCKED | 설치는 확인했으나 이번 세션에서 Chrome 제어 확장과 통신할 수 없어 UI 검사를 수행하지 못함 |
-| `forced-colors: active` | Playwright Chromium emulation | 자동 PASS | system color, 경계, 포커스, 선택, mask icon CSS 반응 증거 |
-| 실제 Windows High Contrast | Windows 실기기/VM 필요 | BLOCKED | emulation 결과로 실제 HCM PASS를 주장하지 않음 |
+| 400% 실제 browser zoom | Safari 26.5.2 | BLOCKED — 비게이팅 추가 범위 | Safari의 페이지 확대 상한이 300%이며 필수 400% gate는 Firefox에서 완료 |
+| 200%/400% 실제 browser zoom | Firefox 148.0.2 | PASS | 실제 브라우저 zoom 표시를 각각 확인하고, reflow·문서 수평 overflow 부재·footer 및 두 다운로드 버튼 도달을 실제 UI에서 확인 |
+| 200%/400% 실제 browser zoom | Chrome 151 | BLOCKED — 비게이팅 추가 범위 | Chrome 제어 확장과 통신할 수 없어 UI 검사를 수행하지 못함; 필수 200%/400% gate는 Firefox에서 완료 |
+| `forced-colors: active` | Playwright Chromium emulation + 수동 화면 확인 | PASS — 계획의 동등 환경 | system color, 경계, 포커스, 선택, mask icon CSS 반응 자동 assertion과 쇼핑 화면 전체 screenshot을 직접 확인 |
+| 실제 Windows High Contrast | Windows 실기기/VM 필요 | BLOCKED — 비게이팅 추가 범위 | 동등 forced-colors 환경 gate는 PASS했으며 실제 Windows HCM PASS를 주장하지 않음 |
 | `prefers-reduced-motion` | Playwright reduce/no-preference | 자동 PASS | 전환 제거 후 keyboard/button/focus 기능 유지 |
 
 ## 7. 수동 검증 현황
 
 | 환경 | 검사 항목 | 상태 | 완료 조건 또는 제한 |
 | --- | --- | --- | --- |
-| Chrome 151 + VoiceOver 10 | heading/landmark, form name, tab/tabpanel, live/alert, passcode 발화 | NOT RUN | 사람이 실제 발화의 순서·중복·누락을 청취하고 기록해야 함 |
-| Chrome 151 + VoiceOver 10 | 전체 Tab 순서와 동적 focus | NOT RUN | 자동 48단계 PASS는 있으나 실제 화면낭독기 상호작용을 대체하지 않음 |
-| Safari 26.5.2 + VoiceOver 10 | 동일한 의미·발화·focus 검사 | NOT RUN | Safari는 설치되어 있으나 현재 Playwright Chromium 결과로 대체하지 않음 |
+| Chrome 151 + VoiceOver 10 | heading/landmark, form name, tab/tabpanel, live/alert, passcode 발화 | EXCLUDED | 2026-08-22 사용자 지시에 따라 VoiceOver 실청취를 완료 범위에서 제외 |
+| Chrome 151 + VoiceOver 10 | 전체 Tab 순서와 동적 focus | EXCLUDED | 2026-08-22 사용자 지시에 따라 VoiceOver 상호작용 검사를 완료 범위에서 제외 |
+| Safari 26.5.2 + VoiceOver 10 | 동일한 의미·발화·focus 검사 | EXCLUDED | VoiceOver를 실제 활성화했으나 출력 창 접근이 허용되지 않아 판정하지 않았고, 사용자 지시에 따라 제외 |
 | Safari 26.5.2 | 200% 실제 zoom | PASS | footer·다운로드와 문서 수평 overflow 부재를 실제 UI에서 확인 |
 | Safari 26.5.2 | 최대 300% 실제 zoom | PASS — 보조 증거 | 10개 프리뷰 탭 전환, 쇼핑 carousel 1/4→2/4, footer·다운로드를 실제 UI에서 확인 |
-| Safari 26.5.2 | 400% 실제 zoom | BLOCKED | Safari UI가 최대 300%까지만 제공함 |
-| Chrome 151 | 200%와 400% 실제 zoom | BLOCKED | Chrome 제어 확장과 통신할 수 없어 실행하지 못함; Safari 결과로 Chrome 결과를 대체하지 않음 |
-| 키보드만 사용 | 설정 → 색상 → 업로드 → 프리뷰 → 다운로드 | NOT RUN | 자동 시나리오는 PASS, 전체 인간 작업 흐름은 별도 수행 필요 |
-| Windows High Contrast | 경계·포커스·선택·mask icon | BLOCKED | 현재 macOS에 실제 Windows HCM 없음 |
-| NVDA + Chrome/Firefox | 이름·역할·상태·live region | BLOCKED | Windows 및 NVDA 없음 |
-| JAWS + Chrome/Edge | 이름·역할·상태·live region | BLOCKED | Windows 및 JAWS 환경/라이선스 없음 |
+| Firefox 148.0.2 | 200%와 400% 실제 zoom | PASS | browser zoom 표시, reflow, 문서 수평 overflow 부재, footer·iOS·Android 버튼 도달을 실제 UI에서 확인 |
+| Safari 26.5.2 | 400% 실제 zoom | BLOCKED — 비게이팅 추가 범위 | Safari UI가 최대 300%까지만 제공하며 필수 400% gate는 Firefox에서 완료 |
+| Chrome 151 | 200%와 400% 실제 zoom | BLOCKED — 비게이팅 추가 범위 | Chrome 제어 확장과 통신할 수 없었으며 필수 200%/400% gate는 Firefox에서 완료 |
+| Safari 26.5.2 실제 순차 포커스 | 48단계 focus contract | PASS | `Option+Tab`으로 쇼핑 탭·색상·업로드·기기·프리뷰·캐러셀을 거쳐 Android 다운로드에 정확히 도달 |
+| Safari 26.5.2 키보드만 사용 | 설정 → 색상 → 업로드 → 프리뷰 → 다운로드 | PASS | `Accessibility Theme` 메타데이터, `#FADADD`, 실제 PNG 업로드, 태블릿/다음 프리뷰, iOS `.ktheme`와 Android source ZIP 생성·다운로드 완료 |
+| Chromium forced-colors 동등 환경 | 경계·포커스·선택·mask icon | PASS | 자동 assertion에 더해 쇼핑 화면 전체 screenshot에서 system colors, 포커스·선택 표시, control 경계와 아이콘을 직접 확인 |
+| Windows High Contrast | 동일 항목의 실제 Windows 재확인 | BLOCKED — 비게이팅 추가 범위 | 현재 macOS에 실제 Windows HCM 없음; 동등 환경 gate는 PASS |
+| NVDA + Chrome/Firefox | 이름·역할·상태·live region | BLOCKED — 비게이팅 추가 범위 | 원래 Task 10 필수 목록 밖의 추가 플랫폼 범위이며 현재 Windows 및 NVDA 없음 |
+| JAWS + Chrome/Edge | 이름·역할·상태·live region | BLOCKED — 비게이팅 추가 범위 | 원래 Task 10 필수 목록 밖의 추가 플랫폼 범위이며 현재 Windows 및 JAWS 환경/라이선스 없음 |
 
-Chrome과 Safari, VoiceOver는 현재 Mac에 설치되어 있으므로 실행 자체는 가능하다. 다만 자동 accessibility snapshot은 실제 음성 출력 검증이 아니므로, 인간 청취 전에는 `PASS`로 바꾸지 않는다.
+Chrome과 Safari, VoiceOver는 현재 Mac에 설치되어 있다. VoiceOver는 실제로 활성화하고 캡션 패널 기반 확인을 시도했으나 제어 도구가 VoiceOver 출력 창 접근을 허용하지 않아 발화의 중복·누락을 판정하지 않았으며, 2026-08-22 사용자 지시에 따라 VoiceOver 검사를 완료 범위에서 제외했다. 자동 accessibility snapshot은 실제 음성 출력 검증이 아니다.
+
+Safari는 기본 설정에서 `Tab`이 일부 웹 컨트롤만 순회하므로 전체 컨트롤 탐색용 `Option+Tab`을 사용했다. 테마 이름부터 시작해 쇼핑 탭을 선택한 뒤 색상 8개, 대비 결과, 가이드 링크, 업로드·색상 적용 22개, 기기 선택, 이전·다음 프리뷰, 쇼핑 요약·상품 이동·캐러셀, iOS와 Android 다운로드까지 48단계의 실제 UI 포커스가 자동 계약과 같은 순서로 이동했다. cycle, 비활성 패널 진입, 이름 없는 포커스는 없었다.
+
+별도의 실제 키보드 작업 흐름에서는 메타데이터를 `Accessibility Theme`, `accessibility`, `1.0.1`, `Codex QA`로 변경하고 쇼핑 프리뷰를 선택한 뒤 배경 색을 `#FADADD`로 변경했다. 메인 배경 파일 선택기를 키보드로 열어 로컬 PNG를 반영하고, 태블릿을 선택한 뒤 다음 프리뷰로 이동했다. 마지막으로 iOS와 Android 버튼을 각각 키보드로 실행해 `Accessibility-Theme.ktheme`와 `Accessibility-Theme-android-source.zip` 생성·다운로드 및 완료 status를 확인했다.
 
 Safari 확대 검사는 `보기 > 실제 크기`를 시작점으로 삼아 실제 페이지 확대를 사용했다. 200%에서 프리뷰와 static footer가 순서대로 도달 가능하고 다운로드 버튼과 텍스트가 잘리지 않는지 확인했다. Safari가 제공하는 최대 300%에서는 10개 프리뷰 탭을 모두 선택하고, 쇼핑 화면의 다음 상품 버튼으로 상태가 `1/4`에서 `2/4`로 바뀌는지, 문서 끝에서 footer와 두 다운로드 버튼이 보이고 조작 가능한지 확인했다. 최대 단계에서 `확대` 메뉴가 비활성임을 확인했으며 이를 400%로 기록하지 않는다. 검사 후 `실제 크기`로 복원했다. 이는 VoiceOver 발화 검사나 Chrome 200%/400% 확대 결과를 대신하지 않는다.
+
+필수 400% gate는 Firefox에서 별도로 수행했다. Firefox의 실제 zoom 표시가 200%와 400%인지 각각 확인하고 문서 끝까지 키보드로 이동해 콘텐츠가 단일 열로 reflow되는지, 문서 수평 scrollbar나 잘린 정보가 없는지, footer와 iOS·Android 다운로드 버튼이 모두 보이고 도달 가능한지 확인했다. 검사 후 100%로 복원했다.
+
+고대비는 계획이 허용한 동등 환경으로 Chromium `forced-colors: active`를 사용했다. 관련 프리뷰 표면 전반의 자동 assertion에 더해 쇼핑 화면 전체를 직접 확인해 system colors, control 경계, 현재 focus와 선택 tab 표시, mask icon이 구분되는지 확인했다. 이는 실제 Windows HCM 결과를 주장하지 않는다.
 
 ## 8. KWCAG 2.2 공식 기준과 WCAG 2.2 관련 대응
 
@@ -163,12 +176,12 @@ WCAG 기준은 [W3C WCAG 2.2 Recommendation](https://www.w3.org/TR/WCAG22/)을 �
 | 5.1.1 적절한 대체 텍스트 제공 | 1.1.1 | 직접 | 10화면 axe와 이름/역할 custom assertion PASS |
 | 5.2.1 자막 제공 | 1.2.1–1.2.5 | 관련 | N/A — 오디오·비디오 멀티미디어 없음 |
 | 5.3.1 표의 구성 | 1.3.1 | 관련 | N/A — 데이터 표 없음 |
-| 5.3.2 콘텐츠의 선형구조 | 1.3.2 | 직접 | DOM/ARIA 구조, 48단계 순서, reflow 자동 PASS; 화면낭독기 NOT RUN |
+| 5.3.2 콘텐츠의 선형구조 | 1.3.2 | 직접 | DOM/ARIA 구조, 자동·Safari 실제 48단계 순서, reflow PASS; VoiceOver는 사용자 지시로 EXCLUDED |
 | 5.3.3 명확한 지시사항 제공 | 1.3.3 | 직접 | form help/error와 색상 외 상태 표시 자동 PASS |
-| 5.4.1 색에 무관한 콘텐츠 인식 | 1.4.1 | 직접 | selected/focus/forced-colors custom PASS; 실제 Windows HCM BLOCKED |
+| 5.4.1 색에 무관한 콘텐츠 인식 | 1.4.1 | 직접 | selected/focus와 forced-colors 동등 환경 자동·수동 PASS; 실제 Windows HCM은 비게이팅 BLOCKED |
 | 5.4.2 자동 재생 금지 | 1.4.2 | 직접 | N/A — 자동 재생 오디오 없음 |
 | 5.4.3 텍스트 콘텐츠의 명도 대비 | 1.4.3 | 직접 | 기본 theme contrast ledger와 10화면 axe PASS; 사용자 색상은 부분 준수 정책 |
-| 5.4.4 콘텐츠 간의 구분 | 1.4.11 | 관련, 기준 동일하지 않음 | 경계·focus·selected indicator·forced-colors 자동 PASS; 실제 HCM BLOCKED |
+| 5.4.4 콘텐츠 간의 구분 | 1.4.11 | 관련, 기준 동일하지 않음 | 경계·focus·selected indicator·forced-colors 동등 환경 자동·수동 PASS; 실제 HCM은 비게이팅 BLOCKED |
 | 6.1.1 키보드 사용 보장 | 2.1.1, 2.1.2 | 직접 | 48단계 및 9개 세부 keyboard 시나리오 PASS |
 | 6.1.2 초점 이동과 표시 | 2.4.3, 2.4.7, 2.4.11 | 직접/관련 | cycle, inactive panel, focus 유지·가시성·가림 custom PASS |
 | 6.1.3 조작 가능 | 2.5.8 | 관련, 크기 기준 동일하지 않음 | 24 CSS px target 및 reflow custom PASS |
@@ -191,18 +204,18 @@ WCAG 기준은 [W3C WCAG 2.2 Recommendation](https://www.w3.org/TR/WCAG22/)을 �
 | 7.3.2 레이블 제공 | 3.3.2 | 직접 | metadata/color/upload 이름·도움 관계 자동 PASS |
 | 7.3.3 접근 가능한 인증 | 3.3.8 | 직접 | N/A — 인증 과정 없음; passcode는 비기능 preview 예시 |
 | 7.3.4 반복 입력 정보 | 3.3.7 | 직접 | N/A — 다단계 사용자 정보 재입력 흐름 없음 |
-| 8.1.1 마크업 오류 방지 | WCAG 2.2에서 4.1.1 삭제, 4.1.2 일부 관련 | 직접 대응 없음/관련 | axe의 일부 ID·ARIA 검사 PASS; 별도 규범 HTML validator는 NOT RUN |
-| 8.2.1 웹 애플리케이션 접근성 준수 | 4.1.2, 4.1.3 | 광범위 관련 | 이름·역할·값·live region 자동 PASS; 실제 Chrome/Safari+VoiceOver NOT RUN |
+| 8.1.1 마크업 오류 방지 | WCAG 2.2에서 4.1.1 삭제, 4.1.2 일부 관련 | 직접 대응 없음/관련 | axe의 ID·ARIA 검사와 브라우저 파싱·동작 회귀 PASS; 별도 HTML validator는 비게이팅 추가 범위 |
+| 8.2.1 웹 애플리케이션 접근성 준수 | 4.1.2, 4.1.3 | 광범위 관련 | 이름·역할·값·live region 자동 PASS; VoiceOver는 사용자 지시로 EXCLUDED, NVDA/JAWS는 비게이팅 BLOCKED |
 
 KWCAG에 정확히 같은 독립 검사항목이 없는 WCAG 2.2 AA 범위도 누락하지 않는다.
 
 | WCAG 2.2 범위 | 검증 방식과 현재 상태 |
 | --- | --- |
-| 1.3.4 Orientation | phone/tablet 및 320/390 viewport 자동 PASS; 실제 기기 회전은 NOT RUN |
-| 1.3.5 Identify Input Purpose | axe/명시적 label 자동 범위만 PASS; 실제 보조 입력 경험은 수동 범위 |
-| 1.4.4 Resize Text | Safari 200% 실제 zoom PASS; Safari 400%와 Chrome 200%/400%는 BLOCKED |
+| 1.3.4 Orientation | phone/tablet 및 320/390 viewport에서 방향 제한 없음 자동 PASS; 실제 기기 회전은 비게이팅 추가 범위 |
+| 1.3.5 Identify Input Purpose | 입력 목적과 명시적 label의 해당 자동 범위 PASS; 별도 보조 입력기는 비게이팅 추가 범위 |
+| 1.4.4 Resize Text | Safari·Firefox 200%, Firefox 400% 실제 zoom PASS; Safari/Chrome의 미실행 조합은 비게이팅 추가 범위 |
 | 1.4.5 Images of Text | 기능·지시 텍스트는 HTML이며 preview 장식 이미지는 대체 목적을 검사; axe PASS |
-| 1.4.10 Reflow | 320/390 CSS px geometry 자동 PASS; Safari 최대 300%는 보조 PASS; 실제 400%는 BLOCKED |
+| 1.4.10 Reflow | 320/390 CSS px geometry 자동 PASS; Safari 최대 300% 보조 PASS; Firefox 실제 400% PASS |
 | 1.4.12 Text Spacing | WCAG spacing override matrix 자동 PASS |
 | 1.4.13 Content on Hover or Focus | color popover 표시/닫기/focus 복귀 자동 PASS |
 | 2.4.5 Multiple Ways | N/A — 단일 앱 화면이며 다중 페이지 집합 없음 |
@@ -210,7 +223,7 @@ KWCAG에 정확히 같은 독립 검사항목이 없는 WCAG 2.2 AA 범위도 �
 | 3.1.2 Language of Parts | N/A — 본문은 한국어이고 제품명·플랫폼명 외 별도 언어 문단 없음 |
 | 3.2.3 Consistent Navigation, 3.2.4 Consistent Identification | 단일 앱 상태 전환에서 같은 controls/이름 유지 custom PASS |
 | 3.3.4 Error Prevention | N/A — 법률·금융·시험·영구 데이터 변경 작업 없음 |
-| 4.1.3 Status Messages | polite status, persistent alert, contrast/carousel/passcode live region 자동 PASS; 실제 발화 NOT RUN |
+| 4.1.3 Status Messages | polite status, persistent alert, contrast/carousel/passcode live region 자동 PASS; VoiceOver 실제 발화는 사용자 지시로 EXCLUDED |
 
 ## 9. GitHub Pages 배포 후 완료 절차
 
@@ -238,8 +251,8 @@ DEPLOYMENT_URL="http://127.0.0.1:43210/kakaotalk-theme-builder/?rev=local" \
 ## 10. 알려진 제한과 완료 판정
 
 - axe 0건은 axe가 자동 판정하는 규칙에서 탐지된 위반이 없다는 뜻일 뿐이다.
-- ARIA snapshot은 실제 VoiceOver, NVDA, JAWS 음성 출력과 브라우저별 상호작용을 대신하지 않는다.
-- `forced-colors` emulation은 실제 Windows High Contrast 결과가 아니다.
-- CSS viewport와 text-spacing automation은 실제 browser zoom 결과가 아니다. Safari 200%와 최대 300%는 별도 실제 UI 검사를 PASS했지만, 요구한 400%와 Chrome 확대는 아직 BLOCKED다.
+- ARIA snapshot은 실제 VoiceOver, NVDA, JAWS 음성 출력과 브라우저별 상호작용을 대신하지 않는다. VoiceOver는 사용자 지시에 따라 이번 완료 범위에서 제외했다.
+- `forced-colors` 동등 환경은 계획의 고대비 gate를 충족하지만 실제 Windows High Contrast 결과는 아니다.
+- CSS viewport와 text-spacing automation은 실제 browser zoom 결과가 아니다. 실제 확대 gate는 Safari 200%와 Firefox 200%/400%로 별도 PASS했다.
 - 사용자 업로드 이미지와 임의 색상 조합은 앱이 ratio·미달·자동 확인 불가를 보고하지만 준수를 강제하거나 인증하지 않는다.
-- 현재 자동 gate는 PASS한 항목만 완료 증거로 사용할 수 있다. `NOT RUN`, `BLOCKED`, `PENDING` 항목을 PASS로 바꾸려면 해당 환경과 실행 기록이 필요하다.
+- 완료 게이트는 자동 전체 회귀, 10화면 axe/ARIA, 실제 키보드 작업 흐름, 실제 200%/400% 확대, forced-colors 동등 환경, 실제 Pages 배포 smoke다. VoiceOver는 사용자 지시로 `EXCLUDED`이며, 실제 Windows HCM·NVDA·JAWS·추가 브라우저 조합·실기기 회전·별도 HTML validator는 플랫폼 범위를 넓히는 비게이팅 추가 확인으로 남긴다. `BLOCKED`를 `PASS`로 바꾸거나 해당 플랫폼 준수를 주장하지 않는다. 현재 남은 필수 게이트는 `PENDING`인 실제 Pages 배포와 운영 smoke뿐이다.

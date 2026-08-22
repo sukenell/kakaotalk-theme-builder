@@ -795,7 +795,7 @@ Run: `npm run test:a11y -- --grep @task9-forced`
 
 Run: `npm run test:all`
 
-Expected: 자동 emulation PASS. 실제 Windows High Contrast는 Task 10 수동 게이트에 남긴다.
+Expected: 자동 emulation PASS. 고대비 수동 완료 기준은 Task 10의 2026-08-22 개정 기준(실제 Windows 또는 동등한 forced-colors 환경)으로 대체한다.
 
 ```bash
 git add styles.css e2e/accessibility.spec.js
@@ -853,7 +853,7 @@ p { margin-bottom: 2em !important; }
 
 Run: `npm run test:a11y -- --grep @task9-reflow`
 
-Expected: 320 CSS px와 text spacing 자동 검사 PASS. `deviceScaleFactor`는 page zoom 증거로 사용하지 않는다. 실제 Chrome/Safari 200%·400% zoom은 Task 10 수동 게이트에서 수행한다.
+Expected: 320 CSS px와 text spacing 자동 검사 PASS. `deviceScaleFactor`는 page zoom 증거로 사용하지 않는다. 실제 확대 완료 기준은 Task 10의 2026-08-22 개정 기준(해당 단계를 지원하는 실제 브라우저의 200%·400%)으로 대체한다.
 
 Run: `npm run test:all`
 
@@ -936,6 +936,8 @@ Expected: Node와 Playwright 모두 fail 0, axe violation 0.
 
 **Step 5: 수동 검증을 실행하고 기록한다**
 
+> 2026-08-22 범위 변경: 사용자 지시에 따라 VoiceOver 실청취와 VoiceOver 상호작용 검사는 완료 기준에서 제외한다. 자동 ARIA snapshot을 실제 음성 검증으로 대체하거나 PASS로 기록하지 않는다.
+
 `docs/accessibility-verification.md`에 날짜·브라우저·보조기술·결과와 WCAG 2.2 성공기준 ↔ KWCAG 2.2 공식 조항 crosswalk를 기록한다. axe가 담당하는 항목, custom browser assertion, 수동 검증의 소유 기준을 구분한다.
 
 - Safari + VoiceOver: heading/landmark, form names, tab/tabpanel, live/alert, 암호 상태
@@ -945,7 +947,7 @@ Expected: Node와 Playwright 모두 fail 0, axe violation 0.
 - WCAG 텍스트 간격: 겹침·클리핑·조작 손실
 - 키보드만으로 테마 설정부터 다운로드까지 완료
 
-Expected: 모든 항목 PASS. 실제 화면낭독기 중복 발표나 브라우저별 차이가 있으면 완료로 판정하지 않고 해당 작업으로 되돌아간다.
+Expected: VoiceOver 제외 범위 외의 필수 항목 PASS. 고대비는 실제 Windows 또는 동등한 `forced-colors` 환경 중 하나를 완료하고, 200%/400% 확대는 해당 단계를 지원하는 실제 브라우저에서 완료한다. 실제 화면낭독기 결과를 수행하는 경우 중복 발표나 브라우저별 차이가 있으면 해당 작업으로 되돌아간다.
 
 **Step 6: 최종 회귀와 diff를 검토한다**
 
