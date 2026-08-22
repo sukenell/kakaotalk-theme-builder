@@ -8,6 +8,8 @@
 
 **Tech Stack:** HTML, CSS, JavaScript ES modules, Node.js built-in test runner, Playwright Test, `@axe-core/playwright`.
 
+**상태:** 2026-08-22 `CLOSED` — Task 0–10 구현, 전체 회귀, 수동 완료 게이트, 독립 검토, `main` 통합, GitHub Pages 배포와 운영 smoke까지 완료했다. VoiceOver 실청취·상호작용 검사는 사용자 지시에 따라 완료 범위에서 `EXCLUDED`로 기록했다.
+
 ---
 
 ## 구현 전 결정과 작업 규칙

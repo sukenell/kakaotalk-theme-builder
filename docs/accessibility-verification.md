@@ -7,8 +7,8 @@
 | 검증일 | 2026-08-22 |
 | 검증 대상 구현 커밋 | `121958399e52e7e4e567ef249d777d8524a2aa84` |
 | Task 10 구현 커밋 | `121958399e52e7e4e567ef249d777d8524a2aa84` |
-| GitHub Pages 배포 커밋 | `PENDING` |
-| GitHub Pages URL | `PENDING` |
+| GitHub Pages 검증 대상 앱 커밋 | `23d594391493218a32445894aa37d09f7f92196c` |
+| GitHub Pages URL | [https://sukenell.github.io/kakaotalk-theme-builder/](https://sukenell.github.io/kakaotalk-theme-builder/) |
 | 운영체제 | macOS 26.5.2 (25F84) |
 | 자동 검사 브라우저 | Playwright Desktop Chrome / Chromium, `@playwright/test` 1.62.1 |
 | 설치된 수동 검사 브라우저 | Google Chrome 151.0.7922.174, Safari 26.5.2, Firefox 148.0.2 |
@@ -34,7 +34,7 @@
 | `npx playwright test e2e/accessibility-audit.spec.js e2e/accessibility-keyboard.spec.js` | PASS — 20 passed | 10개 기본 화면 axe/ARIA와 48단계 Tab 및 9개 키보드 시나리오 |
 | `npx playwright test --list` | 124개 발견 | 로컬 123개 실행 대상과 환경변수 없을 때 skip되는 배포 smoke 1개 |
 | `npm run test:all` | PASS — Node 195 passed; Playwright 123 passed, deployment 1 skipped; 실패 0 | 전체 로컬 회귀. 배포 smoke는 URL이 없는 로컬 suite에서 의도적으로 skip |
-| `npm run test:deployment` | 로컬 PASS — 1 passed; 실제 Pages `PENDING` | Pages형 `/kakaotalk-theme-builder/` subpath fixture에서 asset 2xx·진단 0·axe 0 검증. 최종 SHA 배포 뒤 다시 실행 |
+| `npm run test:deployment` | PASS — 로컬 fixture 1 passed; 실제 Pages 1 passed | `/kakaotalk-theme-builder/` subpath에서 asset 2xx·진단 0·axe 0 검증. 실제 Pages는 검증 대상 앱 SHA를 `?rev=`로 지정해 실행 |
 
 모든 Playwright 테스트는 공통 fixture에서 `console.error`와 `pageerror`를 수집한다. 선언이 없으면 기대 multiset은 0건이며, 예외가 필요할 때에도 `kind + 정확한 message + 정확한 count`가 모두 일치해야 한다. 처리되지 않은 Promise rejection은 Playwright의 `pageerror`로 한 번 수집한다. 각 테스트는 `browser-diagnostics` JSON을 증거로 남긴다.
 
@@ -238,7 +238,16 @@ DEPLOYMENT_URL="http://127.0.0.1:43210/kakaotalk-theme-builder/?rev=local" \
 
 서버의 document root 아래 `kakaotalk-theme-builder/`가 저장소 root를 가리켜야 한다. smoke는 요청 URL의 origin/path 유지, stylesheet와 module script 선언, 브라우저가 불러온 모든 subresource의 같은 subpath·2xx 응답, 주요 앱 semantics, 브라우저 진단 0건 및 기본 화면 axe 0건을 검사하고 JSON evidence를 남긴다.
 
-2026-08-22에 위 구조의 로컬 fixture로 실행한 결과는 1 passed였다. 환경변수 누락, 상대 URL, origin root URL은 각각 config 단계에서 의도대로 실패했다. 이 결과는 실제 GitHub Pages 배포 결과가 아니므로 배포 SHA와 URL은 계속 `PENDING`이다.
+2026-08-22에 위 구조의 로컬 fixture로 실행한 결과는 1 passed였다. 환경변수 누락, 상대 URL, origin root URL은 각각 config 단계에서 의도대로 실패했다.
+
+같은 날 `main`의 `23d594391493218a32445894aa37d09f7f92196c`가 `github-pages` 환경에 배포되었고, deployment status `success`와 environment URL `https://sukenell.github.io/kakaotalk-theme-builder/`를 확인했다. 다음 운영 URL로 smoke를 실행해 1 passed를 확인했다.
+
+```bash
+DEPLOYMENT_URL="https://sukenell.github.io/kakaotalk-theme-builder/?rev=23d594391493218a32445894aa37d09f7f92196c" \
+  npm run test:deployment
+```
+
+운영 smoke는 저장소 subpath 유지, stylesheet와 module script 로드, 모든 subresource 2xx, 주요 앱 semantics, 브라우저 진단 0건 및 기본 화면 axe 0건을 통과했다.
 
 최종 배포에서는 다음 순서를 지킨다.
 
@@ -255,4 +264,4 @@ DEPLOYMENT_URL="http://127.0.0.1:43210/kakaotalk-theme-builder/?rev=local" \
 - `forced-colors` 동등 환경은 계획의 고대비 gate를 충족하지만 실제 Windows High Contrast 결과는 아니다.
 - CSS viewport와 text-spacing automation은 실제 browser zoom 결과가 아니다. 실제 확대 gate는 Safari 200%와 Firefox 200%/400%로 별도 PASS했다.
 - 사용자 업로드 이미지와 임의 색상 조합은 앱이 ratio·미달·자동 확인 불가를 보고하지만 준수를 강제하거나 인증하지 않는다.
-- 완료 게이트는 자동 전체 회귀, 10화면 axe/ARIA, 실제 키보드 작업 흐름, 실제 200%/400% 확대, forced-colors 동등 환경, 실제 Pages 배포 smoke다. VoiceOver는 사용자 지시로 `EXCLUDED`이며, 실제 Windows HCM·NVDA·JAWS·추가 브라우저 조합·실기기 회전·별도 HTML validator는 플랫폼 범위를 넓히는 비게이팅 추가 확인으로 남긴다. `BLOCKED`를 `PASS`로 바꾸거나 해당 플랫폼 준수를 주장하지 않는다. 현재 남은 필수 게이트는 `PENDING`인 실제 Pages 배포와 운영 smoke뿐이다.
+- 완료 게이트인 자동 전체 회귀, 10화면 axe/ARIA, 실제 키보드 작업 흐름, 실제 200%/400% 확대, forced-colors 동등 환경, 실제 Pages 배포 smoke는 모두 `PASS`다. VoiceOver는 사용자 지시로 `EXCLUDED`이며, 실제 Windows HCM·NVDA·JAWS·추가 브라우저 조합·실기기 회전·별도 HTML validator는 플랫폼 범위를 넓히는 비게이팅 추가 확인으로 남긴다. `BLOCKED`를 `PASS`로 바꾸거나 해당 플랫폼 준수를 주장하지 않는다.
